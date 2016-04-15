@@ -6,11 +6,8 @@
 // offset for the complement base in the random seeds table
 const int cpOff = -20;
 
-// shift for gerenerating multiple hash values
-const int varShift = 27;
-
 // seed for gerenerating multiple hash values
-const uint64_t varSeed = 10427061540882326010ul;
+const uint64_t varSeed = 2577914034309095328ul;
 
 // 64-bit random seed table corresponding to bases and their complements
 static const uint64_t seedTab[256] = {
@@ -117,6 +114,26 @@ inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned 
     return (rhVal<fhVal)? rhVal : fhVal;
 }
 
+// change a single base and update forward-strand hash value accordingly
+inline uint64_t setBase(uint64_t fhVal, char* kmerSeq, unsigned pos, char base, unsigned k)
+{
+    fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
+    kmerSeq[pos] = base;
+    fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
+    return fhVal;
+}
+
+// change a single base and update hash values accordingly
+inline uint64_t setBase(uint64_t& fhVal, uint64_t& rhVal, char* kmerSeq, unsigned pos, char base, unsigned k)
+{
+    fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
+    rhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]+cpOff], pos);
+    kmerSeq[pos] = base;
+    fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
+    rhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]+cpOff], pos);
+    return (rhVal<fhVal)? rhVal : fhVal;
+}
+
 // spaced-seed hash values
 
 /**
@@ -171,7 +188,7 @@ inline uint64_t getRhval(uint64_t &kVal, const char * seedSeq, const char * kmer
  * @return hash for masked k-mer in forward orientation
  */
 inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
-	const unsigned charOut = kmerSeq[0];
+    const unsigned charOut = kmerSeq[0];
     kVal = rol(kVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     uint64_t sVal=kVal;
     for(unsigned i=1; i<k-1; i++) {
@@ -192,7 +209,7 @@ inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const char
  * @return hash for masked k-mer in forward orientation
  */
 inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
-	const unsigned charOut = kmerSeq[k-1];
+    const unsigned charOut = kmerSeq[k-1];
     kVal = ror(kVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     uint64_t sVal=kVal;
     for(unsigned i=1; i<k-1; i++) {
@@ -214,15 +231,15 @@ inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const char 
  * @return canonical hash value for masked k-mer
  */
 inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
-	const unsigned charOut = kmerSeq[0];
-	fkVal = rol(fkVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
+    const unsigned charOut = kmerSeq[0];
+    fkVal = rol(fkVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     rkVal = ror(rkVal, 1) ^ ror(seedTab[charOut+cpOff], 1) ^ rol(seedTab[charIn+cpOff], k-1);
     uint64_t fsVal=fkVal, rsVal=rkVal;
     for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1') {
             fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]], k-1-i);
             rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]+cpOff], i);
-		}
+        }
     }
     return (rsVal<fsVal)? rsVal : fsVal;
 }
@@ -239,15 +256,40 @@ inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * s
  * @return canonical hash value for masked k-mer
  */
 inline uint64_t rollHashesLeft(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
-	const unsigned charOut = kmerSeq[k-1];
-	fkVal = ror(fkVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
+    const unsigned charOut = kmerSeq[k-1];
+    fkVal = ror(fkVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     rkVal = rol(rkVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
-	uint64_t fsVal=fkVal, rsVal=rkVal;
+    uint64_t fsVal=fkVal, rsVal=rkVal;
     for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1') {
             fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]], k-1-i);
             rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]+cpOff], i);
-		}
+        }
+    }
+    return (rsVal<fsVal)? rsVal : fsVal;
+}
+
+/**
+ * Change a single base and recompute spaced seed hash values
+ *
+ * @param fkVal hash value for current k-mer unmasked and in forward orientation
+ * @param rkVal hash value for current k-mer unmasked and in reverse complement orientation
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq sequence for current k-mer
+ * @param pos position of base to change
+ * @param base new base value
+ * @param k k-mer size
+ * @return updated canonical hash value for masked k-mer
+ */
+inline uint64_t setBase(uint64_t& fkVal, uint64_t& rkVal, const char * seedSeq, char * kmerSeq, unsigned pos, char base, unsigned k)
+{
+    setBase(fkVal, rkVal, kmerSeq, pos, base, k);
+    uint64_t fsVal=fkVal, rsVal=rkVal;
+    for(unsigned i=0; i<k; i++) {
+        if(seedSeq[i]!='1') {
+            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+        }
     }
     return (rsVal<fsVal)? rsVal : fsVal;
 }
