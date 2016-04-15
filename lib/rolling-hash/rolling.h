@@ -118,7 +118,16 @@ inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned 
 }
 
 // spaced-seed hash values
-// forward-strand spaced seed hash value of the base kmer, i.e. fhval(kmer_0)
+
+/**
+ * Calculate forward-strand spaced seed hash value of the base kmer, i.e. fhval(kmer_0)
+ *
+ * @param kVal set to forward-strand hash value for unmasked k-mer
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq k-mer to be hashed
+ * @param k k-mer size
+ * @return hash value for masked forward-strand k-mer
+ */
 inline uint64_t getFhval(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned k) {
     kVal=0;
     uint64_t sVal=0;
@@ -130,6 +139,15 @@ inline uint64_t getFhval(uint64_t &kVal, const char * seedSeq, const char * kmer
     return sVal;
 }
 
+/**
+ * Calculate reverse-strand spaced seed hash value of the base kmer, i.e. rhval(kmer_0)
+ *
+ * @param kVal set to reverse-strand hash value for unmasked k-mer
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq k-mer to be hashed
+ * @param k k-mer size
+ * @return hash for masked reverse-strand k-mer
+ */
 // reverse-strand spaced seed hash value of the base kmer, i.e. rhval(kmer_0)
 inline uint64_t getRhval(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned k) {
     kVal=0;
@@ -142,51 +160,93 @@ inline uint64_t getRhval(uint64_t &kVal, const char * seedSeq, const char * kmer
     return sVal;
 }
 
-// recursive forward-strand spaced seed hash value for next k-mer
-inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
+/**
+ * Recursive forward-strand spaced seed hash value for next k-mer
+ *
+ * @param kVal hash value for current k-mer unmasked and in forward orientation
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq sequence for *current* k-mer (not the k-mer we are rolling into)
+ * @param charIn new base we are rolling in from the right
+ * @param k k-mer size
+ * @return hash for masked k-mer in forward orientation
+ */
+inline uint64_t rollHashesRight(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
+	const unsigned charOut = kmerSeq[0];
     kVal = rol(kVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     uint64_t sVal=kVal;
-    for(unsigned i=0; i<k; i++) {
+    for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1')
-            sVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+            sVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]], k-1-i);
     }
     return sVal;
 }
 
-// recursive forward-strand spaced seed hash value for prev k-mer
-inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+/**
+ * Recursive forward-strand spaced seed hash value for prev k-mer
+ *
+ * @param kVal hash value for current k-mer unmasked and in forward orientation
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq sequence for current k-mer (not the k-mer we are rolling into)
+ * @param charIn new base we are rolling in from the left
+ * @param k k-mer size
+ * @return hash for masked k-mer in forward orientation
+ */
+inline uint64_t rollHashesLeft(uint64_t &kVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
+	const unsigned charOut = kmerSeq[k-1];
     kVal = ror(kVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     uint64_t sVal=kVal;
-    for(unsigned i=0; i<k; i++) {
+    for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1')
-            sVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
+            sVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]], k-1-i);
     }
     return sVal;
 }
 
-// recursive canonical spaced seed hash value for next k-mer
-inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
+/**
+ * Recursive canonical spaced seed hash value for next k-mer
+ *
+ * @param fkVal hash value for current k-mer unmasked and in forward orientation
+ * @param rkVal hash value for current k-mer unmasked and in reverse complement orientation
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq sequence for current k-mer (not the k-mer we are rolling into)
+ * @param charIn new base we are rolling in from the right
+ * @param k k-mer size
+ * @return canonical hash value for masked k-mer
+ */
+inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
+	const unsigned charOut = kmerSeq[0];
 	fkVal = rol(fkVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     rkVal = ror(rkVal, 1) ^ ror(seedTab[charOut+cpOff], 1) ^ rol(seedTab[charIn+cpOff], k-1);
     uint64_t fsVal=fkVal, rsVal=rkVal;
-    for(unsigned i=0; i<k; i++) {
+    for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1') {
-            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
-            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]], k-1-i);
+            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]+cpOff], i);
 		}
     }
     return (rsVal<fsVal)? rsVal : fsVal;
 }
 
-// recursive canonical spaced seed hash value for prev k-mer
-inline uint64_t rollHashesLeft(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
+/**
+ * Recursive canonical spaced seed hash value for prev k-mer
+ *
+ * @param fkVal hash value for current k-mer unmasked and in forward orientation
+ * @param rkVal hash value for current k-mer unmasked and in reverse complement orientation
+ * @param seedSeq bitmask indicating "don't care" positions for hashing
+ * @param kmerSeq sequence for current k-mer (not the k-mer we are rolling into)
+ * @param charIn new base we are rolling in from the left
+ * @param k k-mer size
+ * @return canonical hash value for masked k-mer
+ */
+inline uint64_t rollHashesLeft(uint64_t &fkVal, uint64_t &rkVal, const char * seedSeq, const char * kmerSeq, const unsigned char charIn, const unsigned k) {
+	const unsigned charOut = kmerSeq[k-1];
 	fkVal = ror(fkVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     rkVal = rol(rkVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
 	uint64_t fsVal=fkVal, rsVal=rkVal;
-    for(unsigned i=0; i<k; i++) {
+    for(unsigned i=1; i<k-1; i++) {
         if(seedSeq[i]!='1') {
-            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]], k-1-i);
-            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
+            fsVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]], k-1-i);
+            rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]+cpOff], i);
 		}
     }
     return (rsVal<fsVal)? rsVal : fsVal;
