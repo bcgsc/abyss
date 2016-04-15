@@ -74,8 +74,7 @@ TEST(BloomDBG, splitSeq)
 	vector<Sequence> segments1 = BloomDBG::splitSeq(seq1, k,
 		graph1, minBranchLen);
 
-	V GACTC(V(MaskedKmer("GACTC"),
-		RollingHash("GACTC", k)));
+	V GACTC(V("GACTC", RollingHash("GACTC", k)));
 
 	ASSERT_EQ(1U, out_degree(GACTC, graph1));
 	ASSERT_EQ(1U, segments1.size());

@@ -11,6 +11,7 @@
 #include "BloomDBG/MaskedKmer.h"
 #include "Graph/Properties.h"
 #include "BloomDBG/RollingHash.h"
+#include "BloomDBG/LightweightKmer.h"
 #include "lib/bloomfilter/BloomFilter.hpp"
 
 #include <algorithm>
@@ -22,17 +23,83 @@
 #include <vector>
 #include <iostream>
 
+#define BASE_CHARS "ACGT"
+
 using boost::graph_traits;
 
-NAMESPACE_STD_HASH_BEGIN
-template <> struct hash< std::pair<MaskedKmer, RollingHash> > {
-	/**
-	 * Hash function for graph vertex type (vertex_descriptor),
-	 * which is std::pair<MaskedKmer, RollingHash>.
-	 */
-	size_t operator()(const std::pair<MaskedKmer, RollingHash>& vertex) const
+/**
+ * Represents a vertex in the de Bruijn graph.
+ */
+struct RollingBloomDBGVertex
+{
+private:
+
+	LightweightKmer m_kmer;
+	RollingHash m_rollingHash;
+
+public:
+
+	RollingBloomDBGVertex() {}
+
+	RollingBloomDBGVertex(const char* kmer, const RollingHash rollingHash)
+		: m_kmer(kmer), m_rollingHash(rollingHash) {}
+
+	const LightweightKmer& kmer() const { return m_kmer; };
+	const RollingHash& rollingHash() const { return m_rollingHash; }
+
+	RollingBloomDBGVertex clone() const {
+		return RollingBloomDBGVertex(m_kmer.c_str(), m_rollingHash);
+	}
+
+	void shift(extDirection dir, char charIn = 'A')
 	{
-		return vertex.second.getHash();
+		if (dir == SENSE) {
+			m_rollingHash.rollRight(m_kmer.c_str(), charIn);
+		} else {
+			m_rollingHash.rollLeft(charIn, m_kmer.c_str());
+		}
+		m_kmer.shift(dir, charIn);
+	}
+
+	void setLastBase(extDirection dir, char base)
+	{
+		const unsigned k = Kmer::length();
+		if (dir == SENSE) {
+			m_rollingHash.setBase(m_kmer.c_str(), k-1, base);
+		} else {
+			m_rollingHash.setBase(m_kmer.c_str(), 0, base);
+		}
+	}
+
+	/**
+	 * Comparison operator that takes spaced seed bitmask into account.
+	 */
+	bool operator==(const RollingBloomDBGVertex& o) const
+	{
+		/* do fast comparison first */
+		if (m_rollingHash != o.m_rollingHash)
+			return false;
+
+		return m_kmer == o.m_kmer;
+	}
+
+	/**
+	 * Inequality operator that takes spaced seed bitmask into account.
+	 */
+	bool operator!=(const RollingBloomDBGVertex& o) const
+	{
+		return !(*this == o);
+	}
+};
+
+NAMESPACE_STD_HASH_BEGIN
+template <> struct hash<RollingBloomDBGVertex> {
+	/**
+	 * Hash function for graph vertex type (vertex_descriptor)
+	 */
+	size_t operator()(const RollingBloomDBGVertex& vertex) const
+	{
+		return vertex.rollingHash().getHash();
 	}
 };
 NAMESPACE_STD_HASH_END
@@ -51,7 +118,7 @@ class RollingBloomDBG: public BF {
 	/** The bloom filter */
 	const BF& m_bloom;
 
-	RollingBloomDBG(const BF& bloom) : m_bloom(bloom) { }
+	RollingBloomDBG(const BF& bloom) : m_bloom(bloom) {}
 
   private:
 	/** Copy constructor. */
@@ -73,7 +140,8 @@ struct graph_traits< RollingBloomDBG<BF> > {
 	 * The second member of the pair (std::vector<size_t>) is
 	 * a set of hash values associated with the k-mer.
 	 */
-	typedef std::pair<MaskedKmer, RollingHash> vertex_descriptor;
+	/* typedef std::pair<char*, RollingHash> vertex_descriptor; */
+	typedef RollingBloomDBGVertex vertex_descriptor;
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
 		: boost::adjacency_graph_tag,
@@ -110,11 +178,7 @@ struct adjacency_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.first.setLastBase(SENSE, m_i);
-			m_v.second = m_u.second;
-			m_v.second.rollRight(
-				m_u.first.str().c_str(),
-				m_v.first.str().c_str());
+			m_v.setLastBase(SENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -127,9 +191,9 @@ struct adjacency_iterator
 	adjacency_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
 	adjacency_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
-		: m_g(&g), m_u(u), m_v(u), m_i(0)
+		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
-		m_v.first.shift(SENSE);
+		m_v.shift(SENSE);
 		next();
 	}
 
@@ -179,11 +243,7 @@ struct out_edge_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.first.setLastBase(SENSE, m_i);
-			m_v.second = m_u.second;
-			m_v.second.rollRight(
-				m_u.first.str().c_str(),
-				m_v.first.str().c_str());
+			m_v.setLastBase(SENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -195,9 +255,9 @@ struct out_edge_iterator
 	out_edge_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
 	out_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
-		: m_g(&g), m_u(u), m_v(u), m_i(0)
+		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
-		m_v.first.shift(SENSE);
+		m_v.shift(SENSE);
 		next();
 	}
 
@@ -247,11 +307,7 @@ struct in_edge_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.first.setLastBase(ANTISENSE, m_i);
-			m_v.second = m_u.second;
-			m_v.second.rollLeft(
-				m_v.first.str().c_str(),
-				m_u.first.str().c_str());
+			m_v.setLastBase(ANTISENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -263,9 +319,9 @@ struct in_edge_iterator
 	in_edge_iterator(const RollingBloomDBG<BF>& g) : m_g(&g), m_i(NUM_BASES) { }
 
 	in_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
-		: m_g(&g), m_u(u), m_v(u), m_i(0)
+		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
-		m_v.first.shift(ANTISENSE);
+		m_v.shift(ANTISENSE);
 		next();
 	}
 
@@ -318,7 +374,7 @@ template <typename Graph>
 static inline bool
 vertex_exists(const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
-	size_t hash = u.second.getHash();
+	size_t hash = u.rollingHash().getHash();
 	return g.m_bloom.contains(&hash);
 }
 
