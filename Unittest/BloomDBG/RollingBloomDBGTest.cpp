@@ -24,12 +24,12 @@ protected:
 
 	const unsigned m_k;
 	const unsigned m_bloomSize;
-	const unsigned m_bloomHashes;
+	const unsigned m_numHashes;
 	BloomFilter m_bloom;
 	Graph m_graph;
 
-	RollingBloomDBGTest() : m_k(5), m_bloomSize(100000), m_bloomHashes(1),
-		m_bloom(m_bloomSize, m_bloomHashes, m_k), m_graph(m_bloom)
+	RollingBloomDBGTest() : m_k(5), m_bloomSize(100000), m_numHashes(2),
+		m_bloom(m_bloomSize, m_numHashes, m_k), m_graph(m_bloom)
 	{
 		MaskedKmer::setLength(m_k);
 
@@ -47,17 +47,17 @@ protected:
 		 * complements of these k-mers.
 		 */
 
-		size_t hashCGACT = RollingHash("CGACT", m_k).getHash();
-		size_t hashTGACT = RollingHash("TGACT", m_k).getHash();
-		size_t hashGACTC = RollingHash("GACTC", m_k).getHash();
-		size_t hashACTCT = RollingHash("ACTCT", m_k).getHash();
-		size_t hashACTCG = RollingHash("ACTCG", m_k).getHash();
-
-		m_bloom.insert(&hashCGACT);
-		m_bloom.insert(&hashTGACT);
-		m_bloom.insert(&hashGACTC);
-		m_bloom.insert(&hashACTCT);
-		m_bloom.insert(&hashACTCG);
+		size_t hashes[MAX_HASHES];
+		RollingHash("CGACT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("TGACT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("GACTC", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("ACTCT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("ACTCG", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
 	}
 
 };
@@ -66,9 +66,9 @@ TEST_F(RollingBloomDBGTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC("GACTC", RollingHash("GACTC", m_k));
-	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
-	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_numHashes, m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_numHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -94,9 +94,9 @@ TEST_F(RollingBloomDBGTest, adjacency_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC("GACTC", RollingHash("GACTC", m_k));
-	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
-	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_numHashes, m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_numHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);
@@ -122,9 +122,9 @@ TEST_F(RollingBloomDBGTest, in_edges)
 {
 	/* TEST: check that "GACTC" has the expected ingoing edges */
 
-	const V GACTC("GACTC", RollingHash("GACTC", m_k));
-	const V CGACT("CGACT", RollingHash("CGACT", m_k));
-	const V TGACT("TGACT", RollingHash("TGACT", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
+	const V CGACT("CGACT", RollingHash("CGACT", m_numHashes, m_k));
+	const V TGACT("TGACT", RollingHash("TGACT", m_numHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(CGACT);
@@ -153,13 +153,13 @@ protected:
 
 	const unsigned m_k;
 	const unsigned m_bloomSize;
-	const unsigned m_bloomHashes;
+	const unsigned m_numHashes;
 	BloomFilter m_bloom;
 	Graph m_graph;
 	const std::string m_spacedSeed;
 
-	RollingBloomDBGSpacedSeedTest() : m_k(5), m_bloomSize(100000), m_bloomHashes(1),
-		m_bloom(m_bloomSize, m_bloomHashes, m_k), m_graph(m_bloom),
+	RollingBloomDBGSpacedSeedTest() : m_k(5), m_bloomSize(100000), m_numHashes(1),
+		m_bloom(m_bloomSize, m_numHashes, m_k), m_graph(m_bloom),
 		m_spacedSeed("11011")
 	{
 		MaskedKmer::setLength(m_k);
@@ -188,17 +188,17 @@ protected:
 		 * any additional edges in the graph.
 		 */
 
-		size_t hashCGACT = RollingHash("CGACT", m_k).getHash();
-		size_t hashTGACT = RollingHash("TGACT", m_k).getHash();
-		size_t hashGACTC = RollingHash("GACTC", m_k).getHash();
-		size_t hashACTCT = RollingHash("ACTCT", m_k).getHash();
-		size_t hashACTCG = RollingHash("ACTCG", m_k).getHash();
-
-		m_bloom.insert(&hashCGACT);
-		m_bloom.insert(&hashTGACT);
-		m_bloom.insert(&hashGACTC);
-		m_bloom.insert(&hashACTCT);
-		m_bloom.insert(&hashACTCG);
+		size_t hashes[MAX_HASHES];
+		RollingHash("CGACT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("TGACT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("GACTC", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("ACTCT", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
+		RollingHash("ACTCG", m_numHashes, m_k).getHashes(hashes);
+		m_bloom.insert(hashes);
 	}
 
 };
@@ -207,9 +207,9 @@ TEST_F(RollingBloomDBGSpacedSeedTest, out_edge_iterator)
 {
 	/* TEST: check that "GACTC" has the expected outgoing edges */
 
-	const V GACTC("GACTC", RollingHash("GACTC", m_k));
-	const V ACTCT("ACTCT", RollingHash("ACTCT", m_k));
-	const V ACTCG("ACTCG", RollingHash("ACTCG", m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
+	const V ACTCT("ACTCT", RollingHash("ACTCT", m_numHashes, m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_numHashes, m_k));
 
 	unordered_set<V> expectedNeighbours;
 	expectedNeighbours.insert(ACTCT);

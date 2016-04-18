@@ -99,7 +99,7 @@ template <> struct hash<RollingBloomDBGVertex> {
 	 */
 	size_t operator()(const RollingBloomDBGVertex& vertex) const
 	{
-		return vertex.rollingHash().getHash();
+		return vertex.rollingHash().getHashSeed();
 	}
 };
 NAMESPACE_STD_HASH_END
@@ -140,7 +140,6 @@ struct graph_traits< RollingBloomDBG<BF> > {
 	 * The second member of the pair (std::vector<size_t>) is
 	 * a set of hash values associated with the k-mer.
 	 */
-	/* typedef std::pair<char*, RollingHash> vertex_descriptor; */
 	typedef RollingBloomDBGVertex vertex_descriptor;
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
@@ -374,8 +373,9 @@ template <typename Graph>
 static inline bool
 vertex_exists(const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
-	size_t hash = u.rollingHash().getHash();
-	return g.m_bloom.contains(&hash);
+	size_t hashes[MAX_HASHES];
+	u.rollingHash().getHashes(hashes);
+	return g.m_bloom.contains(hashes);
 }
 
 template <typename Graph>

@@ -48,6 +48,7 @@ static const char USAGE_MESSAGE[] =
 "      --no-chastity          do not discard unchaste reads\n"
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
 "      --help                 display this help and exit\n"
+"  -H  --num-hashes=N         number of Bloom filter hash functions [1]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
@@ -102,7 +103,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:C:g:j:k:K:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:c:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, QR_SEED };
 
@@ -113,6 +114,7 @@ static const struct option longopts[] = {
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "graph",            required_argument, NULL, 'g' },
+	{ "num-hashes",       required_argument, NULL, 'H' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -156,6 +158,8 @@ int main(int argc, char** argv)
 			arg >> params.covTrackPath; break;
 		  case 'g':
 			arg >> params.graphPath; break;
+		  case 'H':
+			arg >> params.numHashes; break;
 		  case 'j':
 			arg >> params.threads; break;
 		  case 'k':
@@ -212,6 +216,13 @@ int main(int argc, char** argv)
 
 	if (params.k > 0 && params.K > 0 && params.K > params.k/2) {
 		cerr << PROGRAM ": value of `-K' must be <= k/2\n";
+		die = true;
+	}
+
+	if (params.numHashes > MAX_HASHES) {
+		cerr << PROGRAM ": number of hash functions (`-H`) must "
+			"be <= " << MAX_HASHES << " (set by `configure` option "
+			"--enable-max-hashes=N)\n";
 		die = true;
 	}
 
@@ -282,9 +293,8 @@ int main(int argc, char** argv)
 		params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
 
 	/* use cascading Bloom filter to remove error k-mers */
-	const unsigned numHashes = 1;
 	HashAgnosticCascadingBloom cascadingBloom(
-		bloomLevelSize, numHashes, params.minCov, params.k);
+		bloomLevelSize, params.numHashes, params.minCov, params.k);
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i) {

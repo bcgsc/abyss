@@ -21,31 +21,26 @@ TEST(HashAgnosticCascadingBloom, base)
 	const char* c = "TAATAACAGTCCCTAT";
 	const char* d = "GATCGTGGCGGGCGAT";
 
-	RollingHashIterator itA(a, k);
-	RollingHashIterator itB(b, k);
-	RollingHashIterator itC(c, k);
-	RollingHashIterator itD(d, k);
+	RollingHashIterator itA(a, numHashes, k);
+	RollingHashIterator itB(b, numHashes, k);
+	RollingHashIterator itC(c, numHashes, k);
+	RollingHashIterator itD(d, numHashes, k);
 	size_t hash;
 
-	hash = *itA;
-	x.insert(&hash);
+	x.insert(*itA);
 	EXPECT_EQ(x.popcount(), 0U);
 	EXPECT_FALSE(x.contains(&hash));
-	x.insert(&hash);
+	x.insert(*itA);
 	EXPECT_EQ(x.popcount(), 1U);
-	EXPECT_TRUE(x.contains(&hash));
-	hash = *itB;
-	x.insert(&hash);
+	EXPECT_TRUE(x.contains(*itA));
+	x.insert(*itB);
 	EXPECT_EQ(x.popcount(), 1U);
-	EXPECT_FALSE(x.contains(&hash));
-	hash = *itC;
-	x.insert(&hash);
+	EXPECT_FALSE(x.contains(*itB));
+	x.insert(*itC);
 	EXPECT_EQ(x.popcount(), 1U);
-	EXPECT_FALSE(x.contains(&hash));
-	hash = *itB;
-	x.insert(&hash);
+	EXPECT_FALSE(x.contains(*itC));
+	x.insert(*itB);
 	EXPECT_EQ(x.popcount(), 2U);
-	EXPECT_TRUE(x.contains(&hash));
-	hash = *itD;
-	EXPECT_FALSE(x.contains(&hash));
+	EXPECT_TRUE(x.contains(*itB));
+	EXPECT_FALSE(x.contains(*itD));
 }
