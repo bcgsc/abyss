@@ -6,8 +6,11 @@
 // offset for the complement base in the random seeds table
 const int cpOff = -20;
 
+// shift for gerenerating multiple hash values
+const int varShift = 27;
+
 // seed for gerenerating multiple hash values
-const uint64_t varSeed = 2577914034309095328ul;
+const uint64_t varSeed = 10427061540882326010ul;
 
 // 64-bit random seed table corresponding to bases and their complements
 static const uint64_t seedTab[256] = {
@@ -132,6 +135,22 @@ inline uint64_t setBase(uint64_t& fhVal, uint64_t& rhVal, char* kmerSeq, unsigne
     fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
     rhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]+cpOff], pos);
     return (rhVal<fhVal)? rhVal : fhVal;
+}
+
+/**
+ * Compute multiple pseudo-independent hash values from a seed hash value.
+ *
+ * @param hashes array for storing computed hash values
+ * @param seedVal seed value for multi-hash calculation
+ * @param numHashes number of hash values to compute
+ * @param k-mer size
+ */
+inline void multiHash(uint64_t hashes[], uint64_t seedVal, unsigned numHashes, unsigned k)
+{
+    for (unsigned i = 0; i < numHashes; i++) {
+        hashes[i] = seedVal * (i ^ k * varSeed);
+        hashes[i] ^= hashes[i] >> varShift;
+    }
 }
 
 // spaced-seed hash values
