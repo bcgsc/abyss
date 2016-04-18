@@ -13,10 +13,11 @@ class RollingHashTest : public ::testing::Test
 {
 protected:
 
+	const unsigned m_numHashes;
 	const unsigned m_k;
 	const string m_kmerMask;
 
-	RollingHashTest() : m_k(4)
+	RollingHashTest() : m_numHashes(2), m_k(4)
 	{
 		Kmer::setLength(m_k);
 	}
@@ -25,17 +26,17 @@ protected:
 TEST_F(RollingHashTest, kmerMask)
 {
 	MaskedKmer::setMask("1001");
-	RollingHash kmer1Hash("GCCG", m_k);
-	RollingHash kmer2Hash("GTTG", m_k);
+	RollingHash kmer1Hash("GCCG", m_numHashes, m_k);
+	RollingHash kmer2Hash("GTTG", m_numHashes, m_k);
 	ASSERT_EQ(kmer1Hash, kmer2Hash);
 }
 
 TEST_F(RollingHashTest, rollRight)
 {
 	MaskedKmer::mask().clear();
-	RollingHash leftKmerHash("GACG", m_k);
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	leftKmerHash.rollRight("GACG", 'T');
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
@@ -46,9 +47,9 @@ TEST_F(RollingHashTest, rollRight)
 TEST_F(RollingHashTest, rollRightMasked)
 {
 	MaskedKmer::setMask("1001");
-	RollingHash leftKmerHash("GACG", m_k);
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	leftKmerHash.rollRight("GACG", 'T');
 	ASSERT_EQ(middleKmerHash, leftKmerHash);
@@ -63,11 +64,11 @@ TEST_F(RollingHashTest, rollRightMaskedMismatch)
 	const char* origSeq    = "GACGTC";
 	const char* mutatedSeq = "GACTTC";
 
-	RollingHash left(origSeq, m_k);
-	RollingHash middle(origSeq + 1, m_k);
-	RollingHash right(origSeq + 2, m_k);
+	RollingHash left(origSeq, m_numHashes, m_k);
+	RollingHash middle(origSeq + 1, m_numHashes, m_k);
+	RollingHash right(origSeq + 2, m_numHashes, m_k);
 
-	RollingHash mutated(mutatedSeq, m_k);
+	RollingHash mutated(mutatedSeq, m_numHashes, m_k);
 
 	ASSERT_NE(left, mutated);
 	mutated.rollRight(mutatedSeq, 'T');
@@ -80,9 +81,9 @@ TEST_F(RollingHashTest, rollLeft)
 {
 	MaskedKmer::mask().clear();
 
-	RollingHash leftKmerHash("GACG", m_k);
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	rightKmerHash.rollLeft('A', "CGTC");
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
@@ -94,9 +95,9 @@ TEST_F(RollingHashTest, rollLeftMasked)
 {
 	MaskedKmer::setMask("1001");
 
-	RollingHash leftKmerHash("GACG", m_k);
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	rightKmerHash.rollLeft('A', "CGTC");
 	ASSERT_EQ(middleKmerHash, rightKmerHash);
@@ -111,11 +112,11 @@ TEST_F(RollingHashTest, rollLeftMaskedMismatch)
 	const char* origSeq    = "GACGTC";
 	const char* mutatedSeq = "GAGGTC";
 
-	RollingHash left(origSeq, m_k);
-	RollingHash middle(origSeq + 1, m_k);
-	RollingHash right(origSeq + 2, m_k);
+	RollingHash left(origSeq, m_numHashes, m_k);
+	RollingHash middle(origSeq + 1, m_numHashes, m_k);
+	RollingHash right(origSeq + 2, m_numHashes, m_k);
 
-	RollingHash mutated(mutatedSeq + 2, m_k);
+	RollingHash mutated(mutatedSeq + 2, m_numHashes, m_k);
 
 	ASSERT_NE(right, mutated);
 	mutated.rollLeft('A', mutatedSeq + 2);
@@ -128,8 +129,8 @@ TEST_F(RollingHashTest, reset)
 {
 	MaskedKmer::mask().clear();
 
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	middleKmerHash.reset("CGTC");
 	ASSERT_EQ(rightKmerHash, middleKmerHash);
@@ -139,8 +140,8 @@ TEST_F(RollingHashTest, resetMasked)
 {
 	MaskedKmer::setMask("1001");
 
-	RollingHash middleKmerHash("ACGT", m_k);
-	RollingHash rightKmerHash("CGTC", m_k);
+	RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
 
 	/*
 	 * Note: third base of middleKmerHash is intentionally set to 'G'
@@ -159,8 +160,8 @@ TEST_F(RollingHashTest, setBase)
 	char kmer1[] = "ACGT";
 	char kmer2[] = "ACCT";
 
-	RollingHash hash1(kmer1, m_k);
-	RollingHash hash2(kmer2, m_k);
+	RollingHash hash1(kmer1, m_numHashes, m_k);
+	RollingHash hash2(kmer2, m_numHashes, m_k);
 
 	ASSERT_NE(hash2, hash1);
 	hash1.setBase(kmer1, 2, 'C');
@@ -175,8 +176,8 @@ TEST_F(RollingHashTest, setBaseMasked)
 	char kmer1[] = "ACGT";
 	char kmer2[] = "ACCT";
 
-	RollingHash hash1(kmer1, m_k);
-	RollingHash hash2(kmer2, m_k);
+	RollingHash hash1(kmer1, m_numHashes, m_k);
+	RollingHash hash2(kmer2, m_numHashes, m_k);
 
 	/* hashes should agree since mismatch is in masked position */
 	ASSERT_EQ(hash2, hash1);

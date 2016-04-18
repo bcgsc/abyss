@@ -87,6 +87,7 @@ private:
 				m_rollingHash.rollRight(m_seq.c_str() + m_pos - 1,
 					m_seq[m_pos + m_k - 1]);
 			}
+			m_rollingHash.getHashes(m_hashes);
 			return;
 
 		}
@@ -101,7 +102,8 @@ public:
 	 * Default constructor. Creates an iterator pointing to
 	 * the end of the iterator range.
 	 */
-	RollingHashIterator() : m_k(0), m_rollingHash(m_k),
+	RollingHashIterator() : m_numHashes(0), m_k(0),
+		m_rollingHash(m_numHashes, m_k),
 		m_pos(std::numeric_limits<std::size_t>::max()) {}
 
 	/**
@@ -110,9 +112,9 @@ public:
 	 * @param k k-mer size
 	 * for each k-mer
 	 */
-	RollingHashIterator(const std::string& seq, unsigned k)
-		: m_seq(seq), m_k(k), m_rollingHash(m_k), m_rollNextHash(false),
-		m_pos(0)
+	RollingHashIterator(const std::string& seq, unsigned numHashes, unsigned k)
+		: m_seq(seq), m_numHashes(numHashes), m_k(k),
+		m_rollingHash(m_numHashes, m_k), m_rollNextHash(false), m_pos(0)
 	{
 		init();
 	}
@@ -140,10 +142,10 @@ public:
 	}
 
 	/** get reference to hash values for current k-mer */
-	size_t operator*() const
+	const size_t* operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
-		return m_rollingHash.getHash();
+		return m_hashes;
 	}
 
 	/** test equality with another iterator */
@@ -211,6 +213,10 @@ private:
 
 	/** DNA sequence being hashed */
 	std::string m_seq;
+	/** number of hash functions */
+	unsigned m_numHashes;
+	/** hash values */
+	size_t m_hashes[MAX_HASHES];
 	/** k-mer size */
 	unsigned m_k;
 	/** internal state for rolling hash */

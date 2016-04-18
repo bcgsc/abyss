@@ -28,7 +28,7 @@ public:
 	/**
 	 * Default constructor.
 	 */
-	RollingHash() : m_k(0), m_hash1(0), m_rcHash1(0) {}
+	RollingHash() : m_numHashes(0), m_k(0), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object when initial k-mer
@@ -37,7 +37,8 @@ public:
 	 * for each k-mer
 	 * @param k k-mer length
 	 */
-	RollingHash(unsigned k) : m_k(k), m_hash1(0), m_rcHash1(0) {}
+	RollingHash(unsigned numHashes, unsigned k) : m_numHashes(numHashes),
+		m_k(k), m_hash1(0), m_rcHash1(0) {}
 
 	/**
 	 * Constructor. Construct RollingHash object while specifying
@@ -47,8 +48,8 @@ public:
 	 * for each k-mer
 	 * @param k k-mer length
 	 */
-	RollingHash(const std::string& kmer, unsigned k)
-		: m_k(k), m_hash1(0), m_rcHash1(0)
+	RollingHash(const std::string& kmer, unsigned numHashes, unsigned k)
+		: m_numHashes(numHashes), m_k(k), m_hash1(0), m_rcHash1(0)
 	{
 		/* init rolling hash state */
 		reset(kmer);
@@ -185,16 +186,37 @@ public:
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
 	}
 
-	/** Get hash value for current k-mer */
-	size_t getHash() const
+	/**
+	 * Get the seed hash value for the current k-mer. The seed hash
+	 * value is used to calculate multiple pseudo-independant
+	 * hash functions.
+	 */
+	size_t getHashSeed() const
 	{
 		return m_hash;
+	}
+
+	/**
+	 * Get hash values for current k-mer.
+	 *
+	 * @param hashes array for returned hash values
+	 */
+	void getHashes(size_t hashes[]) const
+	{
+		multiHash(hashes, getHashSeed(), m_numHashes, m_k);
 	}
 
 	/** Equality operator */
 	bool operator==(const RollingHash& o) const
 	{
-		return m_k == o.m_k && getHash() == o.getHash();
+		/**
+		 * Note: If hash seeds are equal, then the values
+		 * for all hash functions will also be equal, since
+		 * the hash values are calculated from the
+		 * seed in a deterministic manner. In practice seed
+		 * collision is very unlikely, though!
+		 */
+		return m_k == o.m_k && getHashSeed() == o.getHashSeed();
 	}
 
 	/** Inequality operator */
@@ -247,6 +269,8 @@ public:
 
 private:
 
+	/** number of hash functions */
+	unsigned m_numHashes;
 	/** k-mer length */
 	unsigned m_k;
 	/** value of first hash function for current k-mer */
@@ -254,7 +278,7 @@ private:
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
 	size_t m_rcHash1;
-	/** canonical hash value */
+	/** current canonical hash value */
 	size_t m_hash;
 };
 
