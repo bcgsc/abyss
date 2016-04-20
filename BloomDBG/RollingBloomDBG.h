@@ -263,7 +263,7 @@ struct out_edge_iterator
 	edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
-		return edge_descriptor(m_u, m_v);
+		return edge_descriptor(m_u, m_v.clone());
 	}
 
 	bool operator==(const out_edge_iterator& it) const
@@ -327,7 +327,7 @@ struct in_edge_iterator
 	edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
-		return edge_descriptor(m_v, m_u);
+		return edge_descriptor(m_v.clone(), m_u);
 	}
 
 	bool operator==(const in_edge_iterator& it) const

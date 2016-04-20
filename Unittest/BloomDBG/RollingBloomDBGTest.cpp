@@ -10,11 +10,6 @@ using namespace boost;
 
 typedef RollingBloomDBG<BloomFilter> Graph;
 typedef graph_traits<Graph> GraphTraits;
-
-/* each vertex is represented by
- * std::pair<MaskedKmer, vector<size_t>>, where 'string' is the
- * k-mer and 'vector<size_t>' is the associated set of
- * hash values */
 typedef graph_traits<Graph>::vertex_descriptor V;
 
 /** Test fixture for RollingBloomDBG tests. */
@@ -143,6 +138,54 @@ TEST_F(RollingBloomDBGTest, in_edges)
 	neighbour = expectedNeighbours.find(source(*ei, m_graph));
 	ASSERT_NE(expectedNeighbours.end(), neighbour);
 	ei++;
+	ASSERT_EQ(ei_end, ei);
+}
+
+TEST_F(RollingBloomDBGTest, pathTraversal)
+{
+	/*
+	 * Walk a simple path:
+	 *
+	 * CGACT-GACTC-ACTCG
+	 */
+
+	BloomFilter bloom(m_bloomSize, m_numHashes, m_k);
+	Graph graph(bloom);
+
+	const V CGACT("CGACT", RollingHash("CGACT", m_numHashes, m_k));
+	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
+	const V ACTCG("ACTCG", RollingHash("ACTCG", m_numHashes, m_k));
+
+	size_t hashes[MAX_HASHES];
+	CGACT.rollingHash().getHashes(hashes);
+	bloom.insert(hashes);
+	GACTC.rollingHash().getHashes(hashes);
+	bloom.insert(hashes);
+	ACTCG.rollingHash().getHashes(hashes);
+	bloom.insert(hashes);
+
+	/* step one */
+
+	V v = CGACT;
+    ASSERT_EQ(1u, out_degree(v, graph));
+	GraphTraits::out_edge_iterator ei, ei_end;
+	boost::tie(ei, ei_end) = out_edges(v, graph);
+	ASSERT_NE(ei_end, ei);
+	ASSERT_EQ(CGACT, source(*ei, graph));
+	ASSERT_EQ(GACTC, target(*ei, graph));
+	v = target(*ei, graph);
+	++ei;
+	ASSERT_EQ(ei_end, ei);
+
+	/* step two */
+
+    ASSERT_EQ(1u, out_degree(v, graph));
+	boost::tie(ei, ei_end) = out_edges(v, graph);
+	ASSERT_NE(ei_end, ei);
+	ASSERT_EQ(GACTC, source(*ei, graph));
+	ASSERT_EQ(ACTCG, target(*ei, graph));
+	v = target(*ei, graph);
+	++ei;
 	ASSERT_EQ(ei_end, ei);
 }
 
