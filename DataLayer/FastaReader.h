@@ -168,11 +168,14 @@ struct FastqRecord : FastaRecord
 {
 	/** Quality */
 	std::string qual;
-
-	FastqRecord() { }
+	char default_qual;
+	FastqRecord()
+		:default_qual('2')
+	{
+	}
 	FastqRecord(const std::string& id, const std::string& comment,
-			const Sequence& seq, const std::string& qual)
-		: FastaRecord(id, comment, seq), qual(qual)
+			const Sequence& seq, const std::string& qual, const char _default_qual = '2')
+		: FastaRecord(id, comment, seq), qual(qual), default_qual(_default_qual)
 	{
 		assert(seq.length() == qual.length());
 	}
@@ -184,10 +187,11 @@ struct FastqRecord : FastaRecord
 	}
 
 	friend std::ostream& operator <<(std::ostream& out,
-			const FastqRecord& o)
+			FastqRecord& o)
 	{
 		if (o.qual.empty())
-			return out << static_cast<const FastaRecord&>(o);
+			o.qual = std::string(o.seq.length(), o.default_qual);
+//			return out << static_cast<const FastaRecord&>(o);
 		out << '@' << o.id;
 		if (!o.comment.empty())
 			out << ' ' << o.comment;
