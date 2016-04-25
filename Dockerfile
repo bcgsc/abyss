@@ -3,7 +3,7 @@ MAINTAINER Shaun Jackman <sjackman@gmail.com>
 
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends \
-		libopenmpi1.6 make openmpi-bin ssh
+		make openmpi-bin ssh
 ADD . /tmp/abyss
 RUN apt-get install -y --no-install-recommends \
 		automake g++ libboost-dev libopenmpi-dev libsparsehash-dev \
