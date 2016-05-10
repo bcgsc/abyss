@@ -20,7 +20,7 @@ private:
 	 */
 	size_t canonicalHash(size_t hash, size_t rcHash) const
 	{
-		return (rcHash < hash) ? rcHash : hash;
+		return rcHash ^ hash;
 	}
 
 public:

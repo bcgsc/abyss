@@ -10,42 +10,49 @@ const int cpOff = -20;
 const int varShift = 27;
 
 // seed for gerenerating multiple hash values
-const uint64_t varSeed = 10427061540882326010ul;
+const uint64_t varSeed = 0x90b45d39fb6da1fa;
+
+// 64-bit random seed for each base
+static const uint64_t seedN = 0x0000000000000000;
+static const uint64_t seedA = 0x3c8bfbb395c60474;
+static const uint64_t seedC = 0x3193c18562a02b4c;
+static const uint64_t seedG = 0x20323ed082572324;
+static const uint64_t seedT = 0x295549f54be24456;
 
 // 64-bit random seed table corresponding to bases and their complements
 static const uint64_t seedTab[256] = {
-    0, 0, 0, 0, 0, 0, 0, 0, // 0..7
-    0, 0, 0, 0, 0, 0, 0, 0, // 8..15
-    0, 0, 0, 0, 0, 0, 0, 0, // 16..23
-    0, 0, 0, 0, 0, 0, 0, 0, // 24..31
-    0, 0, 0, 0, 0, 0, 0, 0, // 32..39
-    0, 0, 0, 0, 0, 2978368046464386134ul, 0, 2319985823310095140ul, // 40..47
-    0, 0, 0, 3572411708064410444ul, 0, 0, 0, 0, // 48..55
-    0, 0, 0, 0, 0, 0, 0, 0, // 56..63
-    4362857412768957556ul, 4362857412768957556ul, 0, 3572411708064410444ul, 0, 0, 0, 2319985823310095140ul, // 64..71
-    0, 0, 0, 0, 0, 2978368046464386134ul, 0, 2319985823310095140ul, // 72..79
-    0, 0, 0, 3572411708064410444ul, 2978368046464386134ul, 0, 0, 0, // 80..87
-    0, 0, 0, 0, 0, 0, 0, 0, // 88..95
-    4362857412768957556ul, 4362857412768957556ul, 0, 3572411708064410444ul, 0, 0, 0, 2319985823310095140ul, // 96..103
-    0, 0, 0, 0, 0, 0, 0, 0, // 104..111
-    0, 0, 0, 0, 2978368046464386134ul, 0, 0, 0, // 112..119
-    0, 0, 0, 0, 0, 0, 0, 0, // 120..127
-    0, 0, 0, 0, 0, 0, 0, 0, // 128..135
-    0, 0, 0, 0, 0, 0, 0, 0, // 136..143
-    0, 0, 0, 0, 0, 0, 0, 0, // 144..151
-    0, 0, 0, 0, 0, 0, 0, 0, // 152..159
-    0, 0, 0, 0, 0, 0, 0, 0, // 160..167
-    0, 0, 0, 0, 0, 0, 0, 0, // 168..175
-    0, 0, 0, 0, 0, 0, 0, 0, // 176..183
-    0, 0, 0, 0, 0, 0, 0, 0, // 184..191
-    0, 0, 0, 0, 0, 0, 0, 0, // 192..199
-    0, 0, 0, 0, 0, 0, 0, 0, // 200..207
-    0, 0, 0, 0, 0, 0, 0, 0, // 208..215
-    0, 0, 0, 0, 0, 0, 0, 0, // 216..223
-    0, 0, 0, 0, 0, 0, 0, 0, // 224..231
-    0, 0, 0, 0, 0, 0, 0, 0, // 232..239
-    0, 0, 0, 0, 0, 0, 0, 0, // 240..247
-    0, 0, 0, 0, 0, 0, 0, 0  // 248..255
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 0..7
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 8..15
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 16..23
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 24..31
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 32..39
+    seedN, seedN, seedN, seedN, seedN, seedT, seedN, seedG, // 40..47
+    seedN, seedN, seedN, seedC, seedN, seedN, seedN, seedN, // 48..55
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 56..63
+    seedA, seedA, seedN, seedC, seedN, seedN, seedN, seedG, // 64..71
+    seedN, seedN, seedN, seedN, seedN, seedT, seedN, seedG, // 72..79
+    seedN, seedN, seedN, seedC, seedT, seedN, seedN, seedN, // 80..87
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 88..95
+    seedA, seedA, seedN, seedC, seedN, seedN, seedN, seedG, // 96..103
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 104..111
+    seedN, seedN, seedN, seedN, seedT, seedN, seedN, seedN, // 112..119
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 120..127
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 128..135
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 136..143
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 144..151
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 152..159
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 160..167
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 168..175
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 176..183
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 184..191
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 192..199
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 200..207
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 208..215
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 216..223
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 224..231
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 232..239
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN, // 240..247
+    seedN, seedN, seedN, seedN, seedN, seedN, seedN, seedN  // 248..255
 };
 
 // rotate "v" to the left by "s" positions
@@ -78,7 +85,7 @@ inline uint64_t getRhval(const char * kmerSeq, const unsigned k) {
 inline uint64_t getChval(const char * kmerSeq, const unsigned k) {
     uint64_t fhVal = getFhval(kmerSeq, k);
     uint64_t rhVal = getRhval(kmerSeq, k);
-    return (rhVal<fhVal)? rhVal : fhVal;
+    return rhVal^fhVal;
 }
 
 // initialize forward-strand hash value of the first kmer, i.e. fhval(kmer_0)
@@ -90,7 +97,7 @@ inline uint64_t initHashes(const char * kmerSeq, const unsigned k) {
 inline uint64_t initHashes(const char * kmerSeq, const unsigned k, uint64_t& fhVal, uint64_t& rhVal) {
     fhVal = getFhval(kmerSeq, k);
     rhVal = getRhval(kmerSeq, k);
-    return (rhVal<fhVal)? rhVal : fhVal;
+    return rhVal^fhVal;
 }
 
 // recursive forward-strand hash value for next k-mer
@@ -102,7 +109,7 @@ inline uint64_t rollHashesRight(const uint64_t fhVal, const unsigned char charOu
 inline uint64_t rollHashesRight(uint64_t& fhVal, uint64_t& rhVal, const unsigned char charOut, const unsigned char charIn, const unsigned k) {
     fhVal = rol(fhVal, 1) ^ rol(seedTab[charOut], k) ^ seedTab[charIn];
     rhVal = ror(rhVal, 1) ^ ror(seedTab[charOut+cpOff], 1) ^ rol(seedTab[charIn+cpOff], k-1);
-    return (rhVal<fhVal)? rhVal : fhVal;
+    return rhVal^fhVal;
 }
 
 // recursive forward-strand hash value for prev k-mer
@@ -114,7 +121,7 @@ inline uint64_t rollHashesLeft(const uint64_t fhVal, const unsigned char charIn,
 inline uint64_t rollHashesLeft(uint64_t& fhVal, uint64_t& rhVal, const unsigned char charIn, const unsigned char charOut, const unsigned k) {
     fhVal = ror(fhVal, 1) ^ ror(seedTab[charOut], 1) ^ rol(seedTab[charIn], k-1);
     rhVal = rol(rhVal, 1) ^ rol(seedTab[charOut+cpOff], k) ^ seedTab[charIn+cpOff];
-    return (rhVal<fhVal)? rhVal : fhVal;
+    return rhVal^fhVal;
 }
 
 // change a single base and update forward-strand hash value accordingly
@@ -134,7 +141,7 @@ inline uint64_t setBase(uint64_t& fhVal, uint64_t& rhVal, char* kmerSeq, unsigne
     kmerSeq[pos] = base;
     fhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]], k-1-pos);
     rhVal ^= rol(seedTab[(unsigned char)kmerSeq[pos]+cpOff], pos);
-    return (rhVal<fhVal)? rhVal : fhVal;
+    return rhVal^fhVal;
 }
 
 /**
@@ -260,7 +267,7 @@ inline uint64_t rollHashesRight(uint64_t &fkVal, uint64_t &rkVal, const char * s
             rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i+1]+cpOff], i);
         }
     }
-    return (rsVal<fsVal)? rsVal : fsVal;
+    return  rsVal^fsVal;
 }
 
 /**
@@ -285,7 +292,7 @@ inline uint64_t rollHashesLeft(uint64_t &fkVal, uint64_t &rkVal, const char * se
             rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i-1]+cpOff], i);
         }
     }
-    return (rsVal<fsVal)? rsVal : fsVal;
+    return rsVal^fsVal;
 }
 
 /**
@@ -310,7 +317,7 @@ inline uint64_t setBase(uint64_t& fkVal, uint64_t& rkVal, const char * seedSeq, 
             rsVal ^= rol(seedTab[(unsigned char)kmerSeq[i]+cpOff], i);
         }
     }
-    return (rsVal<fsVal)? rsVal : fsVal;
+    return rsVal^fsVal;
 }
 
 #endif
