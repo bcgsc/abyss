@@ -11,6 +11,7 @@
 #include <cassert>
 #include <cstdio>
 #include <iostream>
+#include <algorithm>
 
 /**
  * Parameters for path extension.
@@ -447,8 +448,23 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	std::vector<V> longBranchesOut = trueBranches(u, dir, g, params.trimLen);
 	std::vector<V> longBranchesIn;
 
-	if (params.lookBehind)
+	if (params.lookBehind) {
 		longBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
+		/*
+		 * Tricky: Make sure the path we are extending
+		 * is treated as a valid incoming branch, even if it is less
+		 * than trimLen. This can happen if we seeded the path on
+		 * an error branch or a branch that has a coverage gap.
+		 */
+		if (path.size() > 1) {
+			const V& predecessor = (dir == FORWARD) ?
+				*(path.rbegin() + 1) : *(path.begin() + 1);
+			if (std::find(longBranchesIn.begin(), longBranchesIn.end(),
+				predecessor) == longBranchesIn.end()) {
+				longBranchesIn.push_back(predecessor);
+			}
+		}
+	}
 
 	if ((params.lookBehind && longBranchesIn.size() > 1) ||
 		longBranchesOut.size() > 1)
