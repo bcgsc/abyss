@@ -535,10 +535,28 @@ namespace BloomDBG {
 		PathIt end = path.begin();
 
 		for (; end != path.end(); ++end) {
-			unsigned inDegree =
-				trueBranches(*end, REVERSE, dbg, minBranchLen-1).size();
-			unsigned outDegree =
-				trueBranches(*end, FORWARD, dbg, minBranchLen-1).size();
+			std::vector<V> inBranches = trueBranches(*end, REVERSE, dbg,
+				minBranchLen-1);
+			unsigned inDegree = inBranches.size();
+			/*
+			 * Tricky: Include the read itself in the list of valid
+			 * incoming branches, even if it is shorter than trimLen.
+			 */
+			if (end > path.begin() && std::find(inBranches.begin(),
+				inBranches.end(), *(end - 1)) == inBranches.end()) {
+				inDegree++;
+			}
+			std::vector<V> outBranches = trueBranches(*end, FORWARD, dbg,
+				minBranchLen-1);
+			unsigned outDegree = outBranches.size();
+			/*
+			 * Tricky: Include the read itself in the list of valid
+			 * outgoing branches, even if it is shorter than trimLen.
+			 */
+			if (end < path.end() - 1 && std::find(outBranches.begin(),
+				outBranches.end(), *(end + 1)) == outBranches.end()) {
+				outDegree++;
+			}
 			if (inDegree > 1 || outDegree > 1) {
 				/* we've hit a branching point -- end the current
 				 * segment and start a new one */
