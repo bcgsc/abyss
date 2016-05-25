@@ -357,6 +357,7 @@ Parameters of the driver script, `abyss-pe`
  * `d`: allowable error of a distance estimate (bp) [`6`]
  * `e`: minimum erosion k-mer coverage [`round(sqrt(median))`]
  * `E`: minimum erosion k-mer coverage per strand [1 if sqrt(median) > 2 else 0]
+ * `G`: genome size, used to calculate NG50 [disabled]
  * `j`: number of threads [`2`]
  * `k`: size of k-mer (when `K` is not set) or the span of a k-mer pair (when `K` is set)
  * `K`: the length of a single k-mer in a k-mer pair (bp)

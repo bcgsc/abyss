@@ -274,6 +274,11 @@ S?=$s
 N?=$n
 scopt += $v $(dbopt) $(SS) -k$k
 
+# abyss-fac parameters
+ifdef G
+override facopt = -G$G
+endif
+
 # BWA-SW parameters
 bwaswopt=-t$j
 BWASW_OPTIONS='-b9 -q16 -r1 -w500'
@@ -748,7 +753,7 @@ ifneq ($(long),)
 $(name)-stats.tab: %-stats.tab: %-long-scaffs.fa
 endif
 $(name)-stats.tab:
-	abyss-fac $(FAC_OPTIONS) $^ |tee $@
+	abyss-fac $(facopt) $(FAC_OPTIONS) $^ |tee $@
 
 %.csv: %.tab
 	tr '\t' , <$< >$@
@@ -776,7 +781,7 @@ $(name)-stats.tab:
 
 # Report ABySS configuration variable(s) and value(s) currently set.
 
-override varList := a b c d e E j k l m n N p q s S t v cs pi \
+override varList := a b c d e E G j k l m n N p q s S t v cs pi \
 	np pe lib mp se SS hostname xtip \
 	ssq ssq_ti libs path name in mpirun \
 	aligner long ref fixmate DistanceEst \

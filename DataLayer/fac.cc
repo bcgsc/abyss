@@ -29,8 +29,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Options:\n"
 "\n"
-"  -e, --exp-size=N        expected genome size. Will calculate NG50\n"
-"                          and associated stats\n"
+"  -G, -e, --genome-size=N expected genome size. Used to calculate NG50\n"
+"                          and associated stats [disabled]\n"
 "  -s, -t, --min-length=N  ignore sequences shorter than N bp [500]\n"
 "  -d, --delimiter=S       use S for the field delimiter [\\t]\n"
 "  -j, --jira              output JIRA format\n"
@@ -50,7 +50,7 @@ static const char USAGE_MESSAGE[] =
 
 namespace opt {
 	static unsigned minLength = 500;
-	static long long unsigned expSize = 0;
+	static long long unsigned genomeSize;
 	static string delimiter = "\t";
 	static int format;
 	static int verbose;
@@ -58,12 +58,12 @@ namespace opt {
 }
 enum { TAB, JIRA, MMD };
 
-static const char shortopts[] = "d:jms:t:e:v";
+static const char shortopts[] = "d:e:G:jms:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "exp-size", no_argument, NULL, 'e' },
+	{ "genome-size", required_argument, NULL, 'G' },
 	{ "min-length", no_argument, NULL, 's' },
 	{ "delimiter", required_argument, NULL, 'd' },
 	{ "jira", no_argument, NULL, 'j' },
@@ -109,7 +109,7 @@ static void printContiguityStatistics(const char* path)
 			<< "n" << sep
 			<< "n:" << opt::minLength << sep
 			<< "L50" << sep;
-		if (opt::expSize > 0)
+		if (opt::genomeSize > 0)
 			cout << "n:NG50" << sep
 				<< "NG50" << sep;
 		cout << "min" << sep
@@ -126,7 +126,7 @@ static void printContiguityStatistics(const char* path)
 		cout << "n" << sep
 			<< "n:" << opt::minLength << sep
 			<< "L50" << sep;
-		if (opt::expSize > 0)
+		if (opt::genomeSize > 0)
 			cout << "n:NG50" << sep
 				<< "NG50" << sep;
 		cout << "min" << sep
@@ -137,7 +137,7 @@ static void printContiguityStatistics(const char* path)
 			<< "max" << sep
 			<< "sum" << sep
 			<< "name" << '\n';
-		if (opt::expSize > 0)
+		if (opt::genomeSize > 0)
 			cout << "------" << sep
 				<< "------" << sep;
 		cout << "------" << sep
@@ -157,7 +157,7 @@ static void printContiguityStatistics(const char* path)
 	if (opt::format == JIRA)
 		cout << '|';
 	printContiguityStats(cout, h, opt::minLength,
-			printHeader, opt::delimiter, opt::expSize)
+			printHeader, opt::delimiter, opt::genomeSize)
 		<< opt::delimiter << path;
 	if (opt::format == JIRA)
 		cout << opt::delimiter;
@@ -189,9 +189,14 @@ int main(int argc, char** argv)
 			opt::delimiter = "\t|";
 			opt::format = MMD;
 			break;
+		  case 'G':
 		  case 'e':
-			arg >> opt::expSize;
-			break;
+			{
+				double x;
+				arg >> x;
+				opt::genomeSize = x;
+				break;
+			}
 		  case 's': case 't':
 			arg >> opt::minLength;
 			break;
