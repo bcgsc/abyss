@@ -273,6 +273,9 @@ mcopt += $v $(dbopt) -k$k
 S?=$s
 N?=$n
 scopt += $v $(dbopt) $(SS) -k$k
+ifdef G
+scopt += -G$G
+endif
 
 # abyss-fac parameters
 ifdef G

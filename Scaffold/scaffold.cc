@@ -58,6 +58,8 @@ static const char USAGE_MESSAGE[] =
 "          or -s N0-N1   Find the value of s in [N0,N1]\n"
 "                        that maximizes the scaffold N50.\n"
 "  -k, --kmer=N          length of a k-mer\n"
+"  -G, --genome-size=N   expected genome size. Used to calculate NG50\n"
+"                        and associated stats [disabled]\n"
 "      --min-gap=N       minimum scaffold gap length to output [50]\n"
 "      --max-gap=N       maximum scaffold gap length to output [inf]\n"
 "      --complex         remove complex transitive edges\n"
@@ -89,6 +91,9 @@ namespace opt {
 	static unsigned minContigLength = 200;
 	static unsigned minContigLengthEnd;
 
+	/** Genome size. Used to calculate NG50. */
+	static long long unsigned genomeSize;
+
 	/** Minimum scaffold gap length to output. */
 	static int minGap = 50;
 
@@ -115,7 +120,7 @@ namespace opt {
 	static int comp_trans;
 }
 
-static const char shortopts[] = "g:k:n:o:s:v";
+static const char shortopts[] = "G:g:k:n:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
@@ -124,6 +129,7 @@ enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP,
 static const struct option longopts[] = {
 	{ "graph",       no_argument,       NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "genome-size", required_argument, NULL, 'G' },
 	{ "min-gap",     required_argument, NULL, OPT_MIN_GAP },
 	{ "max-gap",     required_argument, NULL, OPT_MAX_GAP },
 	{ "npairs",      required_argument, NULL, 'n' },
@@ -736,7 +742,7 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 		static bool printHeader = true;
 		Histogram h = buildScaffoldLengthHistogram(g, paths);
 		printContiguityStats(cerr, h, STATS_MIN_LENGTH,
-				printHeader)
+				printHeader, "\t", opt::genomeSize)
 			<< "\ts=" << minContigLength << '\n';
 		if (opt::verbose == 0)
 			printHeader = false;
@@ -765,7 +771,9 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 
 	// Print assembly contiguity statistics.
 	Histogram h = buildScaffoldLengthHistogram(g, paths);
-	printContiguityStats(cerr, h, STATS_MIN_LENGTH) << '\n';
+	printContiguityStats(cerr, h, STATS_MIN_LENGTH,
+			true, "\t", opt::genomeSize)
+		<< "\ts=" << minContigLength << '\n';
 	addCntgStatsToDb(h, STATS_MIN_LENGTH);
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
@@ -787,6 +795,13 @@ int main(int argc, char** argv)
 		  case 'k':
 			arg >> opt::k;
 			break;
+		  case 'G':
+			{
+				double x;
+				arg >> x;
+				opt::genomeSize = x;
+				break;
+			}
 		  case 'g':
 			arg >> opt::graphPath;
 			break;
