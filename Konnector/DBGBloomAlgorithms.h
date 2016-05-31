@@ -36,22 +36,21 @@ static inline Sequence pathToSeq(Path<Kmer> path)
  * is no sequence of matches of length numMatchesThreshold,
  * use the longest sequence of matching kmers instead.
  *
- * The default behaviour of this method is to choose
- * the last kmer in the sequence that is present in the
- * Bloom filter de Bruijn graph.
- *
  * @param seq sequence in which to find start kmer
  * @param k kmer size
  * @param g de Bruijn graph
  * @param numMatchesThreshold if we encounter a sequence
  * of numMatchesThreshold consecutive kmers in the Bloom filter,
  * choose the kmer at the beginning of that sequence
+ * @param anchorToEnd if true, all k-mers from end of sequence
+ * up to the chosen k-mer must be matches. (This option is used when
+ * we wish to preserve the original sequences of the reads.)
  * @return position of chosen start kmer
  */
 template<typename Graph>
 static inline unsigned getStartKmerPos(const Sequence& seq,
 	unsigned k, Direction dir, const Graph& g,
-	unsigned numMatchesThreshold=1)
+	unsigned numMatchesThreshold=1, bool anchorToEnd=false)
 {
 	assert(numMatchesThreshold > 0);
 
@@ -86,6 +85,8 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 				maxMatchPos = i - inc;
 				maxMatchLen = matchCount;
 			}
+			if (anchorToEnd)
+				break;
 			matchCount = 0;
 		} else {
 			matchCount++;

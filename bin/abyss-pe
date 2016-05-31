@@ -305,23 +305,21 @@ error::
 # Help and version messages
 
 help:
-	@printf '\
-Usage: abyss-pe [OPTION]... [PARAMETER=VALUE]... [COMMAND]...\n\
-Assemble reads into contigs and scaffolds. ABySS is a de novo\n\
-sequence assembler intended for short paired-end reads and large\n\
-genomes. See the abyss-pe man page for documentation of assembly\n\
-parameters and commands. abyss-pe is a Makefile script, and so\n\
-options of `make` may also be used with abyss-pe. See the `make`\n\
-man page for documentation.\n\
-\n\
-Report bugs to <abyss-users@bcgsc.ca>.\n'
+	@echo 'Usage: abyss-pe [OPTION]... [PARAMETER=VALUE]... [COMMAND]...'
+	@echo 'Assemble reads into contigs and scaffolds. ABySS is a de novo'
+	@echo 'sequence assembler intended for short paired-end reads and large'
+	@echo 'genomes. See the abyss-pe man page for documentation of assembly'
+	@echo 'parameters and commands. abyss-pe is a Makefile script, and so'
+	@echo 'options of `make` may also be used with abyss-pe. See the `make`'
+	@echo 'man page for documentation.'
+	@echo
+	@echo 'Report bugs to https://github.com/bcgsc/abyss/issues or abyss-users@bcgsc.ca.'
 
 version:
-	@printf '\
-abyss-pe (ABySS) 1.9.0\n\
-Written by Shaun Jackman and Anthony Raymond.\n\
-\n\
-Copyright 2012 Canada'\''s Michael Smith Genome Science Centre\n'
+	@echo "abyss-pe (ABySS) 1.9.0"
+	@echo "Written by Shaun Jackman and Anthony Raymond."
+	@echo
+	@echo "Copyright 2012 Canada's Michael Smith Genome Science Centre"
 
 versions: version
 	@echo PATH=$(PATH)
@@ -560,7 +558,7 @@ ifndef cs
 
 %-5.path %-5.fa %-5.$g: %-3.fa %-4.fa %-4.$g %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v --$g -k$k $(pcopt) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
+		|PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.$g %-5.path
 	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
@@ -625,7 +623,7 @@ endif
 	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.$g %-7.fa: %-6.fa %-6.$g %-6.path
-	PathConsensus $v --$g -k$k $(pcopt) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
+	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.$g %-7.path
 	cat $(wordlist 1, 2, $^) \
@@ -674,7 +672,7 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 	abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.$g %-9.fa: %-8.fa %-8.$g %-8.path
-	PathConsensus $v --$g -k$k $(pcopt) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
+	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.$g %-9.path
 	cat $(wordlist 1, 2, $^) \
@@ -792,12 +790,11 @@ override varList := a b c d e E j k l m n N p q s S t v cs pi \
 	MARKDOWN
 
 env:
-	@echo -e "\
-	List of ABySS configuration variables currently set:\n\n\
-	[environment], if variable was inherited from the environment.\n\
-	[command line], if variable was defined on the command line.\n\
-	[file], if variable was defined in (this) makefile.\n\
-	[override], if variable was defined with an override directive in (this) makefile.\n"
+	@echo 'List of ABySS configuration variables currently set:'
+	@echo '[environment], if variable was inherited from the environment.'
+	@echo '[command line], if variable was defined on the command line.'
+	@echo '[file], if variable was defined in (this) makefile.'
+	@echo '[override], if variable was defined with an override directive in (this) makefile.'
 
 	@$(foreach var,$(varList),\
 		echo -e $(var)" = "$($(var))"\t["$(origin $(var))"]" | grep -v "undefined";)

@@ -104,10 +104,10 @@ static inline bool ambiguityIsSubset(char a, char b)
  * @param maskNew output bases that have been changed or added
  * to target in lowercase.
  */
-static inline void overlaySeq(Sequence& overlay, Sequence& target,
+static inline void overlaySeq(const Sequence& overlay, Sequence& target,
 	int shift, bool maskNew = false)
 {
-	Sequence::iterator src = overlay.begin();
+	Sequence::const_iterator src = overlay.begin();
 	Sequence::iterator dest;
 
 	if (shift < 0) {
@@ -125,8 +125,9 @@ static inline void overlaySeq(Sequence& overlay, Sequence& target,
 	for (; src != overlay.end(); ++src, ++dest) {
 		assert(dest != target.end());
 		if (maskNew && *src != *dest)
-			*src = tolower(*src);
-		*dest = *src;
+			*dest = tolower(*src);
+		else
+			*dest = *src;
 	}
 }
 

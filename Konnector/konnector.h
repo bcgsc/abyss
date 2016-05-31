@@ -26,7 +26,16 @@ struct ConnectPairsResult
 	unsigned k;
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
+	/** alternate connecting sequence(s) for read pair */
+	std::vector<Sequence> connectingSeqs;
+	/** read pairs joined with alternate connecting sequence(s) */
 	std::vector<FastaRecord> mergedSeqs;
+	/** consensus sequence for alternate connecting sequences */
+	Sequence consensusConnectingSeq;
+	/**
+	 * consensus sequence for read pairs joined by
+	 * alternate connecting sequences
+	 */
 	FastaRecord consensusSeq;
 	bool foundStartKmer;
 	bool foundGoalKmer;
@@ -37,7 +46,9 @@ struct ConnectPairsResult
 	unsigned maxDepthVisitedForward;
 	unsigned maxDepthVisitedReverse;
 	unsigned pathMismatches;
+	float pathIdentity;
 	unsigned readMismatches;
+	float readIdentity;
 	size_t memUsage;
 
 	ConnectPairsResult() :
@@ -52,7 +63,9 @@ struct ConnectPairsResult
 		maxDepthVisitedForward(0),
 		maxDepthVisitedReverse(0),
 		pathMismatches(0),
+		pathIdentity(0.0f),
 		readMismatches(0),
+		readIdentity(0.0f),
 		memUsage(0)
 	{}
 
@@ -70,7 +83,9 @@ struct ConnectPairsResult
 			<< "max_depth_forward" << "\t"
 			<< "max_depth_reverse" << "\t"
 			<< "path_mismatches" << "\t"
+			<< "path_identity" << "\t"
 			<< "read_mismatches" << "\t"
+			<< "read_identity" << "\t"
 			<< "mem_usage" << "\n";
 		return out;
 	}
@@ -105,7 +120,9 @@ struct ConnectPairsResult
 			<< o.maxDepthVisitedForward << "\t"
 			<< o.maxDepthVisitedReverse << "\t"
 			<< o.pathMismatches << "\t"
+			<< std::setprecision(3) << o.pathIdentity << "\t"
 			<< o.readMismatches << "\t"
+			<< std::setprecision(3) << o.readIdentity << "\t"
 			<< o.memUsage << "\n";
 
 		return out;
@@ -119,10 +136,13 @@ struct ConnectPairsParams {
 	unsigned maxPaths;
 	unsigned maxBranches;
 	unsigned maxPathMismatches;
+	float minPathIdentity;
 	unsigned maxReadMismatches;
+	float minReadIdentity;
 	unsigned kmerMatchesThreshold;
 	bool fixErrors;
 	bool maskBases;
+	bool preserveReads;
 	size_t memLimit;
 	std::string dotPath;
 	std::ofstream* dotStream;
@@ -133,10 +153,13 @@ struct ConnectPairsParams {
 		maxPaths(NO_LIMIT),
 		maxBranches(NO_LIMIT),
 		maxPathMismatches(NO_LIMIT),
+		minPathIdentity(0.0f),
 		maxReadMismatches(NO_LIMIT),
+		minReadIdentity(0.0f),
 		kmerMatchesThreshold(1),
 		fixErrors(false),
 		maskBases(false),
+		preserveReads(false),
 		memLimit(std::numeric_limits<std::size_t>::max()),
 		dotStream(NULL)
 	{}
@@ -230,10 +253,10 @@ static inline ConnectPairsResult connectPairs(
 	const unsigned numMatchesThreshold = 3;
 
 	unsigned startKmerPos = getStartKmerPos(read1, k, FORWARD, g,
-		numMatchesThreshold);
+		numMatchesThreshold, params.preserveReads);
 
 	unsigned goalKmerPos = getStartKmerPos(read2, k, FORWARD, g,
-		numMatchesThreshold);
+		numMatchesThreshold, params.preserveReads);
 
 	const FastaRecord* pRead1 = &read1;
 	const FastaRecord* pRead2 = &read2;
@@ -298,47 +321,100 @@ static inline ConnectPairsResult connectPairs(
 	result.maxDepthVisitedReverse = visitor.getMaxDepthVisited(REVERSE);
 	result.memUsage = visitor.approxMemUsage();
 
-	// write traversal graph to dot file (-d option)
-
 	if (result.pathResult == FOUND_PATH) {
 
-		// build sequences for connecting paths
+		/* build sequences for connecting paths */
 
-		std::string seqPrefix = pRead1->seq.substr(0, startKmerPos);
-		std::string seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
-		for (unsigned i = 0; i < paths.size(); i++) {
-			FastaRecord mergedSeq;
-			std::stringstream index;
-			index << i;
-			assert(index);
-			mergedSeq.id = result.readNamePrefix + "_" + index.str();
-			mergedSeq.seq = seqPrefix + pathToSeq(paths[i]) + seqSuffix;
-			result.mergedSeqs.push_back(mergedSeq);
+		std::string seqPrefix, seqSuffix;
+
+		if (params.preserveReads) {
+			seqPrefix = pRead1->seq;
+			seqSuffix = reverseComplement(pRead2->seq);
+			unsigned trimLeft = pRead1->seq.length() - startKmerPos;
+			unsigned trimRight = pRead2->seq.length() - goalKmerPos;
+			for (unsigned i = 0; i < paths.size(); i++) {
+				Sequence connectingSeq = pathToSeq(paths[i]);
+				/*
+				 * If the input reads overlap, we must fail because
+				 * there's no way to preserve the original read
+				 * sequences in the merged read (the reads may disagree
+				 * in the region of overlap)
+				 */
+				if (trimLeft + trimRight > connectingSeq.length()) {
+					result.pathResult = NO_PATH;
+					return result;
+				}
+				connectingSeq = connectingSeq.substr(trimLeft,
+					connectingSeq.length() - trimLeft - trimRight);
+				result.connectingSeqs.push_back(connectingSeq);
+			}
+		} else {
+			seqPrefix = pRead1->seq.substr(0, startKmerPos);
+			seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
+			for (unsigned i = 0; i < paths.size(); i++)
+				result.connectingSeqs.push_back(pathToSeq(paths[i]));
 		}
 
-		// calc consensus seq and mismatch stats
+		unsigned readPairLength = read1.seq.length() + read2.seq.length();
 
 		if (paths.size() == 1) {
 
+			/* found a unique path between the reads */
+
+			FastaRecord mergedSeq;
+			mergedSeq.id = result.readNamePrefix;
+			mergedSeq.seq = seqPrefix + result.connectingSeqs.front() + seqSuffix;
 			result.readMismatches =
-				maskNew(read1, read2, result.mergedSeqs.front(), params.maskBases);
+				maskNew(read1, read2, mergedSeq, params.maskBases);
+			result.pathIdentity = 100.0f;
+			result.readIdentity = 100.0f * (float)(readPairLength -
+				result.readMismatches) / readPairLength;
+
+			result.mergedSeqs.push_back(mergedSeq);
+			result.consensusSeq = mergedSeq;
+			result.consensusConnectingSeq = result.connectingSeqs.front();
 
 		} else {
 
+			/*
+			 * multiple paths were found, so build a consensus
+			 * sequence using multiple sequence alignment.
+			 */
+
 			NWAlignment aln;
 			unsigned matches, size;
-			boost::tie(matches, size) = align(result.mergedSeqs, aln);
+			boost::tie(matches, size) = align(result.connectingSeqs, aln);
 			assert(size >= matches);
 			result.pathMismatches = size - matches;
-
+			result.consensusConnectingSeq = aln.match_align;
+			result.pathIdentity = 100.0f *
+				(float)(result.consensusConnectingSeq.length()
+				- result.pathMismatches) / result.consensusConnectingSeq.length();
 			result.consensusSeq.id = result.readNamePrefix;
-			result.consensusSeq.seq = aln.match_align;
+			result.consensusSeq.seq = seqPrefix + result.consensusConnectingSeq +
+				seqSuffix;
 			result.readMismatches =
 				maskNew(read1, read2, result.consensusSeq, params.maskBases);
+			result.readIdentity = 100.0f * (float)(readPairLength -
+				result.readMismatches) / readPairLength;
+
+			unsigned i = 1;
+			for (std::vector<Sequence>::iterator it = result.connectingSeqs.begin();
+				it != result.connectingSeqs.end(); ++it) {
+				FastaRecord mergedSeq;
+				std::ostringstream id;
+				id << result.readNamePrefix << '_' << i++;
+				mergedSeq.id = id.str();
+				mergedSeq.seq = seqPrefix + *it + seqSuffix;
+				result.mergedSeqs.push_back(mergedSeq);
+			}
 
 		}
 
+		assert(result.connectingSeqs.size() == result.mergedSeqs.size());
 	}
+
+	/* write traversal graph to dot file (-d option) */
 
 	if (!params.dotPath.empty()) {
 		HashGraph<Kmer> traversalGraph;
@@ -369,7 +445,8 @@ static inline Kmer getHeadKmer(const Sequence& seq, Direction dir,
 template <typename Graph>
 static inline bool extendSeqThroughBubble(Sequence& seq,
 	Direction dir, unsigned startKmerPos, unsigned k,
-	const Graph& g, unsigned trimLen=0, bool maskNew=false)
+	const Graph& g, unsigned trimLen=0, bool maskNew=false,
+	bool preserveSeq=false)
 {
 	assert(seq.length() >= k);
 	assert(dir == FORWARD || dir == REVERSE);
@@ -387,6 +464,11 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		bubbleSeqLen <= startKmerPos) {
 		return false;
 	}
+
+	std::string headKmer = seq.substr(startKmerPos, k);
+	if (headKmer.find_first_not_of("AGCTagct") !=
+		std::string::npos)
+		return false;
 
 	Kmer head(seq.substr(startKmerPos, k));
 	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen);
@@ -432,10 +514,33 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	Sequence& consensus = alignment.match_align;
 
 	if (dir == FORWARD) {
-		overlaySeq(consensus, seq, startKmerPos, maskNew);
+		if (preserveSeq) {
+			/*
+			 * make sure bubble extends beyond end of
+			 * original sequence
+			 */
+			assert(startKmerPos + consensus.length()
+				> seq.length());
+			overlaySeq(consensus.substr(seq.length() - startKmerPos),
+				seq, seq.length(), maskNew);
+		} else {
+			overlaySeq(consensus, seq, startKmerPos, maskNew);
+		}
 	} else {
-		overlaySeq(consensus, seq,
-			-consensus.length() + startKmerPos + k, maskNew);
+		if (preserveSeq) {
+			/*
+			 * make sure bubble extends beyond end of
+			 * original sequence
+			 */
+			assert(consensus.length() > startKmerPos + k);
+			consensus = consensus.substr(0,
+				consensus.length() - startKmerPos - k);
+			overlaySeq(consensus, seq, -consensus.length(),
+				maskNew);
+		} else {
+			overlaySeq(consensus, seq,
+				-consensus.length() + startKmerPos + k, maskNew);
+		}
 	}
 
 	return true;
@@ -530,7 +635,8 @@ template <typename Graph>
 static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	unsigned startKmerPos, unsigned k, const Graph& g,
 	unsigned maxLen=NO_LIMIT, unsigned trimLen=0,
-	bool maskNew=false)
+	bool maskNew=false, bool popBubbles=true,
+	bool preserveSeq=false)
 {
 	if (seq.length() < k)
 		return ES_NO_START_KMER;
@@ -622,35 +728,46 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			pathResult == EXTENDED_TO_LENGTH_LIMIT))
 		{
 			std::string pathSeq = pathToSeq(path);
-			overlaySeq(pathSeq, seq, seq.length() - k + 1, maskNew);
+			if (preserveSeq)
+				overlaySeq(pathSeq.substr(k), seq,
+					seq.length(), maskNew);
+			else
+				overlaySeq(pathSeq, seq,
+					seq.length() - k + 1, maskNew);
 		}
 
 		/*
 		 * extend through simple bubbles
 		 */
 		done = true;
-		if (seq.length() < maxLen &&
+		if (popBubbles && seq.length() < maxLen &&
 			(pathResult == BRANCHING_POINT ||
 			pathResult == EXTENDED_TO_BRANCHING_POINT)) {
 			startKmerPos = startKmerPos + path.size() - 1;
 			assert(startKmerPos < seq.length() - k + 1);
 			if (extendSeqThroughBubble(seq, FORWARD, startKmerPos,
-				k, g, trimLen, maskNew)) {
+				k, g, trimLen, maskNew, preserveSeq)) {
 
 				/* make sure we don't exceed extension limit */
 				if (seq.length() > maxLen)
 					seq = seq.substr(0, maxLen);
 
 				/* check for cycle */
-				Path<Kmer> bubblePath = seqToPath(seq.substr(startKmerPos), k);
-				for (Path<Kmer>::iterator it = bubblePath.begin();
-					it != bubblePath.end(); ++it) {
-					if (visited.containsKmer(*it)) {
+				for (unsigned i = startKmerPos + 1;
+					i < seq.length() - k + 1; ++i) {
+					std::string kmerStr = seq.substr(i, k);
+					size_t pos = kmerStr.find_first_not_of("AGCTagct");
+					if (pos != std::string::npos) {
+						i += pos;
+						continue;
+					}
+					Kmer kmer(kmerStr);
+					if (visited.containsKmer(kmer)) {
 						pathResult = EXTENDED_TO_CYCLE;
-						bubblePath.erase(it, bubblePath.end());
+						seq.erase(i);
 						break;
 					}
-					visited.addKmer(*it);
+					visited.addKmer(kmer);
 				}
 
 				/* set up for another round of extension */
@@ -715,22 +832,14 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	return result;
 }
 
-/**
- * Correct the given sequence using the Bloom filter de Bruijn
- * graph.  The correction is performed by finding the longest
- * stretch of good kmers in the sequence and extending that
- * region both left and right.
- */
 template <typename Graph>
-static inline bool correctAndExtendSeq(Sequence& seq,
-	unsigned k, const Graph& g, unsigned maxLen=NO_LIMIT,
-	unsigned trimLen=0, bool maskNew=false)
+static inline bool trimRead(FastqRecord& read,
+	unsigned k, const Graph& g)
 {
+	Sequence& seq = read.seq;
+
 	if (seq.size() < k)
 		return false;
-
-	if (maxLen < seq.length())
-		maxLen = seq.length();
 
 	/*
 	 * find longest stretch of contiguous kmers
@@ -772,22 +881,8 @@ static inline bool correctAndExtendSeq(Sequence& seq,
 	assert(maxMatchStart != UNSET);
 	assert(maxMatchLen > 0);
 
-	unsigned maxMatchSeqLen = maxMatchLen+k-1;
-	unsigned seedSeqLen = std::min(2*k-1, maxMatchSeqLen);
-
-	Sequence correctedSeq = seq.substr(
-		maxMatchStart + maxMatchSeqLen - seedSeqLen,
-		std::string::npos);
-
-	extendSeq(correctedSeq, REVERSE, correctedSeq.length()-k, k, g, 2*k,
-		trimLen, maskNew);
-	if (correctedSeq.length() < 2*k)
-		return false;
-
-	correctedSeq = correctedSeq.substr(0, k);
-	extendSeq(correctedSeq, FORWARD, 0, k, g, 2*k+1, trimLen, maskNew);
-
-	seq = correctedSeq;
+	read.seq = read.seq.substr(maxMatchStart, maxMatchLen);
+	read.qual = read.qual.substr(maxMatchStart, maxMatchLen);
 	return true;
 }
 

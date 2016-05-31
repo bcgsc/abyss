@@ -6,6 +6,10 @@
 #include "Common/Options.h"
 #include "Common/Kmer.h"
 #include "Common/BitUtil.h"
+#include "Common/KmerIterator.h"
+#include "Graph/Path.h"
+#include "Graph/ExtendPath.h"
+#include "Konnector/DBGBloom.h"
 #include "DataLayer/Options.h"
 #include "DataLayer/FastaReader.h"
 #include "Common/StringUtil.h"
@@ -20,7 +24,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
+#include <cmath>
 
 #if _OPENMP
 # include <omp.h>
@@ -44,7 +48,8 @@ static const char USAGE_MESSAGE[] =
 "Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
-"Usage 6: " PROGRAM " getKmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 6: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 7: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
 "Build and manipulate bloom filter files.\n"
 "\n"
 " Global options:\n"
@@ -85,11 +90,18 @@ static const char USAGE_MESSAGE[] =
 "  -m, --method=`String'      choose distance calculation method \n"
 "                             [`jaccard'(default), `forbes', `czekanowski']\n"
 "\n"
-" Options for `" PROGRAM " getKmers':\n"
+" Options for `" PROGRAM " kmers':\n"
 "\n"
 "  -r, --inverse              get k-mers that are *NOT* in the bloom filter\n"
+"  --bed                      output k-mers in BED format\n"
+"  --fasta                    output k-mers in FASTA format [default]\n"
+"  --raw                      output k-mers in raw format (one per line)\n"
+"\n"
+" Options for `" PROGRAM " trim': (none)\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";;
+
+enum OutputFormat { BED, FASTA, RAW };
 
 namespace opt {
 
@@ -132,37 +144,43 @@ namespace opt {
 	 -m option
 	 */
 	string method("jaccard");
+
 	/* Inverse option to retrieve kmers which are not
 	 in the filter
 	 */
 	bool inverse = false;
+
+	OutputFormat format = FASTA;
 }
 
 static const char shortopts[] = "b:B:j:k:l:L:m:n:q:rvw:";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
 static const struct option longopts[] = {
-	{ "bloom-size",		  required_argument, NULL, 'b' },
-	{ "buffer-size",	  required_argument, NULL, 'B' },
-	{ "threads",		  required_argument, NULL, 'j' },
-	{ "kmer",			  required_argument, NULL, 'k' },
-	{ "levels",			  required_argument, NULL, 'l' },
-	{ "init-level",		  required_argument, NULL, 'L' },
-	{ "chastity",		  no_argument, &opt::chastityFilter, 1 },
-	{ "no-chastity",	  no_argument, &opt::chastityFilter, 0 },
-	{ "trim-masked",	  no_argument, &opt::trimMasked, 1 },
-	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
-	{ "num-locks",		  required_argument, NULL, 'n' },
-	{ "trim-quality",	  required_argument, NULL, 'q' },
+	{ "bloom-size", required_argument, NULL, 'b' },
+	{ "buffer-size", required_argument, NULL, 'B' },
+	{ "threads", required_argument, NULL, 'j' },
+	{ "kmer", required_argument, NULL, 'k' },
+	{ "levels", required_argument, NULL, 'l' },
+	{ "init-level", required_argument, NULL, 'L' },
+	{ "chastity", no_argument, &opt::chastityFilter, 1 },
+	{ "no-chastity", no_argument, &opt::chastityFilter, 0 },
+	{ "trim-masked", no_argument, &opt::trimMasked, 1 },
+	{ "no-trim-masked", no_argument, &opt::trimMasked, 0 },
+	{ "num-locks", required_argument, NULL, 'n' },
+	{ "trim-quality", required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
-	{ "verbose",		  no_argument, NULL, 'v' },
-	{ "help",			  no_argument, NULL, OPT_HELP },
-	{ "version",		  no_argument, NULL, OPT_VERSION },
-	{ "window",			  required_argument, NULL, 'w' },
-	{ "method",			  required_argument, NULL, 'm' },
-	{ "inverse",		   required_argument, NULL, 'r' },
+	{ "verbose", no_argument, NULL, 'v' },
+	{ "help", no_argument, NULL, OPT_HELP },
+	{ "version", no_argument, NULL, OPT_VERSION },
+	{ "window", required_argument, NULL, 'w' },
+	{ "method", required_argument, NULL, 'm' },
+	{ "inverse", required_argument, NULL, 'r' },
+	{ "bed", no_argument, NULL, OPT_BED },
+	{ "fasta", no_argument, NULL, OPT_FASTA },
+	{ "raw", no_argument, NULL, OPT_RAW },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -575,6 +593,8 @@ int compare(int argc, char ** argv){
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?':
+				cerr << PROGRAM ": unrecognized option: `-" << optopt
+					<< "'" << endl;
 				dieWithUsageError();
 			case 'm':
 				arg >> opt::method; break;
@@ -705,9 +725,20 @@ int memberOf(int argc, char ** argv){
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?':
+				cerr << PROGRAM ": unrecognized option: `-" << optopt
+					<< "'" << endl;
 				dieWithUsageError();
 			case 'r':
 				opt::inverse = true; break;
+				break;
+			case OPT_BED:
+				opt::format = BED;
+				break;
+			case OPT_FASTA:
+				opt::format = FASTA;
+				break;
+			case OPT_RAW:
+				opt::format = RAW;
 				break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
@@ -719,7 +750,6 @@ int memberOf(int argc, char ** argv){
 	string path = argv[optind];
 	string fasta = argv[++optind];
 	unsigned k = opt::k;
-	size_t taskIOBufferSize = 100000;
 	if (opt::verbose)
 		std::cerr << "Loading bloom filter from `"
 		<< path << "'...\n";
@@ -728,76 +758,190 @@ int memberOf(int argc, char ** argv){
 	assert_good(*in, path);
 	*in >> bloom;
 
-	// Lifted from Bloom.h `loadFilter'
 	assert(!fasta.empty());
 	if (opt::verbose)
 		std::cerr << "Reading `" << fasta << "'...\n";
 	FastaReader _in(fasta.c_str(), FastaReader::FOLD_CASE);
 
-	/* For each for-loop, create am iterative to keep track
-	 of kmers and also create FASTA headers for the output
-	 */
-	unsigned long fcount = 0;
-
-	for (std::vector<std::string> buffer(taskIOBufferSize);;) {
-		fcount++;
-		buffer.clear();
-		size_t bufferSize = 0;
-		bool good = true;
-
-		for (; good && bufferSize < taskIOBufferSize;) {
-
-			std::string seq;
-			good = _in >> seq;
-
-			if (good) {
-				buffer.push_back(seq);
-				bufferSize += seq.length();
-			}
-		}
-
-		if (buffer.size() == 0)
-			break;
-
-		unsigned long bcount = 0;
-
-		for (size_t j = 0; j < buffer.size(); j++) {
-			bcount++;
-
-			unsigned long kcount = 0;
-
-			const std::string& _seq = buffer.at(j);
-			//std::cerr << "Seq " << _seq << std::endl;
-			if (_seq.size() < k)
+	size_t seqCount=0;
+	for (FastaRecord rec; _in >> rec; ++seqCount) {
+		string& seq = rec.seq;
+		if (seq.size() < k)
+			continue;
+		for (size_t i = 0; i < seq.size() - k + 1; ++i) {
+			string kmer = seq.substr(i, k);
+			size_t pos = kmer.find_last_not_of("ACGTacgt");
+			if (pos != string::npos) {
+				i += pos;
 				continue;
-			for (size_t i = 0; i < _seq.size() - k + 1; ++i) {
-				kcount++;
-				std::string kmer = _seq.substr(i, k);
-
-				size_t pos = kmer.find_last_not_of("ACGTacgt");
-
-				if (pos == std::string::npos) {
-					if(!opt::inverse){
-						if (bloom[Kmer(kmer)]){
-							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << "\n";
-							std::cout << kmer << "\n";
-						}
-					} else {
-						if (!bloom[Kmer(kmer)]){
-							std::cout << ">kmer:" << fcount << "_" << bcount << "_"
-							<< kcount << "\n";
-							std::cout << kmer << "\n";
-						}
-					}
-				} else
-					i += pos;
+			}
+			if (bloom[Kmer(kmer)] || opt::inverse) {
+				if (opt::format == FASTA) {
+					cout << ">" << rec.id << ":seq:" << seqCount
+						<< ":kmer:" << i << "\n";
+				} else if (opt::format == BED) {
+					cout << rec.id
+						<< "\t" << i
+						<< "\t" << i + k - 1
+						<< "\t";
+				}
+				cout << kmer << "\n";
 			}
 		}
+		if (opt::verbose && seqCount % 1000 == 0)
+			cerr << "processed " << seqCount << " sequences" << endl;
 	}
 	assert(_in.eof());
+	if (opt::verbose)
+		cerr << "processed " << seqCount << " sequences" << endl;
 
-	return 1;
+	return 0;
+}
+
+/**
+ * Calculate number of bases to trim from left end of sequence.
+ */
+int calcLeftTrim(const Sequence& seq, unsigned k, const BloomFilter& bloom,
+	size_t minBranchLen)
+{
+	// Boost graph interface for Bloom filter
+	DBGBloom<BloomFilter> g(bloom);
+
+	// if this is the first k-mer we have found in
+	// Bloom filter, starting from the left end
+	// of the sequence
+	bool firstKmerMatch = true;
+
+	KmerIterator it(seq, k);
+	for (; it != KmerIterator::end(); ++it) {
+
+		const Kmer& kmer = *it;
+
+		// assume k-mers not present in Bloom filter are
+		// due to sequencing errors and should be trimmed
+		if (!bloom[kmer])
+			continue;
+
+		// in degree, disregarding false branches
+		unsigned inDegree = trueBranches(kmer, REVERSE, g,
+				minBranchLen).size();
+		// out degree, disregarding false branches
+		unsigned outDegree = trueBranches(kmer, FORWARD, g,
+				minBranchLen).size();
+
+		if (firstKmerMatch) {
+			bool leftTip = (inDegree == 0 && outDegree == 1);
+			bool rightTip = (inDegree == 1 && outDegree == 0);
+			if (!leftTip && !rightTip)
+				break;
+		} else if (inDegree != 1 || outDegree != 1) {
+			// end of linear path
+			break;
+		}
+
+		firstKmerMatch = false;
+
+	} // for each k-mer (left to right)
+
+	if (it.pos() == 0)
+		return 0;
+
+	return k + it.pos() - 1;
+}
+
+/**
+ * Trim reads that corresponds to tips in the Bloom filter
+ * de Bruijn graph.
+ */
+int trim(int argc, char** argv)
+{
+	// parse command line opts
+	parseGlobalOpts(argc, argv);
+	unsigned k = opt::k;
+
+	// arg 1: Bloom filter
+	// args 2-n: FASTA/FASTQ files
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		dieWithUsageError();
+	}
+
+	// load Bloom filter de Bruijn graph
+	string bloomPath(argv[optind++]);
+	if (opt::verbose)
+		cerr << "Loading bloom filter from `"
+			<< bloomPath << "'...\n";
+
+	BloomFilter bloom;
+	istream *in = openInputStream(bloomPath);
+	assert_good(*in, bloomPath);
+	bloom.read(*in);
+	assert_good(*in, bloomPath);
+
+	if (opt::verbose)
+		printBloomStats(cerr, bloom);
+
+	// Calculate min length threshold for a "true branch"
+	// (not due to Bloom filter false positives)
+	const double falseBranchProbability = 0.0001;
+	const size_t minBranchLen =
+		(size_t)ceil(log(falseBranchProbability)/log(bloom.FPR()));
+
+	if (opt::verbose >= 2)
+		cerr << "min length threshold for true branches (k-mers): "
+			<< minBranchLen << endl;
+
+	size_t readCount = 0;
+
+	// trim reads and print to STDOUT
+	for (int i = optind; i < argc; ++i) {
+
+		if (opt::verbose)
+			cerr << "Reading `" << argv[i] << "'..." << endl;
+
+		FastaReader in(argv[i], FastaReader::FOLD_CASE);
+		for (FastqRecord rec; in >> rec; ++readCount) {
+
+			Sequence& seq = rec.seq;
+			string& qual = rec.qual;
+
+			// can't trim if read length < k; just echo
+			// back to STDOUT
+			if (seq.size() < k) {
+				cout << rec;
+				continue;
+			}
+
+			// start pos for trimmed read
+			unsigned startPos = calcLeftTrim(seq, k, bloom, minBranchLen);
+			// end pos for trimmed read
+			unsigned endPos = seq.length() - 1 -
+				calcLeftTrim(reverseComplement(seq), k, bloom, minBranchLen);
+
+			// if whole read was trimmed away
+			if (endPos < startPos)
+				continue;
+
+			// output trimmed read
+			unsigned trimmedLen = endPos - startPos + 1;
+			seq = seq.substr(startPos, trimmedLen);
+			qual = qual.substr(startPos, trimmedLen);
+			cout << rec;
+
+			if (opt::verbose && (readCount+1) % 100000 == 0)
+				cerr << "Processed " << (readCount+1) << " reads"
+					<< endl;
+
+		} // for each read
+		assert(in.eof());
+
+	} // for each input FASTA/FASTQ file
+
+	if (opt::verbose)
+		cerr << "Processed " << readCount << " reads" << endl;
+
+	// success
+	return 0;
 }
 
 int main(int argc, char** argv)
@@ -831,9 +975,14 @@ int main(int argc, char** argv)
 	else if (command == "compare") {
 		return compare(argc, argv);
 	}
-	else if (command == "getKmers") {
+	else if (command == "kmers" || command == "getKmers") {
 		return memberOf(argc, argv);
 	}
+	else if (command == "trim") {
+		return trim(argc, argv);
+	}
 
+	cerr << PROGRAM ": unrecognized command: `" << command
+		<< "'" << endl;
 	dieWithUsageError();
 }

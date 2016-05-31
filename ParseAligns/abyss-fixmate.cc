@@ -17,7 +17,6 @@
 #include <boost/unordered_map.hpp>
 #include "DataBase/Options.h"
 #include "DataBase/DB.h"
-#include <math.h>
 
 using namespace std;
 

@@ -6,9 +6,9 @@
 #define COUNTINGBLOOMFILTER_H 1
 
 #include "Bloom/Bloom.h"
-#include <vector>
-#include <math.h>
 #include <cassert>
+#include <cmath>
+#include <vector>
 
 /** A counting Bloom filter. */
 template<typename NumericType>

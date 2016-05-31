@@ -647,7 +647,7 @@ static void* worker(void* pArg)
 		static pthread_mutex_t inMutex = PTHREAD_MUTEX_INITIALIZER;
 		pthread_mutex_lock(&inMutex);
 		EstimateRecord er;
-		bool good = (*arg.in) >> er;
+		bool good = bool((*arg.in) >> er);
 		pthread_mutex_unlock(&inMutex);
 		if (!good)
 			break;
