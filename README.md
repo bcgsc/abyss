@@ -22,6 +22,7 @@ Contents
 * [Assembling multiple libraries](#assembling-multiple-libraries)
 * [Scaffolding](#scaffolding)
 * [Rescaffolding with long sequences](#rescaffolding-with-long-sequences)
+* [Assembling using a Bloom filter de Bruijn graph](#assembling-using-a-bloom-filter-de-bruijn-graph)
 * [Assembling using a paired de Bruijn graph](#assembling-using-a-paired-de-bruijn-graph)
 * [Assembling a strand-specific RNA-Seq library](#assembling-a-strand-specific-rna-seq-library)
 * [Optimizing the parameter k](#optimizing-the-parameter-k)
@@ -245,6 +246,26 @@ the `long` parameter. These scaffolds will be stored in the file
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
 		long1=long1.fa
+
+Assembling using a Bloom filter de Bruijn graph
+=========================================
+
+Assemblies may be performed using a _Bloom filter de Bruijn graph_, which
+typically reduces memory requirements by an order of magnitude. In order to
+assemble in Bloom filter mode, the user must specify 3 additional parameters:
+`B` (Bloom filter size), `H` (number of Bloom filter hash functions), and `c`
+(minimum k-mer occurrence count). Valid units for the `B` parameter are 'k',
+'M', 'G'. If no unit is specified, bytes are assumed. For example, the following
+will run a E. coli assembly with a Bloom filter size of 100 MB, 3 hash
+functions, a minimum k-mer occurrence threshold of 3, and verbose logging:
+
+	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa' B=100M H=3 c=3 v=-v
+
+At the current time, the user must calculate suitable values for `B` and `H` on
+their own, and finding the best value for `c` may require experimentation
+(optimal values are typically in the range of 2-4). Users are recommended to
+target a Bloom filter false positive rate (FPR) that is less than 5%, as
+reported by the assembly log when using the `v=-v` option (verbose level 1).
 
 Assembling using a paired de Bruijn graph
 =========================================
