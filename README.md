@@ -193,22 +193,23 @@ single-end assembly must be well over the fragment-size to obtain an
 accurate empirical distribution.
 
 Here's an example scenario of assembling a data set with two different
-fragment libraries and single-end reads:
+fragment libraries and single-end reads. Note that the names of the libraries
+(`pea` and `peb`) are arbitrary.
 
- * Library `pe200` has reads in two files,
-   `pe200_1.fa` and `pe200_2.fa`.
- * Library `pe500` has reads in two files,
-   `pe500_1.fa` and `pe500_2.fa`.
+ * Library `pea` has reads in two files,
+   `pea_1.fa` and `pea_2.fa`.
+ * Library `peb` has reads in two files,
+   `peb_1.fa` and `peb_2.fa`.
  * Single-end reads are stored in two files, `se1.fa` and `se2.fa`.
 
 The command line to assemble this example data set is:
 
-	abyss-pe k=64 name=ecoli lib='pe200 pe500' \
-		pe200='pe200_1.fa pe200_2.fa' pe500='pe500_1.fa pe500_2.fa' \
+	abyss-pe k=64 name=ecoli lib='pea peb' \
+		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
 		se='se1.fa se2.fa'
 
 The empirical distribution of fragment sizes will be stored in two
-files named `pe200-3.hist` and `pe500-3.hist`. These files may be
+files named `pea-3.hist` and `peb-3.hist`. These files may be
 plotted to check that the empirical distribution agrees with the
 expected distribution. The assembled contigs will be stored in
 `${name}-contigs.fa`.
@@ -220,11 +221,12 @@ Long-distance mate-pair libraries may be used to scaffold an assembly.
 Specify the names of the mate-pair libraries using the parameter `mp`.
 The scaffolds will be stored in the file `${name}-scaffolds.fa`.
 Here's an example of assembling a data set with two paired-end
-libraries and two mate-pair libraries:
+libraries and two mate-pair libraries. Note that the names of the libraries
+(`pea`, `peb`, `mpa`, `mpb`) are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' \
-		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
-		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa'
+	abyss-pe k=64 name=ecoli lib='pea peb' mp='mpc mpd' \
+		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
+		mpc='mpc_1.fa mpc_2.fa' mpd='mpd_1.fa mpd_2.fa'
 
 The mate-pair libraries are used only for scaffolding and do not
 contribute towards the consensus sequence.
@@ -430,9 +432,9 @@ Of `abyss-pe`:
  * `strain`: name of strain to archive [ ]
  * `library`: name of library to archive [ ]
 
-For example, to export data of species 'Ecoli', strain 'O121' and library 'pe200' into your SQLite database repository named '/abyss/test.sqlite':
+For example, to export data of species 'Ecoli', strain 'O121' and library 'pea' into your SQLite database repository named '/abyss/test.sqlite':
 
-	abyss-pe db=/abyss/test.sqlite species=Ecoli strain=O121 library=pe200 [other options]
+	abyss-pe db=/abyss/test.sqlite species=Ecoli strain=O121 library=pea [other options]
 
 ## Helper programs
 Found in your `path`:
