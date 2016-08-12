@@ -101,7 +101,7 @@ species ?= ""
 endif
 
 # Programs
-MARKDOWN=multimarkdown
+MARKDOWN=pandoc
 
 map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
