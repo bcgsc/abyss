@@ -1,8 +1,3 @@
-Title: ABySS README
-Author: Shaun Jackman, Anthony Raymond
-Affiliation: Canada's Michael Smith Genome Sciences Centre
-CSS: README.css
-
 ABySS
 =====
 
@@ -241,12 +236,12 @@ can be linked unambiguously when considering all BWA-MEM alignments.
 
 Similar to scaffolding, the names of the datasets can be specified with
 the `long` parameter. These scaffolds will be stored in the file
-`${name}-trans-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly:
+`${name}-trans-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly. Note that the names of the libraries are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long=long1 \
+	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
-		long1=long1.fa
+		longa='longa.fa'
 
 Assembling using a paired de Bruijn graph
 =========================================
@@ -289,18 +284,17 @@ Optimizing the parameter k
 
 To find the optimal value of `k`, run multiple assemblies and inspect
 the assembly contiguity statistics. The following shell snippet will
-assemble for every value of `k` from 20 to 40.
+assemble for every eighth value of `k` from 50 to 90.
 
-	export k
-	for k in {20..40}; do
+	for k in `seq 50 8 90`; do
 		mkdir k$k
-		abyss-pe -C k$k name=ecoli in=../reads.fa
+		abyss-pe -C k$k name=ecoli k=$k in=../reads.fa
 	done
 	abyss-fac k*/ecoli-contigs.fa
 
-The default maximum value for `k` is 64. This limit may be changed at
+The default maximum value for `k` is 96. This limit may be changed at
 compile time using the `--enable-maxk` option of configure. It may be
-decreased to 32 to decrease memory usage or increased to 96.
+decreased to 32 to decrease memory usage or increased to larger values.
 
 Parallel processing
 ===================
@@ -329,12 +323,11 @@ ABySS integrates well with cluster job schedulers, such as:
  * Load Sharing Facility (LSF)
  * IBM LoadLeveler
 
-For example, to submit an array of jobs to assemble every odd value of
-`k` between 51 and 63 using 64 processes for each job:
+For example, to submit an array of jobs to assemble every eighth value of
+`k` between 50 and 90 using 64 processes for each job:
 
-	mkdir k{51..63}
-	qsub -N ecoli -pe openmpi 64 -t 51-63:2 \
-		<<<'abyss-pe -C k$SGE_TASK_ID in=/data/reads.fa'
+	qsub -N ecoli -pe openmpi 64 -t 50-90:8 \
+		<<<'mkdir k$SGE_TASK_ID && abyss-pe -C k$SGE_TASK_ID in=/data/reads.fa'
 
 Using the DIDA alignment framework
 =================================
@@ -367,6 +360,7 @@ Parameters of the driver script, `abyss-pe`
  * `m`: minimum overlap of two unitigs (bp) [`30`]
  * `n`: minimum number of pairs required for building contigs [`10`]
  * `N`: minimum number of pairs required for building scaffolds [`n`]
+ * `np`: number of MPI processes [`1`]
  * `p`: minimum sequence identity of a bubble [`0.9`]
  * `q`: minimum base quality [`3`]
  * `s`: minimum unitig size required for building contigs (bp) [`200`]
@@ -378,11 +372,12 @@ Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
 manual page for more information on assembly parameters.
 
-Possibly, `abyss-pe` parameters can have same names as existing environment variables'. The parameters then cannot be used until the environment variables are unset. To detect such occasions, run the command:
+Environment variables
+=====================
+
+`abyss-pe` configuration variables may be set on the command line or from the environment, for example with `export k=20`. It can happen that `abyss-pe` picks up such variables from your environment that you had not intended, and that can cause trouble. To troubleshoot that situation, use the `abyss-pe env` command to print the values of all the `abyss-pe` configuration variables:
 
 	abyss-pe env [options]
-
-Above command will report all `abyss-pe` parameters that are set from various origins. However it will not operate ABySS programs.
 
 ABySS programs
 ==============
@@ -417,8 +412,7 @@ ABySS programs
  * `abyss-scaffold`: scaffold contigs using distance estimates
  * `abyss-todot`: convert graph formats and merge graphs
 
-For a flowchart showing the relationship between these programs,
-see doc/flowchart.pdf.
+This [flowchart](https://github.com/bcgsc/abyss/blob/master/doc/flowchart.pdf) shows the ABySS assembly pipeline its intermediate files.
 
 Export to SQLite Database
 =========================
@@ -460,7 +454,7 @@ Publications
 ## [ABySS](http://genome.cshlp.org/content/19/6/1117)
 
 Simpson, Jared T., Kim Wong, Shaun D. Jackman, Jacqueline E. Schein,
-Steven JM Jones, and İnanç Birol.
+Steven JM Jones, and Inanc Birol.
 **ABySS: a parallel assembler for short read sequence data**.
 *Genome research* 19, no. 6 (2009): 1117-1123.
 [doi:10.1101/gr.089532.108](http://dx.doi.org/10.1101/gr.089532.108)
@@ -487,6 +481,8 @@ Support
 [Ask a question](https://www.biostars.org/p/new/post/?tag_val=abyss,assembly)
 on [Biostars](https://www.biostars.org/t/abyss/).
 
+[Create a new issue](https://github.com/bcgsc/abyss/issues) on GitHub.
+
 Subscribe to the
 [ABySS mailing list]
 (http://groups.google.com/group/abyss-users),
@@ -500,15 +496,11 @@ For questions related to transcriptome assembly, contact the
 Authors
 =======
 
-- **[Shaun Jackman](http://sjackman.ca)**
-  — [GitHub/sjackman](https://github.com/sjackman)
-  — [@sjackman](https://twitter.com/sjackman)
-- **Tony Raymond** — [GitHub/traymond](https://github.com/traymond)
-- **Ben Vandervalk** — [GitHub/benvvalk ](https://github.com/benvvalk)
-- **Jared Simpson** — [GitHub/jts](https://github.com/jts)
++ **[Shaun Jackman](http://sjackman.ca)** - [GitHub/sjackman](https://github.com/sjackman) - [@sjackman](https://twitter.com/sjackman)
++ **Tony Raymond** - [GitHub/traymond](https://github.com/traymond)
++ **Ben Vandervalk** - [GitHub/benvvalk ](https://github.com/benvvalk)
++ **Jared Simpson** - [GitHub/jts](https://github.com/jts)
 
-Supervised by [**Dr. İnanç Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
+Supervised by [**Dr. Inanc Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 
-Copyright 2014 Canada's Michael Smith Genome Sciences Centre
-
-[![githalytics.com](https://cruel-carlota.pagodabox.com/af4811df3b40b7d096f6085db2969f0e "githalytics.com")](http://githalytics.com/sjackman/abyss)
+Copyright 2016 Canada's Michael Smith Genome Sciences Centre

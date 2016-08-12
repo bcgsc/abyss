@@ -12,7 +12,7 @@ dist_doc_DATA = \
 	CITATION.bib CITATION.md \
 	COPYRIGHT \
 	LICENSE \
-	README.css README.html README.md
+	README.html README.md
 
 EXTRA_DIST=autogen.sh doxygen.conf
 
@@ -54,8 +54,8 @@ SUBDIRS = \
 	$(GTest) \
 	$(UnitTest)
 
-%.html: %.md
-	-multimarkdown $< >$@
+%.html: $(srcdir)/%.md
+	-pandoc -s -o $@ $<
 
 clean-local:
 	rm -f README.html
