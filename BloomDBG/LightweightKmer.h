@@ -3,7 +3,7 @@
 
 #include <algorithm>
 #include <cstring>
-#include <boost/shared_ptr.hpp>
+#include <boost/shared_array.hpp>
 
 /**
  * Class that stores a shared pointer to a k-mer (char array).
@@ -20,7 +20,7 @@ class LightweightKmer
 private:
 
 	/** Shared pointer to k-mer data */
-	boost::shared_ptr<char[]> m_kmer;
+	boost::shared_array<char> m_kmer;
 
 public:
 
