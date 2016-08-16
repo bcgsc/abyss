@@ -266,6 +266,7 @@ $(foreach i,$(libs),$(eval $i_s?=$s))
 $(foreach i,$(libs),$(eval $i_n?=$n))
 deopt=$v $(dbopt) -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
 	$(DISTANCEEST_OPTIONS)
+scaffold_deopt=--dot --mean $(deopt)
 
 # SimpleGraph parameters
 sgopt += $(dbopt)
@@ -635,17 +636,17 @@ endif
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+	|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|$(DistanceEst) --dot $(deopt) -o $@ $*-6.hist
+		|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
 
 # Scaffold
 
