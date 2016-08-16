@@ -12,7 +12,11 @@ dist_doc_DATA = \
 	CITATION.bib CITATION.md \
 	COPYRIGHT \
 	LICENSE \
-	README.html README.md
+	README.md
+
+if HAVE_PANDOC
+dist_doc_DATA += README.html
+endif
 
 EXTRA_DIST=autogen.sh doxygen.conf
 
