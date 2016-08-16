@@ -257,7 +257,7 @@ fmopt=$v $(dbopt) -l$($*_l) $(FIXMATE_OPTIONS)
 
 # DistanceEst parameters
 DistanceEst?=DistanceEst$(ssq_t)
-l?=$k
+l?=40
 s?=200
 n?=10
 libs=$(pe) $(mp)
