@@ -43,7 +43,6 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -b  --bloom-size=N         Bloom filter memory size with unit suffix\n"
 "                             'k', 'M', or 'G' [required]\n"
-"  -c, --min-coverage=N       kmer coverage threshold for error correction [2]\n"
 "      --chastity             discard unchaste reads [default]\n"
 "      --no-chastity          do not discard unchaste reads\n"
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
@@ -54,6 +53,8 @@ static const char USAGE_MESSAGE[] =
 "      --no-trim-masked       do not trim masked bases from the ends\n"
 "                             of reads [default]\n"
 "  -k, --kmer=N               the size of a k-mer [required]\n"
+"      --kc=N                 use a cascading Bloom filter with N levels,\n"
+"                             instead of a counting Bloom filter [2]\n"
 "  -o, --out=FILE             write the contigs to FILE [STDOUT]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
@@ -103,9 +104,9 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:c:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, QR_SEED };
+enum { OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV };
 
 static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
@@ -120,6 +121,7 @@ static const struct option longopts[] = {
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
 	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
 	{ "kmer",             required_argument, NULL, 'k' },
+	{ "kc",               required_argument, NULL, MIN_KMER_COV },
 	{ "single-kmer",      required_argument, NULL, 'K' },
 	{ "out",              required_argument, NULL, 'o' },
 	{ "trim-quality",     required_argument, NULL, 'q' },
@@ -152,8 +154,6 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			params.bloomSize = SIToBytes(arg); break;
-		  case 'c':
-			arg >> params.minCov; break;
 		  case 'C':
 			arg >> params.covTrackPath; break;
 		  case 'g':
@@ -189,6 +189,8 @@ int main(int argc, char** argv)
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
+		  case MIN_KMER_COV:
+			arg >> params.minCov; break;
 		  case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);

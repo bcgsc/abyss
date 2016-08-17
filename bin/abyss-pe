@@ -180,6 +180,9 @@ endif
 ifdef j
 abyssopt += -j$j
 endif
+ifdef kc
+abyssopt += --kc=$(kc)
+endif
 ifdef x
 abyssopt += -s$x
 endif
