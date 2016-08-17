@@ -76,7 +76,7 @@ size of a k-mer (when K is not set) or the span of a k-mer pair (when K is set)
 size of a single k-mer in a k-mer pair (bp)
 .TP
 .B l
-minimum alignment length of a read (bp) [k]
+minimum alignment length of a read (bp) [40]
 .TP
 .B m
 minimum overlap of two unitigs (bp) [30]
@@ -101,13 +101,13 @@ minimum base quality [0]
 Mask all bases of reads whose quality is less than Q as `N'.
 .TP
 .B s
-minimum unitig size required for building contigs (bp) [200]
+minimum unitig size required for building contigs (bp) [1000]
 .br
 The seed length should be at least twice the value of k. If more
 sequence is assembled than the expected genome size, try increasing s.
 .TP
 .B S
-minimum contig size required for building scaffolds (bp) [s]
+minimum contig size required for building scaffolds (bp) [1000-10000]
 .TP
 .B SS
 SS=--SS to assemble in strand-specific mode
