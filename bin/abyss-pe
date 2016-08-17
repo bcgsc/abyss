@@ -258,7 +258,7 @@ fmopt=$v $(dbopt) -l$($*_l) $(FIXMATE_OPTIONS)
 # DistanceEst parameters
 DistanceEst?=DistanceEst$(ssq_t)
 l?=40
-s?=200
+s?=1000
 n?=10
 libs=$(pe) $(mp)
 $(foreach i,$(libs),$(eval $i_l?=$l))
@@ -291,7 +291,7 @@ pcopt += -p$p
 mcopt += $v $(dbopt) -k$k
 
 # Scaffold parameters
-S?=$s
+S?=1000-10000
 N?=$n
 scopt += $v $(dbopt) $(SS) -k$k
 ifdef G
