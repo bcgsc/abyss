@@ -60,10 +60,10 @@ PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Copyright 2014 Canada's Michael Smith Genome Science Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k <kmer size> -k <kmer size>... -o <output_prefix> -S <path to scaffold file> [options]... <reads1> [reads2]...\n"
-"i.e. abyss-sealer -k90 -k80 -k70 -k60 -k50 -k40 -k30 -o test -S scaffold.fa read1.fa read2.fa\n\n"
+"Usage: " PROGRAM "-b <Bloom filter size> -k <kmer size> -k <kmer size>... -o <output_prefix> -S <path to scaffold file> [options]... <reads1> [reads2]...\n"
+"i.e. abyss-sealer -b20G -k90 -k80 -k70 -k60 -k50 -k40 -k30 -o test -S scaffold.fa read1.fa read2.fa\n\n"
 "Close gaps by using left and right flanking sequences of gaps as 'reads' for Konnector\n"
-"and performing multiple runs with each of the supplied K values..\n"
+"and performing multiple runs with each of the supplied K values.\n"
 "\n"
 " Options:\n"
 "\n"
@@ -73,7 +73,9 @@ static const char USAGE_MESSAGE[] =
 "  -D, --flank-distance=N       distance of flank from gap [0]\n"
 "  -j, --threads=N              use N parallel threads [1]\n"
 "  -k, --kmer=N                 the size of a k-mer\n"
-"  -b, --bloom-size=N           size of bloom filter [500M]\n"
+"  -b, --bloom-size=N           size of Bloom filter (e.g. '40G'). Required\n"
+"                               when not using pre-built Bloom filter(s)\n"
+"                               (-i option)\n"
 "  -B, --max-branches=N         max branches in de Bruijn graph traversal;\n"
 "                               use 'nolimit' for no limit [1000]\n"
 "  -d, --dot-file=FILE          write graph traversals to a DOT file\n"
@@ -130,7 +132,7 @@ namespace opt {
 	static unsigned threads = 1;
 
 	/** The size of the bloom filter in bytes. */
-	size_t bloomSize = 500 * 1024 * 1024;
+	size_t bloomSize = 0;
 
 	/** The maximum count value of the BLoom filter. */
 	unsigned max_count = 2;
@@ -266,7 +268,7 @@ struct Coord
 {
 	int start;
 	int end;
-	
+
 	Coord() { }
 	Coord(int start, int end) : start(start), end(end) { }
 
@@ -779,12 +781,25 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
+	if (opt::bloomFilterPaths.size() < opt::kvector.size()
+		&& opt::bloomSize == 0)
+	{
+		cerr << PROGRAM ": missing mandatory option `-b' (Bloom filter size)\n"
+			<< "Here are some guidelines for sizing the Bloom filter:\n"
+			<< "  * E. coli (~5 Mbp genome), 615X coverage: -b500M\n"
+			<< "  * S. cerevisiae (~12 Mbp genome), 25X coverage: -b500M\n"
+			<< "  * C. elegans (~100 Mbp genome), 89X coverage: -b1200M\n"
+			<< "  * H. sapiens (~3 Gbp genome), 71X coverage: -b40G\n";
+		die = true;
+	}
+
 	if (opt::outputPrefix.empty()) {
 		cerr << PROGRAM ": missing mandatory option `-o'\n";
 		die = true;
 	}
 
-	if (argc - optind < 1) {
+	if (opt::bloomFilterPaths.size() < opt::kvector.size()
+		&& argc - optind < 1) {
 		cerr << PROGRAM ": missing input file arguments\n";
 		die = true;
 	}
@@ -805,8 +820,6 @@ int main(int argc, char** argv)
 #if USESEQAN
 	seqanTests();
 #endif
-
-	assert(opt::bloomSize > 0);
 
 	ofstream dotStream;
 	if (!opt::dotPath.empty()) {
@@ -962,6 +975,12 @@ int main(int argc, char** argv)
 #endif
 			bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
 		}
+
+		assert(bloom != NULL);
+
+		if (opt::verbose)
+			cerr << "Bloom filter FPR: " << setprecision(3)
+				<< 100 * bloom->FPR() << "%\n";
 
 		DBGBloom<BloomFilter> g(*bloom);
 
