@@ -97,7 +97,7 @@ static const char USAGE_MESSAGE[] =
 "  occurs 3 times or more to be included in the assembly. (The k-mer\n"
 "  count threshold filters out k-mers containing sequencing errors.)\n"
 "\n"
-"  $ " PROGRAM " -k50 -b1G -H2 -c3 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
+"  $ " PROGRAM " -k50 -b1G -H2 --kc=3 reads1.fq.gz reads2.fq.gz > assembly.fa\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
