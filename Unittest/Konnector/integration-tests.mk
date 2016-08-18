@@ -88,7 +88,7 @@ $(tmpdir)/test_reference.fa: | $(tmpdir)
 $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq: $(tmpdir)/test_reference.fa
 	wgsim -S 0 -e $* -N $N -r 0 -R 0 $< $(tmpdir)/e$*_1.fq $(tmpdir)/e$*_2.fq
 
-$(tmpdir)/e%_merged.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
+$(tmpdir)/e%_pseudoreads.fa $(tmpdir)/e%_reads_1.fq $(tmpdir)/e%_reads_2.fq: $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
 	/usr/bin/time -v $(konnector) $(k_opts) -b$b -o $(tmpdir)/e$* $(K_OPTS) $^
 
 $(tmpdir)/e%_l2.bloom: $(tmpdir) $(tmpdir)/e%_1.fq $(tmpdir)/e%_2.fq
@@ -113,7 +113,7 @@ $(tmpdir)/e%_reads_1of3.fq \
 # run_test
 #------------------------------------------------------------
 
-run_test: $(tmpdir) $(tmpdir)/e$e_merged.fa
+run_test: $(tmpdir) $(tmpdir)/e$e_pseudoreads.fa
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
@@ -123,12 +123,12 @@ run_test: $(tmpdir) $(tmpdir)/e$e_merged.fa
 #------------------------------------------------------------
 
 save_and_load_test: $(tmpdir)/e$e_l2.bloom \
-	$(tmpdir)/e$e_merged.fa \
+	$(tmpdir)/e$e_pseudoreads.fa \
 	$(tmpdir)/e$e_reads_1.fq \
 	$(tmpdir)/e$e_reads_2.fq
 	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_loaded \
 		-i $(tmpdir)/e$e_l2.bloom $(K_OPTS) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
-	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_loaded_merged.fa
+	diff $(tmpdir)/e$e_pseudoreads.fa $(tmpdir)/e$e_loaded_pseudoreads.fa
 	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_loaded_reads_1.fq
 	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_loaded_reads_2.fq
 	@echo '------------------'
@@ -142,7 +142,7 @@ save_and_load_test: $(tmpdir)/e$e_l2.bloom \
 HALF_FASTQ_LINES:=$(shell echo '$N * 2 * 4 / 2' | bc)
 
 interleaved_files_test: $(tmpdir)/e$e_l2.bloom \
-		$(tmpdir)/e$e_merged.fa \
+		$(tmpdir)/e$e_pseudoreads.fa \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
 	/usr/bin/time -v $(konnector) $(k_opts) -I -b$b \
@@ -150,7 +150,7 @@ interleaved_files_test: $(tmpdir)/e$e_l2.bloom \
 		$(K_OPTS) \
 		$(tmpdir)/e$e_interleaved_a.fq \
 		$(tmpdir)/e$e_interleaved_b.fq
-	diff $(tmpdir)/e$e_merged.fa $(tmpdir)/e$e_interleaved_merged.fa
+	diff $(tmpdir)/e$e_pseudoreads.fa $(tmpdir)/e$e_interleaved_pseudoreads.fa
 	diff $(tmpdir)/e$e_reads_1.fq $(tmpdir)/e$e_interleaved_reads_1.fq
 	diff $(tmpdir)/e$e_reads_2.fq $(tmpdir)/e$e_interleaved_reads_2.fq
 	@echo '------------------'
@@ -355,16 +355,16 @@ abyss_bloom_multithreaded_test: $(tmpdir) $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq 
 konnector_multithreaded_test: $(tmpdir)/e$e_1.fq $(tmpdir)/e$e_2.fq
 	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_singlethreaded \
 		$(K_OPTS) -j1 $^
-	cat $(tmpdir)/e$e_singlethreaded_merged.fa | \
+	cat $(tmpdir)/e$e_singlethreaded_pseudoreads.fa | \
 		paste - - | sort | tr '\t' '\n' \
-		> $(tmpdir)/e$e_singlethreaded_merged.sorted.fa
+		> $(tmpdir)/e$e_singlethreaded_pseudoreads.sorted.fa
 	/usr/bin/time -v $(konnector) $(k_opts) -o $(tmpdir)/e$e_multithreaded \
 		$(K_OPTS) -j10 $^
-	cat $(tmpdir)/e$e_multithreaded_merged.fa | \
+	cat $(tmpdir)/e$e_multithreaded_pseudoreads.fa | \
 		paste - - | sort | tr '\t' '\n' \
-		> $(tmpdir)/e$e_multithreaded_merged.sorted.fa
-	diff $(tmpdir)/e$e_singlethreaded_merged.sorted.fa \
-		$(tmpdir)/e$e_multithreaded_merged.sorted.fa
+		> $(tmpdir)/e$e_multithreaded_pseudoreads.sorted.fa
+	diff $(tmpdir)/e$e_singlethreaded_pseudoreads.sorted.fa \
+		$(tmpdir)/e$e_multithreaded_pseudoreads.sorted.fa
 	@echo '------------------'
 	@echo '$@: PASSED'
 	@echo '------------------'
