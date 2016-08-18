@@ -71,6 +71,8 @@ static const char USAGE_MESSAGE[] =
 "  -S, --input-scaffold=FILE    load scaffold from FILE\n"
 "  -L, --flank-length=N         length of flanks to be used as pseudoreads [100]\n"
 "  -D, --flank-distance=N       distance of flank from gap [0]\n"
+"  -G, --max-gap-length=N       max gap size to fill in bp [800]; runtime increases\n"
+"                               exponentially with respect to this parameter\n"
 "  -j, --threads=N              use N parallel threads [1]\n"
 "  -k, --kmer=N                 the size of a k-mer\n"
 "  -b, --bloom-size=N           size of Bloom filter (e.g. '40G'). Required\n"
@@ -81,8 +83,6 @@ static const char USAGE_MESSAGE[] =
 "  -d, --dot-file=FILE          write graph traversals to a DOT file\n"
 "  -e, --fix-errors             find and fix single-base errors when reads\n"
 "                               have no kmers in bloom filter [disabled]\n"
-"  -f, --min-frag=N             min fragment size in base pairs [0]\n"
-"  -F, --max-frag=N             max fragment size in base pairs [1000]\n"
 "  -i, --input-bloom=FILE       load bloom filter from FILE\n"
 "      --mask                   mask new and changed bases as lower case\n"
 "      --no-mask                do not mask bases [default]\n"
@@ -115,6 +115,22 @@ static const char USAGE_MESSAGE[] =
 "      --help                   display this help and exit\n"
 "      --version                output version information and exit\n"
 "\n"
+" Deprecated Options:\n"
+"\n"
+"  -f, --min-frag=N             min fragment size in base pairs\n"
+"  -F, --max-frag=N             max fragment size in base pairs\n"
+"\n"
+"   Note: --max-frag was formerly used to determine the maximum gap\n"
+"   size that abyss-sealer would attempt to close, according to the formula\n"
+"   max_gap_size = max_frag - 2 * flank_length, where flank_length is\n"
+"   deteremined by the -L option.  --max-frag is kept only for backwards\n"
+"   compatibility and is superceded by the more intuitive -G (--max-gap-length)\n"
+"   option. Similarly, --min-frag determines the minimum gap size to close,\n"
+"   according to the formula min_gap_size = min_frag - 2 * flank_length, where\n"
+"   a negative gap size indicates an overlap between gap flanks.  Normally the\n"
+"   user would not want to specify a minimum gap size and so it is recommended to\n"
+"   leave --min-frag unset.\n"
+"\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
@@ -124,6 +140,9 @@ namespace opt {
 
 	/** Distance of flank from gap. */
 	unsigned flankDistance = 0;
+
+	/** Max gap size to fill */
+	unsigned maxGapLength = 800;
 
 	/** scaffold file input. */
 	static string inputScaffold;
@@ -165,7 +184,7 @@ namespace opt {
 	unsigned minFrag = 0;
 
 	/** The maximum fragment size */
-	unsigned maxFrag = 1000;
+	unsigned maxFrag = 0;
 
 	/** Bloom filter input file */
 	static string inputBloomPath;
@@ -220,7 +239,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:D:b:B:d:ef:F:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "S:L:D:b:B:d:ef:F:G:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -230,6 +249,7 @@ static const struct option longopts[] = {
 	{ "input-scaffold",   required_argument, NULL, 'S' },
 	{ "flank-length",     required_argument, NULL, 'L' },
 	{ "flank-distance",   required_argument, NULL, 'D' },
+	{ "max-gap-length",   required_argument, NULL, 'G' },
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
 	{ "dot-file",         required_argument, NULL, 'd' },
@@ -703,6 +723,8 @@ int main(int argc, char** argv)
 			arg >> opt::flankLength; break;
 		  case 'D':
 			arg >> opt::flankDistance; break;
+		  case 'G':
+			arg >> opt::maxGapLength; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
@@ -769,6 +791,14 @@ int main(int argc, char** argv)
 				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	/* translate --max-frag to --max-gap-length for backwards compatibility */
+	if (opt::maxFrag > 0) {
+		if ((int)opt::maxFrag < 2 * opt::flankLength)
+			opt::maxGapLength = 0;
+		else
+			opt::maxGapLength = opt::maxFrag - 2 * opt::flankLength;
 	}
 
 	if (opt::inputScaffold.empty()) {
@@ -861,7 +891,7 @@ int main(int argc, char** argv)
 	ConnectPairsParams params;
 
 	params.minMergedSeqLen = opt::minFrag;
-	params.maxMergedSeqLen = opt::maxFrag;
+	params.maxMergedSeqLen = opt::maxGapLength + 2 * opt::flankLength;
 	params.maxPaths = opt::maxPaths;
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
