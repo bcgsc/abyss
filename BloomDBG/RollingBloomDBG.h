@@ -149,11 +149,6 @@ struct graph_traits< RollingBloomDBG<BF> > {
 		{ };
 	typedef boost::disallow_parallel_edge_tag edge_parallel_category;
 
-	static vertex_descriptor null_vertex()
-	{
-		return std::make_pair(MaskedKmer(), std::vector<size_t>());
-	}
-
 	// IncidenceGraph
 	typedef std::pair<vertex_descriptor, vertex_descriptor>
 		edge_descriptor;
