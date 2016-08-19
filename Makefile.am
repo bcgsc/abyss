@@ -56,6 +56,8 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
+	lib/bloomfilter \
+	lib/rolling-hash \
 	$(GTest) \
 	$(UnitTest)
 

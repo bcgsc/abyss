@@ -298,6 +298,8 @@ AC_CONFIG_FILES([
 	Bloom/Makefile
 	BloomDBG/Makefile
 	DataBase/Makefile
+	lib/bloomfilter/Makefile
+	lib/rolling-hash/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
