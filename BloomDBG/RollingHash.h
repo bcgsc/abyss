@@ -18,7 +18,7 @@ private:
 	 * Determine the canonical hash value, given hash values for
 	 * forward and reverse-complement of the same k-mer.
 	 */
-	size_t canonicalHash(size_t hash, size_t rcHash) const
+	uint64_t canonicalHash(uint64_t hash, uint64_t rcHash) const
 	{
 		return (rcHash < hash) ? rcHash : hash;
 	}
@@ -78,10 +78,10 @@ public:
 		assert(spacedSeed.length() == m_k);
 
 		/* compute first hash function for k-mer */
-		size_t hash1 = getFhval(m_hash1, spacedSeed.c_str(), kmer, m_k);
+		uint64_t hash1 = getFhval(m_hash1, spacedSeed.c_str(), kmer, m_k);
 
 		/* compute first hash function for reverse complement of k-mer */
-		size_t rcHash1 = getRhval(m_rcHash1, spacedSeed.c_str(), kmer, m_k);
+		uint64_t rcHash1 = getRhval(m_rcHash1, spacedSeed.c_str(), kmer, m_k);
 
 		m_hash = canonicalHash(hash1, rcHash1);
 	}
@@ -193,7 +193,7 @@ public:
 	 */
 	size_t getHashSeed() const
 	{
-		return m_hash;
+		return (size_t)m_hash;
 	}
 
 	/**
@@ -203,7 +203,11 @@ public:
 	 */
 	void getHashes(size_t hashes[]) const
 	{
-		multiHash(hashes, getHashSeed(), m_numHashes, m_k);
+		uint64_t tmpHashes[MAX_HASHES];
+		multiHash(tmpHashes, m_hash, m_numHashes, m_k);
+		for (unsigned i = 0; i < m_numHashes; ++i) {
+			hashes[i] = (size_t)tmpHashes[i];
+		}
 	}
 
 	/** Equality operator */
@@ -274,12 +278,12 @@ private:
 	/** k-mer length */
 	unsigned m_k;
 	/** value of first hash function for current k-mer */
-	size_t m_hash1;
+	uint64_t m_hash1;
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
-	size_t m_rcHash1;
+	uint64_t m_rcHash1;
 	/** current canonical hash value */
-	size_t m_hash;
+	uint64_t m_hash;
 };
 
 #endif
