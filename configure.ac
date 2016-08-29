@@ -126,8 +126,8 @@ AC_DEFINE_UNQUOTED(FMBITS, $enable_fm,
 				   [Width of bits of the FM-index in bits])
 
 AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
-	[set the maximum k-mer length (default is 256)]),
-	[], [enable_maxk=256])
+	[set the maximum k-mer length (default is 128)]),
+	[], [enable_maxk=128])
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 AC_ARG_ENABLE(max-hashes, AS_HELP_STRING([--enable-max-hashes],
