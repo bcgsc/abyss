@@ -131,8 +131,8 @@ AC_ARG_ENABLE(maxk, AS_HELP_STRING([--enable-maxk=N],
 AC_DEFINE_UNQUOTED(MAX_KMER, [$enable_maxk], [maximum k-mer length])
 
 AC_ARG_ENABLE(max-hashes, AS_HELP_STRING([--enable-max-hashes],
-	[set the maximum number of Bloom filter hash functions (default is 30)]),
-	[], [enable_max_hashes=30])
+	[set the maximum number of Bloom filter hash functions (default is 32)]),
+	[], [enable_max_hashes=32])
 AC_DEFINE_UNQUOTED(MAX_HASHES, [$enable_max_hashes], [maximum Bloom filter hash functions])
 
 # Find the absolute path to the source.
