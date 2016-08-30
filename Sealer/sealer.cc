@@ -828,9 +828,18 @@ int main(int argc, char** argv)
 		die = true;
 	}
 
-	if (opt::bloomFilterPaths.size() < opt::kvector.size()
+	if (opt::bloomFilterPaths.size() > opt::kvector.size()) {
+		cerr << PROGRAM ": you must specify a k-mer size (-k) for each Bloom "
+			" filter file (-i)\n";
+		die = true;
+	} else if (opt::bloomFilterPaths.size() < opt::kvector.size()
 		&& argc - optind < 1) {
 		cerr << PROGRAM ": missing input file arguments\n";
+		die = true;
+	} else if (opt::bloomFilterPaths.size() == opt::kvector.size()
+		&& argc - optind > 0) {
+		cerr << PROGRAM ": input FASTA/FASTQ args should be omitted when using "
+			"pre-built Bloom filters (-i) for all k-mer sizes\n";
 		die = true;
 	}
 
@@ -977,7 +986,7 @@ int main(int argc, char** argv)
 		BloomFilter* bloom;
 		CascadingBloomFilter* cascadingBloom = NULL;
 
-		if (!opt::bloomFilterPaths.empty() && i <= opt::bloomFilterPaths.size()) {
+		if (!opt::bloomFilterPaths.empty() && i < opt::bloomFilterPaths.size()) {
 
 			temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(i) + "'...\n";
 			printLog(logStream, temp);
