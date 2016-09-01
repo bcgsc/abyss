@@ -71,7 +71,7 @@ fi
 # Add file arguments to dida command.  Convert all input file paths
 # to absolute, since we change to a temp dir below
 
-query=($(readlink -f "$@"))
+query=($(echo "$@" | xargs -n1 readlink -f))
 target=${query[${#query[@]}-1]}
 unset query[${#query[@]}-1]
 
