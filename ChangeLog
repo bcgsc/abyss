@@ -1,3 +1,55 @@
+2016-08-30  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.0.0
+	* New Bloom filter mode for assembly => assemble large genomes
+	with minimal memory (e.g. 34G for H. sapiens)
+	* Update param defaults for modern Illumina data
+	* Make sqlite3 an optional dependency
+
+	abyss-bloom:
+	* New 'compare' command for bitwise comparison of Bloom filters
+	(thanks to @bschiffthaler!)
+	* New 'kmers' command for printing k-mers that match a Bloom filter
+	(thanks to @bschiffthaler!)
+
+	abyss-bloom-dbg:
+	* New preunitig assembler that uses Bloom filter
+	* Add 'B' param (Bloom filter size) to 'abyss-pe' command to enable
+	Bloom filter mode
+	* See README.md and '--help' for further instructions
+
+	abyss-fatoagp:
+	* Mask scaftigs shorter than 50bp with 'N's (short scaftigs
+	were causing problems with NCBI submission)
+
+	abyss-pe:
+	* Update default parameter values for modern Illumina data
+	* Change 'l=k' => 'l=40'
+	* Change 's=200' => 's=1000'
+	* Change 'S=s' => 'S=1000-10000' (do a param sweep of 'S')
+	* Use 'DistanceEst --mean' for scaffolding stage, instead of
+	the default '--mle'
+
+	abyss-sealer:
+	* New '--max-gap-length' ('-G') option to replace unintuitive
+	'--max-frag'; use of '--max-frag' is now deprecated
+	* Require user to explicitly specify Bloom filter size (e.g.
+	'-b40G')
+	* Report false positive rate (FPR) when building/loading Bloom
+	filters
+	* Don't require input FASTQ files when using pre-built Bloom
+	filter files
+
+	konnector:
+	* Fix bug causing output read 2 file to be empty
+	* New percent sequence identity options ('-x' and '-X')
+	* New '--alt-paths-mode' option to output alternate connecting
+	paths between read pairs
+
+	README.md:
+	* Fixes to documentation of ABYSS and abyss-pe parameters
+	(thanks to @nsoranzo!)
+
 2015-05-28  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 1.9.0
