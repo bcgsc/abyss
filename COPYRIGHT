@@ -22,7 +22,7 @@ License: GPL-NC-3+
  .
  Debian may redistribute this software package.
 
-Files: autogen.sh bin/* ChangeLog circle.yml CITATION.bib CITATION.md configure.ac COPYRIGHT doc/* Dockerfile doxygen.conf IntegrationTest/* lib/* LICENSE m4/* Makefile.am Misc/* README.md
+Files: autogen.sh bin/* ChangeLog circle.yml CITATION.bib CITATION.md configure.ac COPYRIGHT doc/* Dockerfile doxygen.conf IntegrationTest/* LICENSE m4/* Makefile.am Misc/* README.md
 Copyright: Copyright 2014 Canada's Michael Smith Genome Sciences Centre
 License: GPL-NC-3+
 
