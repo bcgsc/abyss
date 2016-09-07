@@ -56,37 +56,33 @@ protected:
 
 TEST_F(AllPathsSearchTest, UnreachableGoal)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(disconnectedGraph, 0, 2, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(disconnectedGraph, 0, 2);
 
-	EXPECT_EQ(NO_PATH, result);
-	EXPECT_TRUE(paths.empty());
+	EXPECT_EQ(NO_PATH, result.resultCode);
+	EXPECT_TRUE(result.paths.empty());
 }
 
 TEST_F(AllPathsSearchTest, StartNodeEqualsGoal)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(simpleAcyclicGraph, 0, 0, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(simpleAcyclicGraph, 0, 0);
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1u, paths.size());
-	ASSERT_EQ("0", paths[0].str());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(1u, result.paths.size());
+	ASSERT_EQ("0", result.paths[0].str());
 }
 
 TEST_F(AllPathsSearchTest, SinglePath)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(simpleAcyclicGraph, 0, 3, 1, 2, 2, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(simpleAcyclicGraph, 0, 3, 1, 2, 2, NO_LIMIT);
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1u, paths.size());
-	ASSERT_EQ("0,2,3", paths[0].str());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(1u, result.paths.size());
+	ASSERT_EQ("0,2,3", result.paths[0].str());
 }
 
 TEST_F(AllPathsSearchTest, MultiPathGraph)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(multiPathGraph, 0, 6, 4, 4, 6, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(multiPathGraph, 0, 6, 4, 4, 6, NO_LIMIT);
 
 	set<string> expectedPaths;
 	expectedPaths.insert("0,1,3,5,6");
@@ -94,29 +90,28 @@ TEST_F(AllPathsSearchTest, MultiPathGraph)
 	expectedPaths.insert("0,1,3,4,5,6");
 	expectedPaths.insert("0,1,2,3,4,5,6");
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(4u, paths.size());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(4u, result.paths.size());
 
 	// check that each path is one of the expected ones
 	for (unsigned i = 0; i < 4; i++)
-		ASSERT_TRUE(expectedPaths.find(paths[i].str()) != expectedPaths.end());
+		ASSERT_TRUE(expectedPaths.find(result.paths[i].str()) !=
+			expectedPaths.end());
 
 	// check that each path is unique
 	for (unsigned i = 0; i < 3; i++)
-		ASSERT_TRUE(paths[i].str() != paths[i+1].str());
+		ASSERT_TRUE(result.paths[i].str() != result.paths[i+1].str());
 }
 
 TEST_F(AllPathsSearchTest, RespectsMaxPathsLimit)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(multiPathGraph, 0, 6, 3, NO_LIMIT, NO_LIMIT, paths);
-	EXPECT_EQ(TOO_MANY_PATHS, result);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(multiPathGraph, 0, 6, 3, NO_LIMIT, NO_LIMIT, NO_LIMIT);
+	EXPECT_EQ(TOO_MANY_PATHS, result.resultCode);
 }
 
 TEST_F(AllPathsSearchTest, RespectsMaxDepthLimit)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(multiPathGraph, 0, 6, 4, 4, 5, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(multiPathGraph, 0, 6, 4, 4, 5, NO_LIMIT);
 
 	// We expect the fourth path ("0,1,2,3,4,5,6")
 	// to be excluded by the max depth limit.  Note that
@@ -128,22 +123,21 @@ TEST_F(AllPathsSearchTest, RespectsMaxDepthLimit)
 	expectedPaths.insert("0,1,2,3,5,6");
 	expectedPaths.insert("0,1,3,4,5,6");
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(3u, paths.size());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(3u, result.paths.size());
 
 	// check that each path is one of the expected ones
 	for (unsigned i = 0; i < 3; i++)
-		ASSERT_TRUE(expectedPaths.find(paths[i].str()) != expectedPaths.end());
+		ASSERT_TRUE(expectedPaths.find(result.paths[i].str()) != expectedPaths.end());
 
 	// check that each path is unique
 	for (unsigned i = 0; i < 2; i++)
-		ASSERT_TRUE(paths[i].str() != paths[i+1].str());
+		ASSERT_TRUE(result.paths[i].str() != result.paths[i+1].str());
 }
 
 TEST_F(AllPathsSearchTest, RespectsMinDepthLimit)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(multiPathGraph, 0, 6, 4, 5, 6, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(multiPathGraph, 0, 6, 4, 5, 6, NO_LIMIT);
 
 	// We expect the shortest path ("0,1,3,4,6")
 	// to be excluded by the min depth limit.  Note that
@@ -155,35 +149,33 @@ TEST_F(AllPathsSearchTest, RespectsMinDepthLimit)
 	expectedPaths.insert("0,1,3,4,5,6");
 	expectedPaths.insert("0,1,2,3,4,5,6");
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(3u, paths.size());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(3u, result.paths.size());
 
 	// check that each path is one of the expected ones
 	for (unsigned i = 0; i < 3; i++)
-		ASSERT_TRUE(expectedPaths.find(paths[i].str()) != expectedPaths.end());
+		ASSERT_TRUE(expectedPaths.find(result.paths[i].str()) != expectedPaths.end());
 
 	// check that each path is unique
 	for (unsigned i = 0; i < 2; i++)
-		ASSERT_TRUE(paths[i].str() != paths[i+1].str());
+		ASSERT_TRUE(result.paths[i].str() != result.paths[i+1].str());
 }
 
 TEST_F(AllPathsSearchTest, PathContainsCycle)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(simpleCyclicGraph, 0, 3,
-		NO_LIMIT, 0, NO_LIMIT, paths);
-	EXPECT_EQ(PATH_CONTAINS_CYCLE, result);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(simpleCyclicGraph, 0, 3,
+		NO_LIMIT, 0, NO_LIMIT, NO_LIMIT);
+	EXPECT_EQ(PATH_CONTAINS_CYCLE, result.resultCode);
 }
 
 TEST_F(AllPathsSearchTest, IgnoreCycleNotOnPath)
 {
-	vector< Path<Vertex> > paths;
-	PathSearchResult result = allPathsSearch(simpleCyclicGraph, 0, 4,
-		NO_LIMIT, 0, NO_LIMIT, paths);
+	AllPathsSearchResult<Vertex> result = allPathsSearch(simpleCyclicGraph, 0, 4,
+		NO_LIMIT, 0, NO_LIMIT, NO_LIMIT);
 
-	EXPECT_EQ(FOUND_PATH, result);
-	ASSERT_EQ(1u, paths.size());
-	ASSERT_EQ("0,4", paths.front().str());
+	EXPECT_EQ(FOUND_PATH, result.resultCode);
+	ASSERT_EQ(1u, result.paths.size());
+	ASSERT_EQ("0,4", result.paths.front().str());
 }
 
 }

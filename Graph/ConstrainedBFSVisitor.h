@@ -118,30 +118,31 @@ public:
 
 	}
 
-	PathSearchResult uniquePathToGoal(Path<V>& uniquePath)
+	AllPathsSearchResult<V> uniquePathToGoal()
 	{
-		std::vector< Path<V> > pathsFound;
-		PathSearchResult result = pathsToGoal(pathsFound, 1);
-		if (result == FOUND_PATH) {
-			assert(pathsFound.size() == 1);
-			uniquePath = pathsFound[0];
-		}
+		AllPathsSearchResult<V> result = pathsToGoal(1);
 		return result;
 	}
 
-	PathSearchResult pathsToGoal(std::vector< Path<V> >& pathsFound, unsigned maxPaths)
+	AllPathsSearchResult<V> pathsToGoal(unsigned maxPaths)
 	{
-		if (m_tooManyBranches)
-			return TOO_MANY_BRANCHES;
-		else if (!m_bFoundGoal)
-			return NO_PATH;
+		AllPathsSearchResult<V> result;
 
-		PathSearchResult result = allPathsSearch(m_traversalGraph,
-				m_goal, m_start, maxPaths, m_minDepth, m_maxDepth, pathsFound);
+		if (m_tooManyBranches) {
+			result.resultCode = TOO_MANY_BRANCHES;
+			return result;
+		}
+		else if (!m_bFoundGoal) {
+			result.resultCode = NO_PATH;
+			return result;
+		}
 
-		if (result == FOUND_PATH) {
-			for (unsigned i = 0; i < pathsFound.size(); i++)
-				reverse(pathsFound[i].begin(), pathsFound[i].end());
+		result = allPathsSearch(m_traversalGraph, m_goal, m_start,
+			maxPaths, m_minDepth, m_maxDepth, NO_LIMIT);
+
+		if (result.resultCode == FOUND_PATH) {
+			for (unsigned i = 0; i < result.paths.size(); i++)
+				reverse(result.paths[i].begin(), result.paths[i].end());
 		}
 
 		return result;

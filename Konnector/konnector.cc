@@ -58,8 +58,7 @@ static const char USAGE_MESSAGE[] =
 "                             This option specifies the number of levels in the\n"
 "                             cascading Bloom filter; it has no effect if the Bloom\n"
 "                             filter is loaded from an external file.\n"
-"  -B, --max-branches=N       max branches in de Bruijn graph traversal;\n"
-"                             use 'nolimit' for no limit [350]\n"
+"  -C, --max-cost=N           max edges to traverse during each graph search [25000]\n"
 "  -d, --dot-file=FILE        write graph traversals to a DOT file\n"
 "  -D, --dup-bloom-size=N     use an additional Bloom filter to avoid\n"
 "                             assembling the same region of the genome\n"
@@ -123,6 +122,14 @@ static const char USAGE_MESSAGE[] =
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
 "\n"
+" Deprecated Options:\n"
+"\n"
+"  -B, --max-branches=N         max branches in de Bruijn graph traversal;\n"
+"                               use 'nolimit' for no limit [nolimit]\n"
+"\n"
+"  Note: --max-branches was not effective for truncating expensive searches,\n"
+"  and has been superceded by the --max-cost option.\n"
+"\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 const unsigned g_progressStep = 1000;
@@ -155,7 +162,14 @@ namespace opt {
 	bool interleaved = false;
 
 	/** Max active branches during de Bruijn graph traversal */
-	unsigned maxBranches = 350;
+	unsigned maxBranches = NO_LIMIT;
+
+	/**
+	 * Max cost for a connecting path search. Searches that
+	 * exceed this cost limit will be aborted and the read
+	 * pair will remain unmerged.
+	 */
+	unsigned maxCost = 25000;
 
 	/** multi-graph DOT file containing graph traversals */
 	static string dotPath;
@@ -262,6 +276,7 @@ static struct {
 	size_t tooManyMismatches;
 	size_t tooManyReadMismatches;
 	size_t containsCycle;
+	size_t maxCostExceeded;
 	size_t exceededMemLimit;
 	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
@@ -272,7 +287,7 @@ static struct {
 	size_t singleEndExtended;
 } g_count;
 
-static const char shortopts[] = "b:B:c:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:Q:r:s:t:vx:X:";
+static const char shortopts[] = "b:B:c:C:d:D:eEf:F:i:Ij:k:lm:M:no:p:P:q:Q:r:s:t:vx:X:";
 
 enum { OPT_FASTQ = 1, OPT_HELP, OPT_PRESERVE_READS, OPT_VERSION };
 
@@ -280,6 +295,7 @@ static const struct option longopts[] = {
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "min-coverage",     required_argument, NULL, 'c' },
 	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "max-cost",         required_argument, NULL, 'C' },
 	{ "dot-file",         required_argument, NULL, 'd' },
 	{ "dup-bloom-size",   required_argument, NULL, 'D' },
 	{ "fix-errors",       no_argument, NULL, 'e' },
@@ -612,6 +628,7 @@ static inline void printProgressMessage()
 		<< "too many path/path mismatches: " << g_count.tooManyMismatches << ", "
 		<< "too many path/read mismatches: " << g_count.tooManyReadMismatches << ", "
 		<< "contains cycle: " << g_count.containsCycle << ", "
+		<< "max cost exceeded: " << g_count.maxCostExceeded << ", "
 		<< "skipped: " << g_count.skipped
 		<< ")\n";
 }
@@ -663,6 +680,11 @@ static inline void updateCounters(const ConnectPairsParams& params,
 		case PATH_CONTAINS_CYCLE:
 #pragma omp atomic
 			++g_count.containsCycle;
+			break;
+
+		case MAX_COST_EXCEEDED:
+#pragma omp atomic
+			++g_count.maxCostExceeded;
 			break;
 
 		case EXCEEDED_MEM_LIMIT:
@@ -952,12 +974,15 @@ int main(int argc, char** argv)
 			die = true; break;
 		  case 'b':
 			opt::bloomSize = SIToBytes(arg); break;
+		  case 'B':
+			setMaxOption(opt::maxBranches, arg); break;
 		  case 'c':
 			arg >> opt::minCoverage;
 			minCovOptUsed = true;
 			break;
-		  case 'B':
-			setMaxOption(opt::maxBranches, arg); break;
+		  case 'C':
+			arg >> opt::maxCost;
+			break;
 		  case 'd':
 			arg >> opt::dotPath; break;
 		  case 'D':
@@ -1183,6 +1208,7 @@ int main(int argc, char** argv)
 
 	params.minMergedSeqLen = opt::minFrag;
 	params.maxMergedSeqLen = opt::maxFrag;
+	params.maxCost = opt::maxCost;
 	params.maxPaths = opt::maxPaths;
 	params.maxBranches = opt::maxBranches;
 	params.maxPathMismatches = opt::maxMismatches;
@@ -1255,6 +1281,10 @@ int main(int argc, char** argv)
 			"Contains cycle: " << g_count.containsCycle
 				<< " (" << setprecision(3) << (float)100
 					* g_count.containsCycle / g_count.readPairsProcessed
+				<< "%)\n"
+			"Max cost exceeded: " << g_count.maxCostExceeded
+				<< " (" << setprecision(3) << (float)100
+					* g_count.maxCostExceeded / g_count.readPairsProcessed
 				<< "%)\n"
 			"Skipped: " << g_count.skipped
 				<< " (" << setprecision(3) << (float)100

@@ -6,26 +6,32 @@
 #include <boost/tuple/tuple.hpp> // for boost::tie
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graph_concepts.hpp>
+#include <vector>
 
-template <class IncidenceGraph>
-PathSearchResult allPathsSearch(
-	const IncidenceGraph& g,
-	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor start,
-	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
-	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
+/** result of exhaustive path search from vertex A to vertex B */
+template <class VertexT>
+struct AllPathsSearchResult
 {
-	return allPathsSearch(g, start, goal, NO_LIMIT, NO_LIMIT, NO_LIMIT, pathsFound);
-}
+public:
+
+	/** code indicating type of success/failure for search */
+	PathSearchResult resultCode;
+	/** number of edges traversed during search */
+	unsigned cost;
+	/** all paths from vertex A to vertex B (if successful) */
+	std::vector< Path<VertexT> > paths;
+
+	/** constructor */
+	AllPathsSearchResult() : resultCode(NO_PATH), cost(0) {}
+};
 
 template <class IncidenceGraph>
-PathSearchResult allPathsSearch(
+AllPathsSearchResult<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor>
+allPathsSearch(
 	const IncidenceGraph& g,
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor start,
 	typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal,
-	unsigned maxPaths,
-	unsigned minDepth,
-	unsigned maxDepth,
-	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
+	unsigned maxPaths, unsigned minDepth, unsigned maxDepth, unsigned maxCost)
 {
     typedef typename boost::graph_traits<IncidenceGraph>::vertex_descriptor V;
     typedef typename boost::graph_traits<IncidenceGraph>::out_edge_iterator EdgeIter;
@@ -40,15 +46,21 @@ PathSearchResult allPathsSearch(
 	visited.insert(start);
 	eiStack.push_back(out_edges(start, g));
 
-	while(!path.empty()) {
+	AllPathsSearchResult<V> result;
+
+	while(!path.empty() && result.cost <= maxCost) {
 
 		if (path.back() == goal &&
 			(minDepth == NO_LIMIT || (path.size() - 1) >= minDepth)) {
-			if (maxPaths != NO_LIMIT && pathsFound.size() >= maxPaths)
-				return TOO_MANY_PATHS;
-			if (!cycleVertices.empty())
-				return PATH_CONTAINS_CYCLE;
-			pathsFound.push_back(path);
+			if (maxPaths != NO_LIMIT && result.paths.size() >= maxPaths) {
+				result.resultCode = TOO_MANY_PATHS;
+				return result;
+			}
+			if (!cycleVertices.empty()) {
+				result.resultCode = PATH_CONTAINS_CYCLE;
+				return result;
+			}
+			result.paths.push_back(path);
 		}
 
 		// find next unvisited node and append to path
@@ -73,6 +85,7 @@ PathSearchResult allPathsSearch(
 					path.push_back(v);
 					eiStack.push_back(out_edges(v, g));
 					visited.insert(v);
+					result.cost++;
 					break;
 				}
 			} // if ei != ei_end
@@ -80,10 +93,24 @@ PathSearchResult allPathsSearch(
 
 	} // while !path.empty()
 
-	if (pathsFound.empty())
-		return NO_PATH;
+	if (result.cost > maxCost)
+		result.resultCode = MAX_COST_EXCEEDED;
+	else if (result.paths.empty())
+		result.resultCode = NO_PATH;
 	else
-		return FOUND_PATH;
+		result.resultCode = FOUND_PATH;
+
+	return result;
+}
+
+template <class IncidenceGraph>
+AllPathsSearchResult<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor>
+allPathsSearch(
+	const IncidenceGraph& g,
+		typename boost::graph_traits<IncidenceGraph>::vertex_descriptor start,
+		typename boost::graph_traits<IncidenceGraph>::vertex_descriptor goal)
+{
+	return allPathsSearch(g, start, goal, NO_LIMIT, NO_LIMIT, NO_LIMIT, NO_LIMIT);
 }
 
 #endif

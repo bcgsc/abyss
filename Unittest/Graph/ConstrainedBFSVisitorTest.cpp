@@ -48,11 +48,11 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path<V> uniquePath;
-	PathSearchResult result = visitor.uniquePathToGoal(uniquePath);
+	AllPathsSearchResult<V> result = visitor.uniquePathToGoal();
 
-	ASSERT_EQ(result, FOUND_PATH);
-	ASSERT_EQ(uniquePath.str(), "0,2,3");
+	ASSERT_EQ(result.resultCode, FOUND_PATH);
+	ASSERT_EQ(result.paths.size(), 1u);
+	ASSERT_EQ(result.paths.at(0).str(), "0,2,3");
 }
 
 TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
@@ -67,10 +67,8 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path<V> uniquePath;
-
 	EXPECT_EQ(visitor.getMaxDepthVisited(), 1);
-	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), NO_PATH);
+	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, NO_PATH);
 }
 
 TEST_F(ConstrainedBFSVisitorTest, RespectMinDepthLimit)
@@ -85,9 +83,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMinDepthLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path<V> uniquePath;
-
-	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), NO_PATH);
+	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, NO_PATH);
 }
 
 TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
@@ -102,9 +98,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
 
-	Path<V> uniquePath;
-
-	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_PATHS);
+	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, TOO_MANY_PATHS);
 }
 
 TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
@@ -119,14 +113,13 @@ TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
 
-	PathList paths;
-	PathSearchResult result = visitor.pathsToGoal(paths, 2);
+	AllPathsSearchResult<V> result = visitor.pathsToGoal(2);
 
-	EXPECT_EQ(result, FOUND_PATH);
-	ASSERT_EQ(paths.size(), 2u);
+	EXPECT_EQ(result.resultCode, FOUND_PATH);
+	ASSERT_EQ(result.paths.size(), 2u);
 
-	string path1 = paths[0].str();
-	string path2 = paths[1].str();
+	string path1 = result.paths[0].str();
+	string path2 = result.paths[1].str();
 
 	EXPECT_TRUE(path1 != path2);
 	ASSERT_TRUE(path1 == "0,1,3" || path1 == "0,2,3");
@@ -145,9 +138,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectBranchLimit)
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
 	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
 
-	Path<V> uniquePath;
-
-	EXPECT_EQ(visitor.uniquePathToGoal(uniquePath), TOO_MANY_BRANCHES);
+	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, TOO_MANY_BRANCHES);
 }
 
 }

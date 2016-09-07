@@ -79,11 +79,10 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bloom-size=N           size of Bloom filter (e.g. '40G'). Required\n"
 "                               when not using pre-built Bloom filter(s)\n"
 "                               (-i option)\n"
-"  -B, --max-branches=N         max branches in de Bruijn graph traversal;\n"
-"                               use 'nolimit' for no limit [1000]\n"
 "  -d, --dot-file=FILE          write graph traversals to a DOT file\n"
 "  -e, --fix-errors             find and fix single-base errors when reads\n"
 "                               have no kmers in bloom filter [disabled]\n"
+"  -C, --max-cost=N             max edges to traverse during each graph search [100000]\n"
 "  -i, --input-bloom=FILE       load bloom filter from FILE\n"
 "      --mask                   mask new and changed bases as lower case\n"
 "      --no-mask                do not mask bases [default]\n"
@@ -119,19 +118,20 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Deprecated Options:\n"
 "\n"
+"  -B, --max-branches=N         max branches in de Bruijn graph traversal;\n"
+"                               use 'nolimit' for no limit [nolimit]\n"
 "  -f, --min-frag=N             min fragment size in base pairs\n"
 "  -F, --max-frag=N             max fragment size in base pairs\n"
 "\n"
-"   Note: --max-frag was formerly used to determine the maximum gap\n"
-"   size that abyss-sealer would attempt to close, according to the formula\n"
-"   max_gap_size = max_frag - 2 * flank_length, where flank_length is\n"
-"   deteremined by the -L option.  --max-frag is kept only for backwards\n"
-"   compatibility and is superceded by the more intuitive -G (--max-gap-length)\n"
-"   option. Similarly, --min-frag determines the minimum gap size to close,\n"
-"   according to the formula min_gap_size = min_frag - 2 * flank_length, where\n"
-"   a negative gap size indicates an overlap between gap flanks.  Normally the\n"
-"   user would not want to specify a minimum gap size and so it is recommended to\n"
-"   leave --min-frag unset.\n"
+"  Note 1: --max-branches was not effective for truncating expensive searches,\n"
+"  and has been superceded by the --max-cost option.\n"
+"\n"
+"  Note 2: --max-frag was formerly used to determine the maximum gap\n"
+"  size that abyss-sealer would attempt to close, according to the formula\n"
+"  max_gap_size = max_frag - 2 * flank_length, where flank_length is\n"
+"  determined by the -L option.  --max-frag is superceded by the more\n"
+"  intuitive -G (--max-gap-length) option. The related option --min-frag\n"
+"  does not seem to have any practical use.\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -159,7 +159,14 @@ namespace opt {
 	bool interleaved = false;
 
 	/** Max active branches during de Bruijn graph traversal */
-	unsigned maxBranches = 1000;
+	unsigned maxBranches = NO_LIMIT;
+
+	/**
+	 * Max cost for a connecting path search. Searches that
+	 * exceed this cost limit will be aborted and the gap
+	 * will remain unfilled.
+	 */
+	unsigned maxCost = 100000;
 
 	/** multi-graph DOT file containing graph traversals */
 	static string dotPath;
@@ -234,6 +241,7 @@ struct Counters {
 	size_t tooManyMismatches;
 	size_t tooManyReadMismatches;
 	size_t containsCycle;
+	size_t maxCostExceeded;
 	size_t exceededMemLimit;
 	size_t traversalMemExceeded;
 	size_t readPairsProcessed;
@@ -241,7 +249,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:b:B:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -253,6 +261,7 @@ static const struct option longopts[] = {
 	{ "max-gap-length",   required_argument, NULL, 'G' },
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
+	{ "max-cost",         required_argument, NULL, 'C' },
 	{ "dot-file",         required_argument, NULL, 'd' },
 	{ "fix-errors",       no_argument, NULL, 'e' },
 	{ "min-frag",         required_argument, NULL, 'f' },
@@ -489,6 +498,11 @@ string merge(const Graph& g,
 			++g_count.containsCycle;
 			break;
 
+		case MAX_COST_EXCEEDED:
+#pragma omp atomic
+			++g_count.maxCostExceeded;
+			break;
+
 		case EXCEEDED_MEM_LIMIT:
 #pragma omp atomic
 			++g_count.exceededMemLimit;
@@ -595,6 +609,7 @@ void kRun(const ConnectPairsParams& params,
 	g_count.tooManyMismatches = 0;
 	g_count.tooManyReadMismatches = 0;
 	g_count.containsCycle = 0;
+	g_count.maxCostExceeded = 0;
 	g_count.exceededMemLimit = 0;
 	g_count.traversalMemExceeded = 0;
 	g_count.readPairsProcessed = 0;
@@ -669,6 +684,8 @@ void kRun(const ConnectPairsParams& params,
 		+ sizetToString(g_count.tooManyReadMismatches) + "\n");
 	printLog(logStream, "Contains cycle: "
 		+ sizetToString(g_count.containsCycle) + "\n");
+	printLog(logStream, "Max cost exceeded: "
+		+ sizetToString(g_count.maxCostExceeded) + "\n");
 	printLog(logStream, "Exceeded mem limit: "
 		+ sizetToString(g_count.exceededMemLimit) + "\n");
 	printLog(logStream, "Skipped: "
@@ -748,6 +765,8 @@ int main(int argc, char** argv)
 			opt::bloomSize = SIToBytes(arg); break;
 		  case 'B':
 			setMaxOption(opt::maxBranches, arg); break;
+		  case 'C':
+			setMaxOption(opt::maxCost, arg); break;
 		  case 'd':
 			arg >> opt::dotPath; break;
 		  case 'e':
@@ -931,6 +950,7 @@ int main(int argc, char** argv)
 	params.maxMergedSeqLen = opt::maxGapLength + 2 * opt::flankLength;
 	params.maxPaths = opt::maxPaths;
 	params.maxBranches = opt::maxBranches;
+	params.maxCost = opt::maxCost;
 	params.maxPathMismatches = opt::maxMismatches;
 	params.maxReadMismatches = opt::maxFlankMismatches;
 	/*

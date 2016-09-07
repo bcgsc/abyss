@@ -26,6 +26,7 @@ struct ConnectPairsResult
 	unsigned k;
 	std::string readNamePrefix;
 	PathSearchResult pathResult;
+	unsigned searchCost;
 	/** alternate connecting sequence(s) for read pair */
 	std::vector<Sequence> connectingSeqs;
 	/** read pairs joined with alternate connecting sequence(s) */
@@ -54,6 +55,7 @@ struct ConnectPairsResult
 	ConnectPairsResult() :
 		k(0),
 		pathResult(NO_PATH),
+		searchCost(0),
 		foundStartKmer(false),
 		foundGoalKmer(false),
 		startKmerPos(NO_MATCH),
@@ -74,6 +76,7 @@ struct ConnectPairsResult
 		out << "k\t"
 			<< "read_id" << "\t"
 			<< "search_result" << "\t"
+			<< "search_cost" << "\t"
 			<< "num_paths" << "\t"
 			<< "path_lengths" << "\t"
 			<< "start_kmer_pos" << "\t"
@@ -96,6 +99,7 @@ struct ConnectPairsResult
 		out << o.k << '\t'
 			<< o.readNamePrefix << "\t"
 			<< PathSearchResultLabel[o.pathResult] << "\t"
+			<< o.searchCost << "\t"
 			<< o.mergedSeqs.size() << "\t";
 		if (o.mergedSeqs.size() == 0) {
 			out << "NA" << "\t";
@@ -135,6 +139,7 @@ struct ConnectPairsParams {
 	unsigned maxMergedSeqLen;
 	unsigned maxPaths;
 	unsigned maxBranches;
+	unsigned maxCost;
 	unsigned maxPathMismatches;
 	float minPathIdentity;
 	unsigned maxReadMismatches;
@@ -152,6 +157,7 @@ struct ConnectPairsParams {
 		maxMergedSeqLen(1000),
 		maxPaths(NO_LIMIT),
 		maxBranches(NO_LIMIT),
+		maxCost(NO_LIMIT),
 		maxPathMismatches(NO_LIMIT),
 		minPathIdentity(0.0f),
 		maxReadMismatches(NO_LIMIT),
@@ -310,11 +316,12 @@ static inline ConnectPairsResult connectPairs(
 
 	ConstrainedBidiBFSVisitor<Graph> visitor(g, startKmer, goalKmer,
 			params.maxPaths, minPathLen, maxPathLen, params.maxBranches,
-			params.memLimit);
+			params.maxCost, params.memLimit);
 	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<Kmer> > paths;
 	result.pathResult = visitor.pathsToGoal(paths);
+	result.searchCost = visitor.getSearchCost();
 	result.numNodesVisited = visitor.getNumNodesVisited();
 	result.maxActiveBranches = visitor.getMaxActiveBranches();
 	result.maxDepthVisitedForward = visitor.getMaxDepthVisited(FORWARD);

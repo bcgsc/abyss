@@ -65,6 +65,11 @@ protected:
 	  * time during forward/reverse traversal */
 	unsigned m_maxBranches;
 
+	/** max number of edges to traverse during search */
+	unsigned m_maxCost;
+	/** number of edges traversed so far */
+	unsigned m_cost;
+
 	/** memory limit for graph search */
 	size_t m_memLimit;
 	/** controls frequency of memory limit checks */
@@ -78,6 +83,7 @@ protected:
 	unsigned m_peakActiveBranches;
 
 	bool m_tooManyBranches;
+	bool m_maxCostExceeded;
 	bool m_tooManyPaths;
 
 	unsigned long long m_numNodesVisited;
@@ -97,6 +103,7 @@ public:
 		depth_t minPathLength,
 		depth_t maxPathLength,
 		unsigned maxBranches,
+		unsigned maxCost,
 		size_t memLimit
 		) :
 			m_graph(graph),
@@ -106,11 +113,14 @@ public:
 			m_minPathLength(minPathLength),
 			m_maxPathLength(maxPathLength),
 			m_maxBranches(maxBranches),
+			m_maxCost(maxCost),
+			m_cost(0),
 			m_memLimit(memLimit),
 			m_memCheckCounter(0),
 			m_exceededMemLimit(false),
 			m_peakActiveBranches(0),
 			m_tooManyBranches(false),
+			m_maxCostExceeded(false),
 			m_tooManyPaths(false),
 			m_numNodesVisited(0),
 			m_commonEdges(m_maxPaths, EdgeHash(m_graph))
@@ -168,6 +178,12 @@ public:
 
 	BFSVisitorResult tree_edge(const E& e, const G& g, Direction dir)
 	{
+		if (m_cost >= m_maxCost) {
+			m_maxCostExceeded = true;
+			return ABORT_SEARCH;
+		}
+		m_cost++;
+
 		if (!updateTargetDepth(e, g, dir))
 			return SKIP_ELEMENT;
 
@@ -176,11 +192,23 @@ public:
 
 	BFSVisitorResult non_tree_edge(const E& e, const G& g, Direction dir)
 	{
+		if (m_cost >= m_maxCost) {
+			m_maxCostExceeded = true;
+			return ABORT_SEARCH;
+		}
+		m_cost++;
+
 		return recordEdgeTraversal(e, g, dir);
 	}
 
 	BFSVisitorResult common_edge(const E& e, const G& g, Direction dir)
 	{
+		if (m_cost >= m_maxCost) {
+			m_maxCostExceeded = true;
+			return ABORT_SEARCH;
+		}
+		m_cost++;
+
 		V u = source(e, g);
 		V v = target(e, g);
 
@@ -211,6 +239,8 @@ public:
 			return TOO_MANY_PATHS;
 		else if (m_tooManyBranches)
 			return TOO_MANY_BRANCHES;
+		else if (m_maxCostExceeded)
+			return MAX_COST_EXCEEDED;
 		else if (m_exceededMemLimit)
 			return EXCEEDED_MEM_LIMIT;
 
@@ -235,6 +265,11 @@ public:
 	unsigned long long getNumNodesVisited()
 	{
 		return m_numNodesVisited;
+	}
+
+	unsigned getSearchCost()
+	{
+		return m_cost;
 	}
 
 	size_t approxMemUsage()
@@ -389,6 +424,11 @@ protected:
 
 	PathSearchResult buildPaths(const E& common_edge)
 	{
+		if (m_cost > m_maxCost) {
+			m_maxCostExceeded = true;
+			return MAX_COST_EXCEEDED;
+		}
+
 		V u = source(common_edge, m_graph);
 		V v = target(common_edge, m_graph);
 
@@ -396,31 +436,38 @@ protected:
 
 		unsigned maxPathsToStart = m_maxPaths - m_pathsFound.size();
 
-		PathList pathsToStart;
-		PathSearchResult result = allPathsSearch(
+		PathSearchResult resultCode;
+	
+		AllPathsSearchResult<V> leftResult = allPathsSearch(
 			m_traversalGraph[FORWARD], u, m_start, maxPathsToStart,
-			0, m_maxDepth[FORWARD], pathsToStart);
+			0, m_maxDepth[FORWARD], m_maxCost - m_cost);
+		m_cost += leftResult.cost;
+		resultCode = leftResult.resultCode;
 
-		if (result == FOUND_PATH) {
+		if (resultCode == FOUND_PATH) {
 
 			// find paths from common edge to goal vertex (reverse traversal)
 
 			unsigned maxPathsToGoal =
-				(m_maxPaths - m_pathsFound.size()) / pathsToStart.size();
+				(m_maxPaths - m_pathsFound.size()) / leftResult.paths.size();
 
-			PathList pathsToGoal;
-			result = allPathsSearch(m_traversalGraph[REVERSE], v, m_goal,
-				maxPathsToGoal, 0, m_maxDepth[REVERSE], pathsToGoal);
+			AllPathsSearchResult<V> rightResult =
+				allPathsSearch(m_traversalGraph[REVERSE], v, m_goal,
+				maxPathsToGoal, 0, m_maxDepth[REVERSE], m_maxCost - m_cost);
+			m_cost += rightResult.cost;
+			resultCode = rightResult.resultCode;
 
-			if (result == FOUND_PATH)
-				result = buildPaths(pathsToStart, pathsToGoal);
+			if (resultCode == FOUND_PATH)
+				resultCode = buildPaths(leftResult.paths, rightResult.paths);
 
 		} // result == FOUND_PATH (common edge => start)
 
-		if (result == TOO_MANY_PATHS)
+		if (resultCode == MAX_COST_EXCEEDED)
+			m_maxCostExceeded = true;
+		else if (resultCode == TOO_MANY_PATHS)
 			m_tooManyPaths = true;
 
-		return result;
+		return resultCode;
 	}
 
 	PathSearchResult buildPaths(const PathList& pathsToStart, const PathList& pathsToGoal)
