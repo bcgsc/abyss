@@ -23,6 +23,18 @@ Files: *
 Copyright: Copyright 2016 British Columbia Cancer Agency Branch
 License: GPL-3
 
+Files: Layout/*
+Copyright: Copyright 2012 Shaun Jackman
+License: GPL-3
+
+Files: lib/bloomfilter/*
+Copyright: Copyright 2016 Justin Chu
+License: GPL-3
+
+Files: lib/rolling-hash/*
+Copyright: Copyright 2016 Hamid Mohamadi
+License: GPL-3
+
 Files: Common/cholesky.hpp
 Copyright: Copyright 2005 Gunter Winkler, Konstantin Kutzkow
 License: LGPL-2.1+
@@ -30,10 +42,6 @@ License: LGPL-2.1+
 Files: Common/city.cc Common/city.h
 Copyright: Copyright 2011 Google, Inc.
 License: Expat
-
-Files: Layout/*
-Copyright: Copyright 2012 Shaun Jackman
-License: GPL-3
 
 Files: dialign/*
 Copyright: Copyright 2008 Amarendran R. Subramanian
