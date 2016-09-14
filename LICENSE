@@ -1,24 +1,22 @@
 ABySS
-Copyright 2014 Canada's Michael Smith Genome Sciences Centre
+Copyright 2016 British Columbia Cancer Agency Branch
 
-You may use, redistribute and modify this software for non-commercial
-purposes under the terms of the GNU General Public License as
-published by the Free Software Foundation, either version 3 of the
-License, or (at your option) any later version.
-
-To license ABySS for commercial purposes, please contact
-Patrick Rebstein <prebstein@bccancer.bc.ca>
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, version 3.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 
-The complete text of the GNU General Public License version 3 follows
-and is also available from the Free Software Foundation web site:
-http://www.gnu.org/licenses/
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-See the file `COPYRIGHT` for details of the copyright and license of
+For commercial licensing options, please contact
+Patrick Rebstein <prebstein@bccancer.bc.ca>
+
+See the file COPYRIGHT for details of the copyright and license of
 each individual file included with this software.
 
                     GNU GENERAL PUBLIC LICENSE
