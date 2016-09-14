@@ -1,3 +1,8 @@
+2016-09-14  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.0.1
+	* Resolve licensing issues by switching to standard GPL-3 license
+
 2016-08-30  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.0.0
