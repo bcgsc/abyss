@@ -83,6 +83,11 @@ graph_ExtendPath_SOURCES = Graph/ExtendPathTest.cpp
 graph_ExtendPath_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
 graph_ExtendPath_LDADD = $(top_builddir)/Common/libcommon.a $(LDADD)
 
+check_PROGRAMS += graph_UndirectedGraph
+graph_UndirectedGraph_SOURCES = Graph/UndirectedGraphTest.cpp
+# graph_UndirectedGraph_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
+# graph_UndirectedGraph_LDADD = $(top_builddir)/Common/libcommon.a $(LDADD)
+
 check_PROGRAMS += Konnector_konnector
 Konnector_konnector_SOURCES = \
 	Konnector/konnectorTest.cpp
