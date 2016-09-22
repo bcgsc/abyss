@@ -1,6 +1,7 @@
 #ifndef SAMIO_H
 #define SAMIO_H 1
 
+#include "Common/ContigNode.h"
 #include "Graph/Properties.h"
 #include <istream>
 #include <sstream>
