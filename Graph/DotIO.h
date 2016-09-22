@@ -170,12 +170,17 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 	typedef typename graph_traits<Graph>::edge_descriptor
 		edge_descriptor;
 	typedef typename edge_property<Graph>::type edge_property_type;
+	typedef typename graph_traits<Graph>::directed_category
+		directed_category;
+
+	bool isDirectedGraph = boost::detail::is_directed(directed_category());
 
 	// Add vertices if this graph is empty.
 	bool addVertices = num_vertices(g) == 0;
 
 	// Graph properties
-	in >> expect("digraph") >> Ignore('{');
+	in >> expect(isDirectedGraph ? "digraph" : "graph");
+	in >> Ignore('{');
 	assert(in);
 
 	edge_property_type defaultEdgeProp;
@@ -243,7 +248,7 @@ std::istream& read_dot(std::istream& in, Graph& g, BetterEP betterEP)
 			}
 		} else if (c == '-') {
 			// Edge
-			in >> expect(">");
+			in >> expect(isDirectedGraph ? ">" : "-");
 			assert(in);
 			g_contigNames.lock();
 

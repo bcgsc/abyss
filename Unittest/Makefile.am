@@ -83,6 +83,15 @@ graph_ExtendPath_SOURCES = Graph/ExtendPathTest.cpp
 graph_ExtendPath_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
 graph_ExtendPath_LDADD = $(top_builddir)/Common/libcommon.a $(LDADD)
 
+check_PROGRAMS += graph_DotIO
+graph_DotIO_SOURCES = Graph/DotIOTest.cpp
+graph_DotIO_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
+graph_DotIO_LDADD = \
+	$(top_builddir)/Assembly/libassembly.a \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 check_PROGRAMS += graph_UndirectedGraph
 graph_UndirectedGraph_SOURCES = Graph/UndirectedGraphTest.cpp
 # graph_UndirectedGraph_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
