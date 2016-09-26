@@ -248,21 +248,27 @@ Assembling using a Bloom filter de Bruijn graph
 =========================================
 
 Assemblies may be performed using a _Bloom filter de Bruijn graph_, which
-typically reduces memory requirements by an order of magnitude. In order to
-assemble in Bloom filter mode, the user must specify 3 additional parameters:
-`B` (Bloom filter size), `H` (number of Bloom filter hash functions), and `kc`
-(minimum k-mer count threshold). Valid size units for the `B` parameter are 'k',
-'M', 'G'. If no unit is specified, bytes are assumed. For example, the following
-will run a E. coli assembly with a Bloom filter size of 100 MB, 3 hash
-functions, a minimum k-mer count threshold of 3, and verbose logging:
+typically reduces memory requirements by an order of magnitude. To assemble in
+Bloom filter mode, the user must specify 3 additional parameters: `B` (Bloom
+filter size in bytes), `H` (number of Bloom filter hash functions), and `kc`
+(minimum k-mer count threshold). `B` is the overall memory budget for the Bloom
+filter assembler, and may be specified with unit suffixes 'k' (kilobytes), 'M'
+(megabytes), 'G' (gigabytes). If no units are specified bytes are assumed. For
+example, the following will run a E. coli assembly with an overall memory budget
+of 100 megabytes, 3 hash functions, a minimum k-mer count threshold of 3, with
+verbose logging enabled:
 
 	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa' B=100M H=3 kc=3 v=-v
 
 At the current time, the user must calculate suitable values for `B` and `H` on
 their own, and finding the best value for `kc` may require experimentation
-(optimal values are typically in the range of 2-4). Users are recommended to
-target a Bloom filter false positive rate (FPR) that is less than 5%, as
-reported by the assembly log when using the `v=-v` option (verbose level 1).
+(optimal values are typically in the range of 2-4). Internally, the Bloom filter
+assembler divides the memory budget (`B`) equally across (`kc` + 1) Bloom
+filters, where `kc` Bloom filters are used for the cascading Bloom filter and
+one additional Bloom filter is used to track k-mers that have previously been
+included in contigs. Users are recommended to target a Bloom filter false
+positive rate (FPR) that is less than 5%, as reported by the assembly log when
+using the `v=-v` option (verbose level 1).
 
 Assembling using a paired de Bruijn graph
 =========================================
