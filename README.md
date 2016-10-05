@@ -237,7 +237,7 @@ can be linked unambiguously when considering all BWA-MEM alignments.
 
 Similar to scaffolding, the names of the datasets can be specified with
 the `long` parameter. These scaffolds will be stored in the file
-`${name}-trans-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly. Note that the names of the libraries are arbitrary.
+`${name}-long-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly. Note that the names of the libraries are arbitrary.
 
 	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
