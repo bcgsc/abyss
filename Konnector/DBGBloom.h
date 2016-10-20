@@ -346,6 +346,15 @@ in_degree(typename graph_traits<Graph>::vertex_descriptor u,
 
 template <typename Graph>
 static inline
+typename graph_traits<Graph>::degree_size_type
+degree(typename graph_traits<Graph>::vertex_descriptor u,
+	const Graph& g)
+{
+	return in_degree(u, g) + out_degree(u, g);
+}
+
+template <typename Graph>
+static inline
 std::pair<typename graph_traits<Graph>::in_edge_iterator,
 	typename graph_traits<Graph>::in_edge_iterator>
 in_edges(
