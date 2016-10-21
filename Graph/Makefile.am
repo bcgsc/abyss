@@ -35,7 +35,8 @@ EXTRA_DIST = \
 	Path.h \
 	PopBubbles.h \
 	Properties.h \
-	SAMIO.h
+	SAMIO.h \
+	UndirectedGraph.h
 
 abyss_gc_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 abyss_gc_LDADD = $(top_builddir)/Common/libcommon.a
