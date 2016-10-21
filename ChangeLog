@@ -1,3 +1,8 @@
+2016-10-21  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.0.2
+	* Fix compile errors with gcc 6 and boost 1.62
+
 2016-09-14  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.0.1
