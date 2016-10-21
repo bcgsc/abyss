@@ -5,6 +5,7 @@
 AM_CXXFLAGS += $(PTHREAD_CFLAGS) -Wno-error
 AM_LDFLAGS = $(PTHREAD_LIBS)
 AM_CPPFLAGS = \
+	-DGTEST_USE_OWN_TR1_TUPLE=0 \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/lib/gtest-1.7.0/include
 LDADD = $(top_builddir)/lib/gtest-1.7.0/libgtest_main.a

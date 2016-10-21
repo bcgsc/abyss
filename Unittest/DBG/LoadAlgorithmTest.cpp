@@ -1,3 +1,4 @@
+#include "config.h"
 #include "Assembly/SequenceCollection.h"
 #include "Assembly/DBG.h"
 #include "Assembly/AssemblyAlgorithms.h"

@@ -55,6 +55,17 @@ AC_CHECK_TYPE([std::tr1::hash<int>],
 	AC_DEFINE(HAVE_STD_TR1_HASH, [1],
 		[Define if the system provides std::tr1::hash]),
 	[], [#include <tr1/functional>])
+AC_CHECK_TYPE([std::tr1::tuple<int>],
+	AC_DEFINE(HAVE_STD_TR1_TUPLE, [1],
+		[Define if the system provides std::tr1::tuple]),
+	[], [#include <tr1/tuple>])
+if test "x$ac_cv_type_std__tr1__tuple_int_" = "xyes"; then
+	# Avoid double-declaration of std::tr1::tuple by boost.
+	# See http://stackoverflow.com/questions/1156003/c-namespace-collision-with-gtest-and-boost
+	# for explanation.
+	AC_DEFINE(BOOST_HAS_TR1_TUPLE, [1],
+	[Define to disable declaration of std::tr1::tuple by boost])
+fi
 AC_LANG_POP([C++])
 
 # Checks for library functions.
