@@ -455,12 +455,14 @@ namespace BloomDBG {
 	 */
 	struct AssemblyCounters
 	{
+		/** reads consisting entirely of solid k-mers */
+		size_t solidReads;
 		size_t readsExtended;
 		size_t readsProcessed;
 		size_t basesAssembled;
 		size_t contigID;
 
-		AssemblyCounters() : readsExtended(0), readsProcessed(0),
+		AssemblyCounters() : solidReads(0), readsExtended(0), readsProcessed(0),
 			basesAssembled(0), contigID(0) {}
 	};
 
@@ -473,6 +475,10 @@ namespace BloomDBG {
 			<< " of " << counters.readsProcessed
 			<< " reads (" << std::setprecision(3) << (float)100
 			* counters.readsExtended / counters.readsProcessed
+			<< "%), saw " << counters.solidReads
+			<< " of " << counters.readsProcessed
+			<< " solid reads (" << std::setprecision(3) << (float)100
+		    * counters.solidReads / counters.readsProcessed
 			<< "%), assembled " << counters.basesAssembled
 			<< " bp so far" << std::endl;
 	}
@@ -953,6 +959,11 @@ namespace BloomDBG {
 				/* only extend error-free reads */
 				if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
 					skip = true;
+
+				if (!skip) {
+#pragma omp atomic
+					counters.solidReads++;
+				}
 
 				/* skip reads in previously assembled regions */
 				if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
