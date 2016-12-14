@@ -462,7 +462,9 @@ For example, to export data of species 'Ecoli', strain 'O121' and library 'pea' 
 	abyss-pe db=/abyss/test.sqlite species=Ecoli strain=O121 library=pea [other options]
 
 ## Helper programs
+
 Found in your `path`:
+
  * `abyss-db-txt`: create a flat file showing entire repository at a glance
  * `abyss-db-csv`: create `.csv` table(s) from the repository
 
@@ -474,7 +476,6 @@ Usage:
 For example,
 
 	abyss-db-txt repo.sqlite
-
 	abyss-db-csv repo.sqlite DistanceEst
 	abyss-db-csv repo.sqlite DistanceEst abyss-scaffold
 	abyss-db-csv repo.sqlite --all
@@ -514,15 +515,9 @@ on [Biostars](https://www.biostars.org/t/abyss/).
 
 [Create a new issue](https://github.com/bcgsc/abyss/issues) on GitHub.
 
-Subscribe to the
-[ABySS mailing list]
-(http://groups.google.com/group/abyss-users),
-<abyss-users@googlegroups.com>.
+Subscribe to the [ABySS mailing list](http://groups.google.com/group/abyss-users), <abyss-users@googlegroups.com>.
 
-For questions related to transcriptome assembly, contact the
-[Trans-ABySS mailing list]
-(http://groups.google.com/group/trans-abyss),
-<trans-abyss@googlegroups.com>.
+For questions related to transcriptome assembly, contact the [Trans-ABySS mailing list](http://groups.google.com/group/trans-abyss), <trans-abyss@googlegroups.com>.
 
 Authors
 =======
