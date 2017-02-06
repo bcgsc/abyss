@@ -1,5 +1,5 @@
 #ifndef CONCURRENTBLOOMFILTER_H
-#define CONCURRENTBLOOMFILTER
+#define CONCURRENTBLOOMFILTER_H
 
 #ifndef _OPENMP
 # error ConcurrentBloomFilter class requires a compiler that supports OpenMP

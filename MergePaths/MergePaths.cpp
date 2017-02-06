@@ -795,8 +795,8 @@ static ContigPathMap readPaths(const Lengths& lengths,
 /** Store it in out and increment it.
  * @return true if out != last
  */
-template<class T>
-bool atomicInc(T& it, T last, T& out)
+template<class T1, class T2, class T3>
+bool atomicInc(T1& it, T2 last, T3& out)
 {
 	#pragma omp critical(atomicInc)
 	out = it == last ? it : it++;
