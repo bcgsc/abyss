@@ -26,10 +26,8 @@ while (<>) {
 
 	my $scafseq = <>;
 	chomp $scafseq;
-	my $scaflen = $scafseq =~ tr/ACGTacgt//;
-	next if $scaflen < $opt_min_scaf_len;
 
-	# mask scaftigs shorter than length threshold with "N"s
+	# mask scaftigs shorter than -S threshold with "N"s
 	my @ctgseqs = split /([Nn]+)/, $scafseq;
 	foreach my $ctgseq (@ctgseqs) {
 		next if /^[nN]/;
@@ -37,9 +35,20 @@ while (<>) {
 			$ctgseq = "N" x length($ctgseq);
 		}
 	}
+
 	# rejoin and split to merge adjacent stretches of "N"s
 	$scafseq = join '', @ctgseqs;
 	next unless $scafseq =~ /[^nN]/;
+
+	# trim leading/trailing "N"s that may result
+	# from masking short contigs (-S option)
+	$scafseq =~ s/^[nN]+//g;
+	$scafseq =~ s/[nN]+$//g;
+
+	# skip scaffold if length less than -s threshold
+	my $scaflen = $scafseq =~ tr/ACGTacgt//;
+	next if $scaflen < $opt_min_scaf_len;
+
 	@ctgseqs = split /([Nn]+)/, $scafseq;
 
 	my $i = 0;
