@@ -9,7 +9,7 @@ import Data.ByteString.Char8 (ByteString)
 import qualified Data.ByteString.Char8 as S
 import Data.Char (isDigit)
 import Data.Function (on)
-import Data.List (find, groupBy, intercalate, partition, sort, span)
+import Data.List (find, groupBy, intercalate, partition, sortBy, span)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
@@ -35,13 +35,28 @@ pairs (x:y:ys) = (x, y) : pairs ys
 readS :: ByteString -> Int
 readS s = x where Just (x, _) = S.readInt s
 
--- Calculate the N50.
-n50 :: [Int] -> Int
-n50 ws = x
+-- Return the smallest element x for which the sum of the elements x or larger is at least c.
+sumAtLeast :: Int -> [Int] -> Int
+sumAtLeast c xs = x
 	where
-	Just(x, _) = find ((>= g50) . snd) $ zip xs $ scanl1 (+) xs
-	g50 = sum xs `div` 2
-	xs = sort ws
+	Just(x, _) = find ((>= c) . snd) $ zip ws $ scanl1 (+) ws
+	ws = sortBy (flip compare) xs
+
+-- Calculate NGx.
+ngx :: Double -> Int -> [Int] -> Int
+ngx x g = sumAtLeast $ ceiling $ x * fromIntegral g
+
+-- Calculate Nx.
+nx :: Double -> [Int] -> Int
+nx x xs = ngx x (sum xs) xs
+
+-- Calculate NG50.
+ng50 :: Int -> [Int] -> Int
+ng50 = ngx 0.5
+
+-- Calculate N50.
+n50 :: [Int] -> Int
+n50 = nx 0.5
 
 -- A SAM record.
 -- qname flag rname pos mapq cigar rnext pnext tlen seq qual
@@ -180,10 +195,12 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 	$ zip xs (tail xs)
 
 -- The command line options.
-data Opt = OptLength Int | OptMapq Int | OptPrint | OptHelp
+data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int | OptPrint | OptHelp
 	deriving Eq
 options :: [OptDescr Opt]
 options = [
+	Option ['G'] ["genome-size"] (ReqArg (OptGenomeSize . read) "N")
+		"expected genome size used to calculate NG50 [0]",
 	Option ['l'] ["length"] (ReqArg (OptLength . read) "N")
 		"exclude contigs shorter than N bp [200]",
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
@@ -193,11 +210,13 @@ options = [
 	Option [] ["help"] (NoArg OptHelp)
 		"display this help and exit" ]
 data Options = Options {
+	optGenomeSize :: Int,
 	optLength :: Int,
 	optMapq :: Int,
 	optPrint :: Bool
 }
 defaultOptions = Options {
+	optGenomeSize = 0,
 	optLength = 200,
 	optMapq = 10,
 	optPrint = False
@@ -207,6 +226,7 @@ defaultOptions = Options {
 parseOptions :: [Opt] -> Options
 parseOptions = foldl parseOption defaultOptions
 	where parseOption opt x = case x of
+		OptGenomeSize g -> opt { optGenomeSize = g }
 		OptLength l -> opt { optLength = l }
 		OptMapq q -> opt { optMapq = q }
 		OptPrint -> opt { optPrint = True }
@@ -227,7 +247,7 @@ parseArgs = do
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
 printStats :: Options -> FilePath -> IO ()
-printStats (Options optLength optMapq optPrint) path = do
+printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	s <- mmapFileByteString path Nothing
 	when (S.null s) $ error $ "`" ++ path ++ "' is empty"
 
@@ -275,8 +295,12 @@ printStats (Options optLength optMapq optPrint) path = do
 	putStr "Mapped contig bases: "
 	print $ sum qLengths
 
-	putStr "Mapped N50: "
-	print $ n50 qLengths
+	let
+		n50s = if optGenomeSize > 0 then "NG50" else "N50"
+		n50f = if optGenomeSize > 0 then ng50 optGenomeSize else n50
+
+	putStr $ "Mapped " ++ n50s ++ ": "
+	print $ n50f qLengths
 
 	putStr "Number of break points: "
 	print $ length concatExcluded - length excluded
@@ -306,11 +330,11 @@ printStats (Options optLength optMapq optPrint) path = do
 		scaffoldLengths = map scaffoldLength
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
 
-	putStr "Scaffold N50: "
-	print $ n50 . scaffoldLengths $ scaffs
+	putStr $ "Scaffold " ++ n50s ++ ": "
+	print $ n50f . scaffoldLengths $ scaffs
 
-	putStr "Aligned scaffold N50: "
-	print $ n50 . scaffoldLengths $ colinearScaffs
+	putStr $ "Aligned scaffold " ++ n50s ++ ": "
+	print $ n50f . scaffoldLengths $ colinearScaffs
 
 	putStr "Number of Q10 scaffold breakpoints longer than 500 bp: "
 	print $ length colinearScaffs - length scaffs
