@@ -873,6 +873,12 @@ namespace BloomDBG {
 			}
 
 		}  /* for each read segment */
+
+		if (params.verbose >= 2) {
+#pragma omp critical(cerr)
+			std::cerr << "Finished extending read: " << read.id << std::endl;
+		}
+
 	}
 
 	/**
