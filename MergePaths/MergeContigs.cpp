@@ -525,10 +525,12 @@ int main(int argc, char** argv)
 			if (!adjPath.empty()
 					&& g_contigNames.count(rec.id) == 0)
 				continue;
-			if (adjPath.empty())
-				put(g_contigNames, contigs.size(), rec.id);
-			else
-				assert(get(g_contigNames, rec.id) == contigs.size());
+			if (adjPath.empty()) {
+				graph_traits<Graph>::vertex_descriptor
+					u = add_vertex(ContigProperties(rec.seq.length(), 0), g);
+				put(vertex_name, g, u, rec.id);
+			}
+			assert(get(g_contigNames, rec.id) == contigs.size());
 			contigs.push_back(rec);
 
 			++count;
@@ -580,9 +582,6 @@ int main(int argc, char** argv)
 			}
 		}
 	}
-
-	if (adjPath.empty())
-		return 0;
 
 	unsigned npaths = 0;
 	for (ContigPaths::const_iterator it = paths.begin();
