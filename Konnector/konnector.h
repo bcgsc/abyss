@@ -891,8 +891,9 @@ static inline bool trimRead(FastqRecord& read,
 	assert(maxMatchStart != UNSET);
 	assert(maxMatchLen > 0);
 
-	read.seq = read.seq.substr(maxMatchStart, maxMatchLen);
-	read.qual = read.qual.substr(maxMatchStart, maxMatchLen);
+	read.seq = read.seq.substr(maxMatchStart, maxMatchLen + k - 1);
+	if (!read.qual.empty())
+		read.qual = read.qual.substr(maxMatchStart, maxMatchLen + k - 1);
 	return true;
 }
 
