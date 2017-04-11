@@ -44,6 +44,7 @@ static const char USAGE_MESSAGE[] =
 "      --gfa             output the graph in GFA format\n"
 "      --sam             output the graph in SAM format\n"
 "  -e, --estimate output distance estimates\n"
+"      --add-complements add missing complementary edges\n"
 "  -v, --verbose  display verbose output\n"
 "      --help     display this help and exit\n"
 "      --version  output version information and exit\n"
@@ -57,8 +58,10 @@ namespace opt {
 	/** Output distance estimates. */
 	bool estimate;
 
-	/** Add missing complementary edges. */
-	bool addComplementaryEdges;
+	/** Add missing complementary edges.
+	 * Type would be bool, but is int for compatibility with getopt_long.
+	 */
+	int addComplementaryEdges;
 
 	/** Output format */
 	int format = DOT; // used by ContigProperties
@@ -78,6 +81,7 @@ static const struct option longopts[] = {
 	{ "gfa",     no_argument,       &opt::format, GFA },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "estimate", no_argument,      NULL, 'e' },
+	{ "add-complements", no_argument, &opt::addComplementaryEdges, true },
 	{ "kmer",    required_argument, NULL, 'k' },
 	{ "verbose", no_argument,       NULL, 'v' },
 	{ "help",    no_argument,       NULL, OPT_HELP },
