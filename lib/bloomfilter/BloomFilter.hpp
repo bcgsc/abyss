@@ -34,9 +34,15 @@ inline unsigned popCnt(unsigned char x) {
 			>> ((0x4332322132212110 >> (((x & 0xF0) >> 2)) & 0xF) << 2)) & 0xf;
 }
 
+/* To avoid name collision with konnector `BloomFilter` class */
+
+namespace BTL {
+
 class BloomFilter {
 public:
 
+#pragma pack(push)
+#pragma pack(1) //to maintain consistent values across platforms
 	struct FileHeader {
 		char magic[8];
 		uint32_t hlen;
@@ -47,6 +53,7 @@ public:
 		uint64_t nEntry;
 		uint64_t tEntry;
 	};
+#pragma pack(pop)
 
 	/*
 	 * Default constructor.
@@ -256,7 +263,7 @@ public:
 		return true;
 	}
 
-	void writeHeader(ofstream &out) const {
+	void writeHeader(ostream &out) const {
 		FileHeader header;
 		strncpy(header.magic, "BlOOMFXX", 8);
 		char magic[9];
@@ -286,6 +293,18 @@ public:
 		out.write(reinterpret_cast<char*>(&header), sizeof(struct FileHeader));
 	}
 
+	/** Serialize the Bloom filter to a stream */
+	void storeFilter(std::ostream& out) const
+	{
+		assert(out);
+		writeHeader(out);
+
+		//write out each block
+		out.write(reinterpret_cast<char*>(m_filter), m_sizeInBytes);
+
+		assert(out);
+	}
+
 	/*
 	 * Stores the filter as a binary file to the path specified
 	 * Stores uncompressed because the random data tends to
@@ -297,14 +316,8 @@ public:
 		cerr << "Storing filter. Filter is " << m_sizeInBytes << "bytes."
 				<< endl;
 
-		assert(myFile);
-		writeHeader(myFile);
-
-		//write out each block
-		myFile.write(reinterpret_cast<char*>(m_filter), m_sizeInBytes);
-
+		storeFilter(myFile);
 		myFile.close();
-		assert(myFile);
 	}
 
 	size_t getPop() const {
@@ -442,5 +455,7 @@ private:
 	uint64_t m_nEntry;
 	uint64_t m_tEntry;
 };
+
+} // end namespace 'BTL'
 
 #endif /* BLOOMFILTER_H_ */

@@ -8,6 +8,7 @@
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
 #include "Graph/BreadthFirstSearch.h"
+#include "BloomDBG/BloomIO.h"
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingBloomDBG.h"
@@ -102,92 +103,6 @@ namespace BloomDBG {
 			qrSeedLen = 0;
 		}
 	};
-
-	/**
-	 * Round up `num` to the nearest multiple of `base`.
-	 */
-	template <typename T>
-	inline static T roundUpToMultiple(T num, T base)
-	{
-		if (base == 0)
-			return num;
-		T remainder = num % base;
-		if (remainder == 0)
-			return num;
-		return num + base - remainder;
-	}
-
-	/**
-	 * Load DNA sequence into Bloom filter using rolling hash.
-	 *
-	 * @param bloom target Bloom filter
-	 * @param seq DNA sequence
-	 */
-	template <typename BF>
-	inline static void loadSeq(BF& bloom, const std::string& seq)
-	{
-		const unsigned k = bloom.getKmerSize();
-		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, numHashes, k);
-			it != RollingHashIterator::end(); ++it) {
-			bloom.insert(*it);
-		}
-	}
-
-	/**
-	 * Load sequences contents of FASTA file into Bloom filter using
-	 * rolling hash.
-	 * @param bloom target Bloom filter
-	 * @param path path to FASTA file
-	 * @param verbose if true, print progress messages to STDERR
-	 */
-	template <typename BF>
-	inline static void loadFile(BF& bloom, const std::string& path,
-		bool verbose = false)
-	{
-		const size_t BUFFER_SIZE = 1000000;
-		const size_t LOAD_PROGRESS_STEP = 10000;
-
-		assert(!path.empty());
-		if (verbose)
-			std::cerr << "Reading `" << path << "'..." << std::endl;
-
-		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
-		uint64_t readCount = 0;
-#pragma omp parallel
-		for (std::vector<std::string> buffer(BUFFER_SIZE);;) {
-			buffer.clear();
-			size_t bufferSize = 0;
-			bool good = true;
-#pragma omp critical(in)
-			for (; good && bufferSize < BUFFER_SIZE;) {
-				std::string seq;
-				good = in >> seq;
-				if (good) {
-					buffer.push_back(seq);
-					bufferSize += seq.length();
-				}
-			}
-			if (buffer.size() == 0)
-				break;
-			for (size_t j = 0; j < buffer.size(); j++) {
-				loadSeq(bloom, buffer.at(j));
-				if (verbose)
-#pragma omp critical(cerr)
-				{
-					readCount++;
-					if (readCount % LOAD_PROGRESS_STEP == 0)
-						std::cerr << "Loaded " << readCount
-							<< " reads into Bloom filter\n";
-				}
-			}
-		}
-		assert(in.eof());
-		if (verbose) {
-			std::cerr << "Loaded " << readCount << " reads from `"
-					  << path << "` into Bloom filter\n";
-		}
-	}
 
 	/**
 	 * Return true if all of the k-mers in `seq` are contained in `bloom`
@@ -920,7 +835,7 @@ namespace BloomDBG {
 		}
 
 		/* k-mers in previously assembled contigs */
-		BloomFilter assembledKmerSet(goodKmerSet.size(),
+		BTL::BloomFilter assembledKmerSet(goodKmerSet.size(),
 			goodKmerSet.getHashNum(), goodKmerSet.getKmerSize());
 		/* counters for progress messages */
 		AssemblyCounters counters;
