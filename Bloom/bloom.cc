@@ -593,12 +593,6 @@ int build(int argc, char** argv)
 	// bloom filter size in bits
 	size_t bits = opt::bloomSize * 8;
 
-	if (bits % opt::levels != 0) {
-		cerr << PROGRAM ": bloom filter size (-b) must be evenly divisible "
-			<< "by number of bloom filter levels (-l)\n";
-		dieWithUsageError();
-	}
-
 	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
 		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
 			<< "b is bloom filter size (-b), "
