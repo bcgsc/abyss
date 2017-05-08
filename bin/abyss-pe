@@ -71,8 +71,8 @@ endif
 ifdef SLURM_JOB_NAME
 name?=$(SLURM_JOB_NAME)
 endif
-ifdef SLURM_JOBID
-k?=$(SLURM_JOBID)
+ifdef SLURM_ARRAY_TASK_ID
+k?=$(SLURM_ARRAY_TASK_ID)
 endif
 ifdef SLURM_NTASKS
 np?=$(SLURM_NTASKS)
