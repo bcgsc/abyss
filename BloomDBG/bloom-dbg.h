@@ -39,7 +39,7 @@ namespace BloomDBG {
 	 */
 	struct AssemblyParams
 	{
-		/** Bloom filter size (in bits) */
+		/** Bloom filter size (in bytes) */
 		size_t bloomSize;
 
 		/** minimum k-mer coverage threshold */
@@ -53,6 +53,9 @@ namespace BloomDBG {
 
 		/** num Bloom filter hash functions */
 		unsigned numHashes;
+
+		/** input Bloom filter file (if empty, build Bloom filter from reads)*/
+		string bloomPath;
 
 		/** the number of parallel threads. */
 		unsigned threads;
@@ -101,6 +104,27 @@ namespace BloomDBG {
 			spacedSeed.clear();
 			K = 0;
 			qrSeedLen = 0;
+		}
+
+		/** Report current parameter values (for logging) */
+		friend std::ostream& operator<<(std::ostream& out,
+			const AssemblyParams& o)
+		{
+			out << "Assembly parameters:" << std::endl
+				<< '\t' << "K-mer size (-k): " << o.k << std::endl
+				<< '\t' << "K-mer coverage threshold (--kc): " << o.minCov << std::endl
+				<< '\t' << "Max branch trim length (-t): " << o.trim << std::endl
+				<< '\t' << "Bloom size in bytes (-b): " << o.bloomSize << std::endl
+				<< '\t' << "Bloom hash functions (-H): " << o.numHashes << std::endl;
+
+			if (o.K > 0)
+				out << '\t' << "Spaced k-mer size (-K): " << o.K << std::endl;
+
+			if (o.qrSeedLen > 0)
+				out << '\t' << "Quadratic residue (QR) seed length (--qr-seed): "
+					<< o.qrSeedLen << std::endl;
+
+			return out;
 		}
 	};
 

@@ -93,6 +93,31 @@ namespace BloomDBG {
 		}
 	}
 
+	/** Load FASTQ/FASTA/SAM/BAM files from command line into a Bloom filter */
+	template <typename BloomFilterT>
+		static inline void loadBloomFilter(int argc, char** argv,
+			BloomFilterT& bloom, bool verbose=false)
+	{
+		/* load reads into Bloom filter */
+		for (int i = optind; i < argc; ++i) {
+			/*
+			 * Debugging feature: If there is a ':'
+			 * separating the list of input read files into
+			 * two parts, use the first set of files
+			 * to load the Bloom filter and the second
+			 * set of files for the assembly (read extension).
+			 */
+			if (strcmp(argv[i],":") == 0) {
+				optind = i + 1;
+				break;
+			}
+			BloomDBG::loadFile(bloom, argv[i], verbose);
+		}
+		if (verbose)
+			cerr << "Bloom filter FPR: " << setprecision(3)
+				<< bloom.FPR() * 100 << "%" << endl;
+	}
+
 } // end namespace 'BloomDBG'
 
 #endif

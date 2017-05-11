@@ -46,16 +46,16 @@ class HashAgnosticCascadingBloom
 	}
 
 	/**
-	 * Constructor for wrapping a BTL::BloomFilter in
-	 * a single-level HashAgnosticCascadingBloom.  This is used
-	 * to make BTL::BloomFilter support the same interface
-	 * as HashAgnosticCascadingBloom.
+	 * Constructor to load a single-level BTL::BloomFilter from
+	 * files.  This is used to make BTL::BloomFilter support the
+	 * same interface as HashAgnosticCascadingBloom.
 	 */
-	HashAgnosticCascadingBloom(BTL::BloomFilter& bloom)
+	HashAgnosticCascadingBloom(const string& bloomPath)
 	{
-		m_k = bloom.getKmerSize();
-		m_hashes = bloom.getHashNum();
-		m_data.push_back(&bloom);
+		BTL::BloomFilter* bloom = new BTL::BloomFilter(bloomPath);
+		m_k = bloom->getKmerSize();
+		m_hashes = bloom->getHashNum();
+		m_data.push_back(bloom);
 	}
 
 	/** Destructor */
@@ -86,6 +86,12 @@ class HashAgnosticCascadingBloom
 	{
 		assert(m_data.back() != NULL);
 		return m_data.back()->getPop();
+	}
+
+	/** Return number of levels in cascading Bloom filter */
+	unsigned levels() const
+	{
+		return m_data.size();
 	}
 
 	/** Return the estimated false positive rate */

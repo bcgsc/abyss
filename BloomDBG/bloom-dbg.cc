@@ -35,7 +35,7 @@ static const char VERSION_MESSAGE[] =
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " -b <bloom_size> -H <bloom_hashes> -k <kmer_size> \\\n"
-"    -G <genome_size> [options] <FASTQ> [FASTQ]... > assembly.fasta\n"
+"    [options] <FASTQ> [FASTQ]... > assembly.fasta\n"
 "\n"
 "Perform a de Bruijn graph assembly of the given FASTQ files.\n"
 "\n"
@@ -49,6 +49,7 @@ static const char USAGE_MESSAGE[] =
 "  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
 "      --help                 display this help and exit\n"
 "  -H  --num-hashes=N         number of Bloom filter hash functions [1]\n"
+"  -i  --input-bloom=FILE     load Bloom filter from FILE\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
 "      --trim-masked          trim masked bases from the ends of reads\n"
 "      --no-trim-masked       do not trim masked bases from the ends\n"
@@ -105,7 +106,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:C:g:H:j:k:K:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV };
 
@@ -117,6 +118,7 @@ static const struct option longopts[] = {
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "graph",            required_argument, NULL, 'g' },
 	{ "num-hashes",       required_argument, NULL, 'H' },
+	{ "input-bloom",      required_argument, NULL, 'i' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "threads",          required_argument, NULL, 'j' },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -138,6 +140,158 @@ static const struct option longopts[] = {
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
+
+void printCascadingBloomStats(HashAgnosticCascadingBloom& bloom, ostream& os)
+{
+	for (unsigned i = 0; i < bloom.levels(); i++) {
+		os << "Stats for Bloom filter level " << i+1 << ":\n"
+			<< "\tBloom size (bits): "
+			<< bloom.getBloomFilter(i).getFilterSize() << "\n"
+			<< "\tBloom popcount (bits): "
+			<< bloom.getBloomFilter(i).getPop() << "\n"
+			<< "\tBloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.getBloomFilter(i).getFPR() << "%\n";
+	}
+}
+
+/** Create optional auxiliary output files */
+template <typename BloomFilterT>
+void writeAuxiliaryFiles(int argc, char** argv, const BloomFilterT& bloom,
+	const BloomDBG::AssemblyParams& params)
+{
+	/* generate wiggle coverage track */
+	if (!params.covTrackPath.empty() && !params.refPath.empty())
+		BloomDBG::writeCovTrack(bloom, params);
+
+	/* generate de Bruijn graph in GraphViz format */
+	if (!params.graphPath.empty()) {
+		ofstream graphOut(params.graphPath.c_str());
+		assert_good(graphOut, params.graphPath);
+		BloomDBG::outputGraph(argc, argv, bloom, params, graphOut);
+		assert_good(graphOut, params.graphPath);
+		graphOut.close();
+		assert_good(graphOut, params.graphPath);
+	}
+}
+
+/** Initialize global variables for k-mer size and spaced seed pattern */
+void initGlobals(const BloomDBG::AssemblyParams& params)
+{
+	/* set global variable for k-mer length */
+	MaskedKmer::setLength(params.k);
+	if (params.verbose)
+		cerr << "Assembling with k-mer size " << params.k << endl;
+
+	/* set global variable for spaced seed */
+	if (params.K > 0)
+		MaskedKmer::setMask(SpacedSeed::kmerPair(params.k, params.K));
+	else if (params.qrSeedLen > 0)
+		MaskedKmer::setMask(SpacedSeed::qrSeedPair(params.k, params.qrSeedLen));
+	else
+		MaskedKmer::setMask(params.spacedSeed);
+
+	if (params.verbose && !MaskedKmer::mask().empty())
+		cerr << "Using spaced seed " << MaskedKmer::mask() << endl;
+}
+
+/**
+ * Do the assembly after loading a pre-built Bloom filter
+ * from file (`-i` option). (The input Bloom filter file
+ * is constructed using `abyss-bloom build -t rolling-hash`.)
+ */
+void prebuiltBloomAssembly(int argc, char** argv,
+	BloomDBG::AssemblyParams& params, ostream& out)
+{
+	/* load prebuilt Bloom filter from file */
+
+	assert(!params.bloomPath.empty());
+	if (params.verbose)
+		cerr << "Loading prebuilt Bloom filter from `" << params.bloomPath
+			<< "'" << endl;
+
+	/* load the Bloom filter from file */
+
+	HashAgnosticCascadingBloom bloom(params.bloomPath);
+
+	if (params.verbose)
+		cerr << "Bloom filter FPR: " << setprecision(3)
+			<< bloom.FPR() * 100 << "%" << endl;
+
+	printCascadingBloomStats(bloom, cerr);
+
+	/* override command line options with values from Bloom file */
+
+	params.k = bloom.getKmerSize();
+	params.numHashes = bloom.getHashNum();
+	params.bloomSize = bloom.size() * 8;
+	if (params.trim == std::numeric_limits<unsigned>::max())
+		params.trim = params.k;
+
+	assert(params.numHashes <= MAX_HASHES);
+	assert(params.initialized());
+
+	/* init global vars for k-mer size and spaced seed pattern */
+
+	initGlobals(params);
+
+	if (params.verbose)
+		cerr << params;
+
+	/* do assembly */
+
+	BloomDBG::assemble(argc - optind, argv + optind,
+		bloom, params, out);
+
+	/* write supplementary files (e.g. GraphViz) */
+
+	writeAuxiliaryFiles(argc - optind, argv + optind, bloom, params);
+}
+
+/**
+ * Load the reads into a cascading Bloom filter and do the assembly.
+ */
+void cascadingBloomAssembly(int argc, char** argv,
+	const BloomDBG::AssemblyParams& params, ostream& out)
+{
+	/* init global vars for k-mer size and spaced seed pattern */
+
+	assert(params.initialized());
+	initGlobals(params);
+
+	if (params.verbose)
+		cerr << params;
+
+	/*
+	 * Build/load cascading Bloom filetr.
+	 *
+	 * Note 1: We use (params.minCov + 1) here because we use an additional
+	 * Bloom filter in BloomDBG::assemble() to track the set of
+	 * assembled k-mers.
+	 *
+	 * Note 2: BloomFilter class requires size to be a multiple of 64.
+	 */
+
+	const size_t bitsPerByte = 8;
+	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
+		params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
+
+	HashAgnosticCascadingBloom cascadingBloom(
+		bloomLevelSize, params.numHashes, params.minCov, params.k);
+
+	BloomDBG::loadBloomFilter(argc, argv, cascadingBloom, params.verbose);
+
+	if (params.verbose)
+		printCascadingBloomStats(cascadingBloom, cerr);
+
+	/* second pass through FASTA files for assembling */
+
+	BloomDBG::assemble(argc - optind, argv + optind,
+		cascadingBloom, params, out);
+
+	/* write supplementary files (e.g. GraphViz) */
+
+	writeAuxiliaryFiles(argc - optind, argv + optind, cascadingBloom, params);
+}
 
 /**
  * Create a de novo genome assembly using a Bloom filter de
@@ -161,6 +315,8 @@ int main(int argc, char** argv)
 			arg >> params.graphPath; break;
 		  case 'H':
 			arg >> params.numHashes; break;
+		  case 'i':
+			arg >> params.bloomPath; break;
 		  case 'j':
 			arg >> params.threads; break;
 		  case 'k':
@@ -207,12 +363,12 @@ int main(int argc, char** argv)
 		}
 	}
 
-	if (params.bloomSize == 0) {
+	if (params.bloomPath.empty() && params.bloomSize == 0) {
 		cerr << PROGRAM ": missing mandatory option `-b'\n";
 		die = true;
 	}
 
-	if (params.k == 0) {
+	if (params.bloomPath.empty() && params.k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
 		die = true;
 	}
@@ -236,12 +392,12 @@ int main(int argc, char** argv)
 	}
 
 	if (!params.covTrackPath.empty() && params.refPath.empty()) {
-		cerr << PROGRAM ": you must specify a reference with `-r' "
+		cerr << PROGRAM ": you must specify a reference with `-R' "
 			"when using `-C'\n";
 		die = true;
 	}
 
-	if (params.trim == std::numeric_limits<unsigned>::max()) {
+	if (params.k > 0 && params.trim == std::numeric_limits<unsigned>::max()) {
 		params.trim = params.k;
 	}
 
@@ -256,26 +412,10 @@ int main(int argc, char** argv)
 		exit(EXIT_FAILURE);
 	}
 
-	assert(params.initialized());
-
 #if _OPENMP
 	if (params.threads > 0)
 		omp_set_num_threads(params.threads);
 #endif
-
-	/* set global variable for k-mer length */
-	MaskedKmer::setLength(params.k);
-
-	/* set global variable for spaced seed */
-	if (params.K > 0)
-		MaskedKmer::setMask(SpacedSeed::kmerPair(params.k, params.K));
-	else if (params.qrSeedLen > 0)
-		MaskedKmer::setMask(SpacedSeed::qrSeedPair(params.k, params.qrSeedLen));
-	else
-		MaskedKmer::setMask(params.spacedSeed);
-
-	if (params.verbose && !MaskedKmer::mask().empty())
-		cerr << "Using spaced seed " << MaskedKmer::mask() << endl;
 
 	/* print contigs to STDOUT unless -o option was set */
 	ofstream outputFile;
@@ -285,58 +425,11 @@ int main(int argc, char** argv)
 	}
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
 
-	/* BloomFilter class requires size to be a multiple of 64 */
-	const size_t bitsPerByte = 8;
-	/*
-	 * Note: it is (params.minCov + 1) here because we use an additional
-	 * Bloom filter in BloomDBG::assemble() to track the set of
-	 * assembled k-mers.
-	 */
-	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
-		params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
-
-	/* use cascading Bloom filter to remove error k-mers */
-	HashAgnosticCascadingBloom cascadingBloom(
-		bloomLevelSize, params.numHashes, params.minCov, params.k);
-
-	/* load reads into Bloom filter */
-	for (int i = optind; i < argc; ++i) {
-		/*
-		 * Debugging feature: If there is a ':'
-		 * separating the list of input read files into
-		 * two parts, use the first set of files
-		 * to load the Bloom filter and the second
-		 * set of files for the assembly (read extension).
-		 */
-		if (strcmp(argv[i],":") == 0) {
-			optind = i + 1;
-			break;
-		}
-		BloomDBG::loadFile(cascadingBloom, argv[i], params.verbose);
-	}
-	if (params.verbose)
-		cerr << "Bloom filter FPR: " << setprecision(3)
-			<< cascadingBloom.FPR() * 100 << "%" << endl;
-
-	if (!params.covTrackPath.empty()) {
-		assert(!params.refPath.empty());
-		BloomDBG::writeCovTrack(cascadingBloom, params);
-	}
-
-	/* second pass through FASTA files for assembling */
-	BloomDBG::assemble(argc - optind, argv + optind,
-		cascadingBloom, params, out);
-
-	/* generate de Bruijn graph in GraphViz format (optional) */
-	if (!params.graphPath.empty()) {
-		ofstream graphOut(params.graphPath.c_str());
-		assert_good(graphOut, params.graphPath);
-		BloomDBG::outputGraph(argc - optind, argv + optind,
-			cascadingBloom, params, graphOut);
-		assert_good(graphOut, params.graphPath);
-		graphOut.close();
-		assert_good(graphOut, params.graphPath);
-	}
+	/* load the Bloom filter and do the assembly */
+	if (!params.bloomPath.empty())
+		prebuiltBloomAssembly(argc, argv, params, out);
+	else
+		cascadingBloomAssembly(argc, argv, params, out);
 
 	/* cleanup */
 	if (!params.outputPath.empty())
