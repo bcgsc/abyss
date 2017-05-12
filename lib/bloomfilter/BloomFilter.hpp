@@ -74,7 +74,6 @@ public:
 			m_size(filterSize), m_hashNum(hashNum), m_kmerSize(kmerSize), m_dFPR(
 					0), m_nEntry(0), m_tEntry(0) {
 		initSize(m_size);
-		memset(m_filter, 0, m_sizeInBytes);
 	}
 
 	/* De novo filter constructor.
@@ -93,7 +92,6 @@ public:
 			m_size = calcOptimalSize(expectedElemNum, m_dFPR);
 		}
 		initSize(m_size);
-		memset(m_filter, 0, m_sizeInBytes);
 	}
 
 	BloomFilter(const string &filterFilePath) {
@@ -404,7 +402,7 @@ private:
 			exit(1);
 		}
 		m_sizeInBytes = size / bitsPerChar;
-		m_filter = new unsigned char[m_sizeInBytes];
+		m_filter = new unsigned char[m_sizeInBytes]();
 	}
 
 	/*
