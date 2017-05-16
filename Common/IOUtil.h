@@ -106,4 +106,15 @@ static inline void readFile(const char* path, Vector& s)
 	assert(in.gcount() == n);
 }
 
+/** Copy a file */
+inline static void copyFile(const std::string& srcPath,
+	const std::string& dstPath)
+{
+	assert(srcPath != dstPath);
+	std::ifstream src(srcPath.c_str(), std::ios::binary);
+	std::ofstream dst(dstPath.c_str(), std::ios::binary);
+	dst << src.rdbuf();
+	assert(dst);
+}
+
 #endif

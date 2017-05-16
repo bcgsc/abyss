@@ -59,7 +59,7 @@ public:
 	 * Default constructor.
 	 */
 	BloomFilter() :
-			m_filter(0), m_size(0), m_sizeInBytes(0), m_hashNum(0), m_kmerSize(
+			m_filter(NULL), m_size(0), m_sizeInBytes(0), m_hashNum(0), m_kmerSize(
 					0), m_dFPR(0), m_nEntry(0), m_tEntry(0) {
 	}
 
@@ -71,8 +71,9 @@ public:
 	 * kmerSize refers to the number of bases the kmer has
 	 */
 	BloomFilter(size_t filterSize, unsigned hashNum, unsigned kmerSize) :
-			m_size(filterSize), m_hashNum(hashNum), m_kmerSize(kmerSize), m_dFPR(
-					0), m_nEntry(0), m_tEntry(0) {
+		m_filter(NULL), m_size(filterSize), m_hashNum(hashNum),
+		m_kmerSize(kmerSize), m_dFPR(0), m_nEntry(0), m_tEntry(0)
+	{
 		initSize(m_size);
 	}
 
@@ -94,42 +95,15 @@ public:
 		initSize(m_size);
 	}
 
-	BloomFilter(const string &filterFilePath) {
-		FILE *file = fopen(filterFilePath.c_str(), "rb");
-		if (file == NULL) {
-			cerr << "file \"" << filterFilePath << "\" could not be read."
-					<< endl;
-			exit(1);
-		}
-
-		loadHeader(file);
-
-		long int lCurPos = ftell(file);
-		fseek(file, 0, 2);
-		size_t fileSize = ftell(file) - sizeof(struct FileHeader);
-		fseek(file, lCurPos, 0);
-		if (fileSize != m_sizeInBytes) {
-			cerr << "Error: " << filterFilePath
-					<< " does not match size given by its information file. Size: "
-					<< fileSize << " vs " << m_sizeInBytes << " bytes." << endl;
-			exit(1);
-		}
-
-		size_t countRead = fread(m_filter, fileSize, 1, file);
-		if (countRead != 1 && fclose(file) != 0) {
-			cerr << "file \"" << filterFilePath << "\" could not be read."
-					<< endl;
-			exit(1);
-		}
+	BloomFilter(const string &filterFilePath) : m_filter(NULL) {
+		loadFilter(filterFilePath);
 	}
 
 	void loadHeader(FILE *file) {
 
 		FileHeader header;
-		if (fread(&header, sizeof(struct FileHeader), 1, file) == 1) {
-			cerr << "Loading header..." << endl;
-		} else {
-			cerr << "Failed to header" << endl;
+		if (fread(&header, sizeof(struct FileHeader), 1, file) != 1) {
+			cerr << "Failed to read Bloom filter file header" << endl;
 		}
 		char magic[9];
 		strncpy(magic, header.magic, 8);
@@ -151,6 +125,36 @@ public:
 		initSize(m_size);
 		m_hashNum = header.nhash;
 		m_kmerSize = header.kmer;
+	}
+
+	void loadFilter(const string &filterFilePath)
+	{
+		FILE *file = fopen(filterFilePath.c_str(), "rb");
+		if (file == NULL) {
+			cerr << "file \"" << filterFilePath << "\" could not be read."
+				<< endl;
+			exit(1);
+		}
+
+		loadHeader(file);
+
+		long int lCurPos = ftell(file);
+		fseek(file, 0, 2);
+		size_t fileSize = ftell(file) - sizeof(struct FileHeader);
+		fseek(file, lCurPos, 0);
+		if (fileSize != m_sizeInBytes) {
+			cerr << "Error: " << filterFilePath
+				<< " does not match size given by its information file. Size: "
+				<< fileSize << " vs " << m_sizeInBytes << " bytes." << endl;
+			exit(1);
+		}
+
+		size_t countRead = fread(m_filter, fileSize, 1, file);
+		if (countRead != 1 && fclose(file) != 0) {
+			cerr << "file \"" << filterFilePath << "\" could not be read."
+				<< endl;
+			exit(1);
+		}
 	}
 
 	/*
@@ -289,18 +293,22 @@ public:
 //            << header.tEntry << endl;
 
 		out.write(reinterpret_cast<char*>(&header), sizeof(struct FileHeader));
+		assert(out);
 	}
 
 	/** Serialize the Bloom filter to a stream */
-	void storeFilter(std::ostream& out) const
+	// void storeFilter(std::ostream& out) const
+	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
 		assert(out);
-		writeHeader(out);
+		o.writeHeader(out);
+		assert(out);
 
 		//write out each block
-		out.write(reinterpret_cast<char*>(m_filter), m_sizeInBytes);
+		out.write(reinterpret_cast<char*>(o.m_filter), o.m_sizeInBytes);
 
 		assert(out);
+		return out;
 	}
 
 	/*
@@ -314,7 +322,7 @@ public:
 		cerr << "Storing filter. Filter is " << m_sizeInBytes << "bytes."
 				<< endl;
 
-		storeFilter(myFile);
+		myFile << *this;
 		myFile.close();
 	}
 
@@ -402,6 +410,8 @@ private:
 			exit(1);
 		}
 		m_sizeInBytes = size / bitsPerChar;
+		if (m_filter != NULL)
+			delete[] m_filter;
 		m_filter = new unsigned char[m_sizeInBytes]();
 	}
 

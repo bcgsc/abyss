@@ -1,6 +1,9 @@
 #include "config.h"
 
 #include "BloomDBG/bloom-dbg.h"
+#include "BloomDBG/AssemblyCounters.h"
+#include "BloomDBG/AssemblyParams.h"
+#include "BloomDBG/Checkpoint.h"
 #include "BloomDBG/HashAgnosticCascadingBloom.h"
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/SpacedSeed.h"
@@ -41,33 +44,38 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Basic Options:\n"
 "\n"
-"  -b  --bloom-size=N         overall memory budget for the assembly in bytes.\n"
-"                             Unit suffixes 'k' (kilobytes), 'M' (megabytes),\n"
-"                             or 'G' (gigabytes) may be used. [required]\n"
-"      --chastity             discard unchaste reads [default]\n"
-"      --no-chastity          do not discard unchaste reads\n"
-"  -g  --graph=FILE           write de Bruijn graph to FILE (GraphViz)\n"
-"      --help                 display this help and exit\n"
-"  -H  --num-hashes=N         number of Bloom filter hash functions [1]\n"
-"  -i  --input-bloom=FILE     load Bloom filter from FILE\n"
-"  -j, --threads=N            use N parallel threads [1]\n"
-"      --trim-masked          trim masked bases from the ends of reads\n"
-"      --no-trim-masked       do not trim masked bases from the ends\n"
-"                             of reads [default]\n"
-"  -k, --kmer=N               the size of a k-mer [required]\n"
-"      --kc=N                 use a cascading Bloom filter with N levels,\n"
-"                             instead of a counting Bloom filter [2]\n"
-"  -o, --out=FILE             write the contigs to FILE [STDOUT]\n"
-"  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
-"                             quality is less than the threshold\n"
-"  -Q, --mask-quality=N       mask all low quality bases as `N'\n"
-"      --standard-quality     zero quality is `!' (33), typically\n"
-"                             for FASTQ and SAM files [default]\n"
-"      --illumina-quality     zero quality is `@' (64), typically\n"
-"                             for qseq and export files\n"
-"  -t, --trim-length          max branch length to trim, in k-mers [k]\n"
-"  -v, --verbose              display verbose output\n"
-"      --version              output version information and exit\n"
+"  -b  --bloom-size=N           overall memory budget for the assembly in bytes.\n"
+"                               Unit suffixes 'k' (kilobytes), 'M' (megabytes),\n"
+"                               or 'G' (gigabytes) may be used. [required]\n"
+"      --chastity               discard unchaste reads [default]\n"
+"      --no-chastity            do not discard unchaste reads\n"
+"      --checkpoint=N           create a checkpoint every N reads [disabled=0]\n"
+"      --keep-checkpoint        do not delete checkpoint files after assembly\n"
+"                               completes successfully [disabled]\n"
+"      --checkpoint-prefix=STR  filename prefix for checkpoint files\n"
+"                               ['bloom-dbg-checkpoint']\n"
+"  -g  --graph=FILE             write de Bruijn graph to FILE (GraphViz)\n"
+"      --help                   display this help and exit\n"
+"  -H  --num-hashes=N           number of Bloom filter hash functions [1]\n"
+"  -i  --input-bloom=FILE       load Bloom filter from FILE\n"
+"  -j, --threads=N              use N parallel threads [1]\n"
+"      --trim-masked            trim masked bases from the ends of reads\n"
+"      --no-trim-masked         do not trim masked bases from the ends\n"
+"                               of reads [default]\n"
+"  -k, --kmer=N                 the size of a k-mer [required]\n"
+"      --kc=N                   use a cascading Bloom filter with N levels,\n"
+"                               instead of a counting Bloom filter [2]\n"
+"  -o, --out=FILE               write the contigs to FILE [STDOUT]\n"
+"  -q, --trim-quality=N         trim bases from the ends of reads whose\n"
+"                               quality is less than the threshold\n"
+"  -Q, --mask-quality=N         mask all low quality bases as `N'\n"
+"      --standard-quality       zero quality is `!' (33), typically\n"
+"                               for FASTQ and SAM files [default]\n"
+"      --illumina-quality       zero quality is `@' (64), typically\n"
+"                               for qseq and export files\n"
+"  -t, --trim-length            max branch length to trim, in k-mers [k]\n"
+"  -v, --verbose                display verbose output\n"
+"      --version                output version information and exit\n"
 "\n"
 "Spaced Seed Options:\n"
 "\n"
@@ -108,36 +116,42 @@ BloomDBG::AssemblyParams params;
 
 static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV };
+enum {
+	OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV,
+	CHECKPOINT, KEEP_CHECKPOINT, CHECKPOINT_PREFIX
+};
 
 static const struct option longopts[] = {
-	{ "bloom-size",       required_argument, NULL, 'b' },
-	{ "min-coverage",     required_argument, NULL, 'c' },
-	{ "cov-track",        required_argument, NULL, 'C' },
-	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
-	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
-	{ "graph",            required_argument, NULL, 'g' },
-	{ "num-hashes",       required_argument, NULL, 'H' },
-	{ "input-bloom",      required_argument, NULL, 'i' },
-	{ "help",             no_argument, NULL, OPT_HELP },
-	{ "threads",          required_argument, NULL, 'j' },
-	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
-	{ "no-trim-masked",   no_argument, &opt::trimMasked, 0 },
-	{ "kmer",             required_argument, NULL, 'k' },
-	{ "kc",               required_argument, NULL, MIN_KMER_COV },
-	{ "single-kmer",      required_argument, NULL, 'K' },
-	{ "out",              required_argument, NULL, 'o' },
-	{ "trim-quality",     required_argument, NULL, 'q' },
-	{ "mask-quality",     required_argument, NULL, 'Q' },
-	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
-	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
-	{ "qr-seed",          required_argument, NULL, QR_SEED },
-	{ "ref",              required_argument, NULL, 'R' },
-	{ "spaced-seed",      no_argument, NULL, 's' },
-	{ "trim-length",      no_argument, NULL, 't' },
-	{ "trace-file",       no_argument, NULL, 'T'},
-	{ "verbose",          no_argument, NULL, 'v' },
-	{ "version",          no_argument, NULL, OPT_VERSION },
+	{ "bloom-size",        required_argument, NULL, 'b' },
+	{ "min-coverage",      required_argument, NULL, 'c' },
+	{ "cov-track",         required_argument, NULL, 'C' },
+	{ "chastity",          no_argument, &opt::chastityFilter, 1 },
+	{ "no-chastity",       no_argument, &opt::chastityFilter, 0 },
+	{ "checkpoint",        required_argument, NULL, CHECKPOINT },
+	{ "keep-checkpoint",   no_argument, NULL, KEEP_CHECKPOINT },
+	{ "checkpoint-prefix", required_argument, NULL, CHECKPOINT_PREFIX },
+	{ "graph",             required_argument, NULL, 'g' },
+	{ "num-hashes",        required_argument, NULL, 'H' },
+	{ "input-bloom",       required_argument, NULL, 'i' },
+	{ "help",              no_argument, NULL, OPT_HELP },
+	{ "threads",           required_argument, NULL, 'j' },
+	{ "trim-masked",       no_argument, &opt::trimMasked, 1 },
+	{ "no-trim-masked",    no_argument, &opt::trimMasked, 0 },
+	{ "kmer",              required_argument, NULL, 'k' },
+	{ "kc",                required_argument, NULL, MIN_KMER_COV },
+	{ "single-kmer",       required_argument, NULL, 'K' },
+	{ "out",               required_argument, NULL, 'o' },
+	{ "trim-quality",      required_argument, NULL, 'q' },
+	{ "mask-quality",      required_argument, NULL, 'Q' },
+	{ "standard-quality",  no_argument, &opt::qualityOffset, 33 },
+	{ "illumina-quality",  no_argument, &opt::qualityOffset, 64 },
+	{ "qr-seed",           required_argument, NULL, QR_SEED },
+	{ "ref",               required_argument, NULL, 'R' },
+	{ "spaced-seed",       no_argument, NULL, 's' },
+	{ "trim-length",       no_argument, NULL, 't' },
+	{ "trace-file",        no_argument, NULL, 'T'},
+	{ "verbose",           no_argument, NULL, 'v' },
+	{ "version",           no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -195,6 +209,61 @@ void initGlobals(const BloomDBG::AssemblyParams& params)
 }
 
 /**
+ * Resume assembly from previously saved checkpoint.
+ */
+void resumeAssemblyFromCheckpoint(int argc, char** argv,
+	BloomDBG::AssemblyParams& params, ostream& out)
+{
+	assert(params.checkpointsEnabled() && checkpointExists(params));
+
+	assert(params.initialized());
+	initGlobals(params);
+
+	/* empty Bloom filter de Bruijn graph */
+	HashAgnosticCascadingBloom solidKmerSet;
+
+	/* empty visited k-mers Bloom filter */
+	BTL::BloomFilter visitedKmerSet;
+
+	/* counters for progress messages */
+	BloomDBG::AssemblyCounters counters;
+
+	/* setup input/output streams for the assembly */
+
+	/* input reads */
+	FastaConcat in(argv + optind, argv + argc, FastaReader::FOLD_CASE);
+
+	/* output stream for duplicate contigs FASTA output (for checkpoints) */
+	ofstream checkpointOut;
+	assert(!params.checkpointPathPrefix.empty());
+	string prefix = params.checkpointPathPrefix;
+	string checkpointPath = prefix + BloomDBG::CHECKPOINT_FASTA_EXT;
+    checkpointOut.open(checkpointPath.c_str(), std::ofstream::app);
+	assert_good(checkpointOut, checkpointPath);
+
+	/* stream for trace file output ('-T' option) */
+	ofstream traceOut;
+	if (!params.tracePath.empty()) {
+		traceOut.open(params.tracePath.c_str());
+		assert_good(traceOut, params.tracePath);
+		BloomDBG::SeqExtensionResult::printHeaders(traceOut);
+		assert_good(traceOut, params.tracePath);
+	}
+
+	/* bundle input/output streams for assembly */
+	BloomDBG::AssemblyStreams<FastaConcat>
+		streams(in, out, checkpointOut, traceOut);
+
+	/* restore state of Bloom filters, counters, and input/output streams */
+	BloomDBG::resumeFromCheckpoint(solidKmerSet, visitedKmerSet,
+		counters, params, streams);
+
+	/* resume the assembly */
+	BloomDBG::assemble(solidKmerSet, visitedKmerSet, counters, params,
+		streams);
+}
+
+/**
  * Do the assembly after loading a pre-built Bloom filter
  * from file (`-i` option). (The input Bloom filter file
  * is constructed using `abyss-bloom build -t rolling-hash`.)
@@ -223,7 +292,7 @@ void prebuiltBloomAssembly(int argc, char** argv,
 
 	params.k = bloom.getKmerSize();
 	params.numHashes = bloom.getHashNum();
-	params.bloomSize = bloom.size() * 8;
+	params.bloomSize = bloom.size() + 7 / 8;
 	if (params.trim == std::numeric_limits<unsigned>::max())
 		params.trim = params.k;
 
@@ -355,7 +424,17 @@ int main(int argc, char** argv)
 			params.resetSpacedSeedParams();
 			arg >> params.qrSeedLen;
 			break;
+		  case CHECKPOINT:
+			arg >> params.readsPerCheckpoint;
+			break;
+		  case KEEP_CHECKPOINT:
+			params.keepCheckpoint = true;
+			break;
+		  case CHECKPOINT_PREFIX:
+			arg >> params.checkpointPathPrefix;
+			break;
 		}
+
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
 				<< (char)c << optarg << "'\n";
@@ -426,7 +505,9 @@ int main(int argc, char** argv)
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
 
 	/* load the Bloom filter and do the assembly */
-	if (!params.bloomPath.empty())
+	if (params.checkpointsEnabled() && checkpointExists(params))
+		resumeAssemblyFromCheckpoint(argc, argv, params, out);
+	else if (!params.bloomPath.empty())
 		prebuiltBloomAssembly(argc, argv, params, out);
 	else
 		cascadingBloomAssembly(argc, argv, params, out);
