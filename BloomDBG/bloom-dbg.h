@@ -90,6 +90,29 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Return true if the given sequence has a blunt end in the Bloom filter
+	 * de Bruijn graph. PRECONDITION: `seq` must not contain any
+	 * non-ACGT chars.
+	 */
+	template <typename GraphT>
+		inline static unsigned isTip(const Sequence& seq, const GraphT& graph,
+			const AssemblyParams& params)
+	{
+		const unsigned maxFalsePositives = 5;
+		unsigned k = params.k;
+		unsigned numHashes = params.numHashes;
+
+		Path<Vertex> path = seqToPath(seq, k, numHashes);
+		/* note: `seqToPath` skips over k-mers with non-ACGT chars */
+		assert(path.size() == seq.length() - k + 1);
+		Vertex& lastKmer = path.back();
+		Vertex& firstKmer = path.front();
+
+		return !lookAhead(firstKmer, REVERSE, maxFalsePositives, graph)
+			|| !lookAhead(lastKmer, FORWARD, maxFalsePositives, graph);
+	}
+
+	/**
 	 * Translate a path in the de Bruijn graph to an equivalent
 	 * DNA sequence.
 	 */
@@ -729,6 +752,9 @@ namespace BloomDBG {
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
+		/* Boost graph API for Bloom filter */
+		RollingBloomDBG<SolidKmerSetT> graph(solidKmerSet);
+
 		unsigned k = params.k;
 		const Sequence& seq = rec.seq;
 
@@ -743,12 +769,15 @@ namespace BloomDBG {
 #pragma omp atomic
 		counters.solidReads++;
 
+		/* don't extend reads that are tips */
+		if (isTip(seq, graph, params))
+			return;
+
 		/* skip reads in previously assembled regions */
 		if (allKmersInBloom(seq, assembledKmerSet))
 			return;
 
 		/* extend the read into a contig */
-		RollingBloomDBG<SolidKmerSetT> graph(solidKmerSet);
 		extendRead(rec, graph, assembledKmerSet, params,
 			counters, streams);
 
