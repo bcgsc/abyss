@@ -784,7 +784,7 @@ int memberOf(int argc, char ** argv){
 				i += pos;
 				continue;
 			}
-			if (bloom[Kmer(kmer)] || opt::inverse) {
+			if (bloom[Kmer(kmer)] != opt::inverse) {
 				if (opt::format == FASTA) {
 					cout << ">" << rec.id << ":seq:" << seqCount
 						<< ":kmer:" << i << "\n";
