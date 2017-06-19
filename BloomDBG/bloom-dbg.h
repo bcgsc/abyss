@@ -6,6 +6,7 @@
 #include "BloomDBG/RollingHashIterator.h"
 #include "Common/Uncompress.h"
 #include "Common/IOUtil.h"
+#include "Common/Sequence.h"
 #include "DataLayer/FastaReader.h"
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
@@ -87,29 +88,6 @@ namespace BloomDBG {
 			path.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
 		}
 		return path;
-	}
-
-	/**
-	 * Return true if the given sequence has a blunt end in the Bloom filter
-	 * de Bruijn graph. PRECONDITION: `seq` must not contain any
-	 * non-ACGT chars.
-	 */
-	template <typename GraphT>
-		inline static unsigned isTip(const Sequence& seq, const GraphT& graph,
-			const AssemblyParams& params)
-	{
-		const unsigned maxFalsePositives = 5;
-		unsigned k = params.k;
-		unsigned numHashes = params.numHashes;
-
-		Path<Vertex> path = seqToPath(seq, k, numHashes);
-		/* note: `seqToPath` skips over k-mers with non-ACGT chars */
-		assert(path.size() == seq.length() - k + 1);
-		Vertex& lastKmer = path.back();
-		Vertex& firstKmer = path.front();
-
-		return !lookAhead(firstKmer, REVERSE, maxFalsePositives, graph)
-			|| !lookAhead(lastKmer, FORWARD, maxFalsePositives, graph);
 	}
 
 	/**
@@ -743,6 +721,51 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Return true if the left end of the given sequence is a blunt end
+	 * in the Bloom filterde Bruijn graph. PRECONDITION: `seq` does not contain
+	 * any non-ACGT chars.
+	 */
+	template <typename GraphT>
+		inline static unsigned leftIsBluntEnd(const Sequence& seq, const GraphT& graph,
+			const AssemblyParams& params)
+	{
+		unsigned k = params.k;
+		unsigned numHashes = params.numHashes;
+		unsigned fpLookAhead = 5;
+
+		if (seq.length() < k)
+			return false;
+
+		Sequence firstKmerStr(seq, 0, k);
+		Path<Vertex> path = seqToPath(firstKmerStr, k, numHashes);
+		Vertex& firstKmer = path.front();
+
+		return !lookAhead(firstKmer, REVERSE, fpLookAhead, graph);
+	}
+
+	/**
+	 * Return true if the left and/or right end of the sequence is a blunt
+	 * end in the de Bruijn graph.  Such reads likely have read errors
+	 * and thus we should not try to extend these into contings.
+	 * When testing for a blunt end, we account for the possibility of
+	 * false positive extensions by using a small amount of look-ahead
+	 * (as dictated by params.fpLookAhead).
+	 */
+	template <typename GraphT>
+	inline static bool hasBluntEnd(const Sequence& seq, const GraphT& graph,
+		const AssemblyParams& params)
+	{
+		if (leftIsBluntEnd(seq, graph, params))
+			return true;
+
+		Sequence rc = reverseComplement(seq);
+		if (leftIsBluntEnd(rc, graph, params))
+			return true;
+
+		return false;
+	}
+
+	/**
 	 * Decide if a read should be extended and if so extend it into a contig.
 	 */
 	template <typename SolidKmerSetT, typename AssembledKmerSetT,
@@ -762,16 +785,20 @@ namespace BloomDBG {
 		if (seq.length() < k)
 			return;
 
+		/* skip reads with non-ACGT chars */
+		if (!allACGT(seq))
+			return;
+
+		/* don't extend reads that are tips */
+		if (hasBluntEnd(seq, graph, params))
+			return;
+
 		/* only extend "solid" reads */
 		if (!allKmersInBloom(seq, solidKmerSet))
 			return;
 
 #pragma omp atomic
 		counters.solidReads++;
-
-		/* don't extend reads that are tips */
-		if (isTip(seq, graph, params))
-			return;
 
 		/* skip reads in previously assembled regions */
 		if (allKmersInBloom(seq, assembledKmerSet))
