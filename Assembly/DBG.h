@@ -103,11 +103,15 @@ SequenceCollectionHash()
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
 	if (opt::rank >= 0) {
-		// Make room for 200 million k-mers. Approximately 58 million
-		// 96-mers fit into 2 GB of ram, which results in a hash load
-		// of 0.216, and approximately 116 million 32-mers, which
-		// results in a hash load of 0.432.
-		m_data.rehash(200000000);
+		// Initialize sparsehash size to 2 billion empty buckets.
+		// Memory overhead is 2 bits per empty bucket,
+		// so the initial memory footprint per CPU core is 512 MB.
+		// Setting the initialize sparehash size to a large
+		// number avoids the prohibitively slow step of resizing
+		// the hash table and rehashing *every* element when the
+		// maximum load factor is reached. (For sparehash, the
+		// default max load factor appears to be ~0.7.)
+		m_data.rehash(2000000000);
 		m_data.min_load_factor(0.2);
 	} else {
 		// Allocate a big hash for a single processor.
