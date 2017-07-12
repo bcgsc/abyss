@@ -195,7 +195,7 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 	$ zip xs (tail xs)
 
 -- The command line options.
-data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int | OptPrint | OptHelp
+data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int | OptPrint | OptHelp | OptVersion
 	deriving Eq
 options :: [OptDescr Opt]
 options = [
@@ -208,7 +208,9 @@ options = [
 	Option ['p'] ["print"] (NoArg OptPrint)
 		"print scaffold breakpoints in SAM format",
 	Option [] ["help"] (NoArg OptHelp)
-		"display this help and exit" ]
+		"display this help and exit",
+	Option [] ["version"] (NoArg OptVersion)
+		"display version information and exit" ]
 data Options = Options {
 	optGenomeSize :: Int,
 	optLength :: Int,
@@ -237,11 +239,13 @@ parseArgs = do
 	args <- getArgs
 	case getOpt Permute options args of
 		(opts, files, []) -> if OptHelp `elem` opts then help else
+			if OptVersion `elem` opts then putStr version >> exitSuccess else
 			return (parseOptions opts, files)
 		(_, _, errs) -> error (concat errs ++ tryHelp)
 	where
 	help = putStr (usageInfo usage options) >> exitSuccess
 	tryHelp = "Try 'abyss-samtobreak --help' for more information."
+	version = "abyss-samtobreak (ABySS) 2.0.2\n"
 	usage = "Usage: samtobreak [OPTION]...\n\
 \Calculate contig and scaffold contiguity and correctness metrics.\n"
 
