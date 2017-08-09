@@ -481,7 +481,7 @@ void NetworkSequenceCollection::runControl()
 				break;
 			}
 			case NAS_GEN_ADJ:
-				cout << "Finding adjacenct k-mer...\n";
+				cout << "Finding adjacent k-mer...\n";
 				m_comm.sendControlMessage(APC_SET_STATE, NAS_GEN_ADJ);
 				m_comm.barrier();
 				m_numBasesAdjSet = 0;
