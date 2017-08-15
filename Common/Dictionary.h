@@ -100,14 +100,6 @@ class Dictionary
 			return m_vec.back();
 		}
 
-		/** Clear dictionary contents and reset to default state. */
-		void clear()
-		{
-			m_map.clear();
-			m_vec.clear();
-			m_locked = false;
-		}
-
 	private:
 		Map m_map;
 		Vector m_vec;
