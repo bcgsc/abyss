@@ -255,9 +255,10 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 static void pathToComment(ostream& out,
 		const Graph& g, const ContigPath& path)
 {
-	assert(path.size() > 1);
 	out << get(vertex_name, g, path.front());
-	if (path.size() == 3)
+	if (path.size() == 1)
+		return;
+	else if (path.size() == 3)
 		out << ',' << get(vertex_name, g, path[1]);
 	else if (path.size() > 3)
 		out << ",...";
