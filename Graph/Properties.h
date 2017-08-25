@@ -64,6 +64,7 @@ struct NoProperty
 {
 	NoProperty(...) { }
 	bool operator==(const NoProperty&) const { return true; }
+	bool operator!=(const NoProperty&) const { return false; }
 	friend std::ostream& operator<<(std::ostream& out,
 			const NoProperty&)
 	{
