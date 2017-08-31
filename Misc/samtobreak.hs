@@ -10,6 +10,7 @@ import qualified Data.ByteString.Char8 as S
 import Data.Char (isDigit)
 import Data.Function (on)
 import Data.List (find, groupBy, intercalate, partition, sortBy, span)
+import Data.Maybe (fromMaybe)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
@@ -39,7 +40,7 @@ readS s = x where Just (x, _) = S.readInt s
 sumAtLeast :: Int -> [Int] -> Int
 sumAtLeast c xs = x
 	where
-	Just(x, _) = find ((>= c) . snd) $ zip ws $ scanl1 (+) ws
+	(x, _) = fromMaybe (0, 0) $ find ((>= c) . snd) $ zip ws $ scanl1 (+) ws
 	ws = sortBy (flip compare) xs
 
 -- Calculate NGx.
