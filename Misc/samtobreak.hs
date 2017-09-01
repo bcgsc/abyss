@@ -274,7 +274,8 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 		good = filter (not . null) . map (filter isGood) $ excluded
 
 		-- Group contigs into scaffolds by their name.
-		scaffoldName = S.takeWhile (/= '_') . qname
+		isScaffoldDelimiter c = c == '_' || c == ':'
+		scaffoldName = S.takeWhile (not . isScaffoldDelimiter) . qname
 		oneHit = concat . filter ((== 1) . length) $ good
 		scaffs = groupBy ((==) `on` scaffoldName) $ oneHit
 
