@@ -5,8 +5,8 @@
 import Control.Arrow ((***))
 import Control.Monad (when)
 import Data.Bits ((.&.))
-import Data.ByteString.Char8 (ByteString)
-import qualified Data.ByteString.Char8 as S
+import Data.ByteString.Lazy.Char8 (ByteString)
+import qualified Data.ByteString.Lazy.Char8 as S
 import Data.Char (isDigit)
 import Data.Function (on)
 import Data.List (find, groupBy, intercalate, partition, sortBy, span)
@@ -14,7 +14,6 @@ import Data.Maybe (fromMaybe)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
-import System.IO.MMap (mmapFileByteString)
 
 -- Return groups of equivalent elements. Unlike Data.List.groupBy,
 -- consecutive pairs of elements are compared, and the relation need
@@ -149,7 +148,7 @@ readSAM s = SAM qname (readS flag) rname (readS pos)
 	where
 	lengthQseq = if S.head qseq == '*'
 		then cigarLength "IMS" cigar
-		else S.length qseq
+		else fromIntegral $ S.length qseq
 	(qname:flag:rname:pos:mapq:cigar:_:_:_:qseq:_) = S.words s
 
 -- Print a SAM record.
@@ -253,7 +252,7 @@ parseArgs = do
 -- Calculate contig and scaffold contiguity and correctness metrics.
 printStats :: Options -> FilePath -> IO ()
 printStats (Options optGenomeSize optLength optMapq optPrint) path = do
-	s <- mmapFileByteString path Nothing
+	s <- S.readFile path
 	when (S.null s) $ error $ "`" ++ path ++ "' is empty"
 
 	let
