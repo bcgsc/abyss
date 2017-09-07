@@ -23,8 +23,20 @@
 #ifndef _H_CHOLESKY_HPP_
 #define _H_CHOLESKY_HPP_
 
-
 #include <cassert>
+
+/*
+ * Workaround: UBLAS has not been updated to reflect changes to Boost serialization
+ * in Boost 1.64.  Including array_wrapper.hpp fixes the problem.  However,
+ * including array_wrapper.hpp with Boost < 1.64 also causes compilation
+ * errors, so the #include must be conditional on BOOST_VERSION.
+ *
+ * See: https://stackoverflow.com/questions/44534516/error-make-array-is-not-a-member-of-boostserialization
+ * And also: https://github.com/uBLAS/ublas/pull/55#issuecomment-316985022
+ */
+#if BOOST_VERSION >= 106400
+#include <boost/serialization/array_wrapper.hpp>
+#endif
 
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_proxy.hpp>
