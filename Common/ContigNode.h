@@ -20,7 +20,7 @@ class ContigNode
 {
 public:
 
-ContigNode() { }
+ContigNode() : m_index(0) { }
 
 ContigNode(const ContigNode& o) : m_index(o.m_index) { }
 
