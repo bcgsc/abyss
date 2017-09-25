@@ -4,6 +4,8 @@ ABySS
 ABySS is a *de novo* sequence assembler intended for short paired-end
 reads and large genomes.
 
+Please [cite our papers](#citation).
+
 Contents
 ========
 
@@ -27,7 +29,8 @@ Contents
 * [Assembly Parameters](#assembly-parameters)
 * [ABySS programs](#abyss-programs)
 * [Export to SQLite Database](#export-to-sqlite-database)
-* [Publications](#publications)
+* [Citation](#citation)
+* [Related Publications](#related-publications)
 * [Support](#support)
 * [Authors](#authors)
 
@@ -480,8 +483,8 @@ For example,
 	abyss-db-csv repo.sqlite DistanceEst abyss-scaffold
 	abyss-db-csv repo.sqlite --all
 
-Publications
-============
+Citation
+================================================================================
 
 ## [ABySS 2.0](http://doi.org/10.1101/gr.214346.116)
 
@@ -493,25 +496,27 @@ Shaun D Jackman, Benjamin P Vandervalk, Hamid Mohamadi, Justin Chu, Sarah Yeo, S
 ## [ABySS](http://genome.cshlp.org/content/19/6/1117)
 
 Simpson, Jared T., Kim Wong, Shaun D. Jackman, Jacqueline E. Schein,
-Steven JM Jones, and Inanc Birol.
+Steven JM Jones, and Inanc Birol (2009).
 **ABySS: a parallel assembler for short read sequence data**.
-*Genome research* 19, no. 6 (2009): 1117-1123.
+*Genome research*, 19(6), 1117-1123.
 [doi:10.1101/gr.089532.108](http://dx.doi.org/10.1101/gr.089532.108)
+
+Related Publications
+================================================================================
 
 ## [Trans-ABySS](http://www.nature.com/nmeth/journal/v7/n11/abs/nmeth.1517.html)
 
 Robertson, Gordon, Jacqueline Schein, Readman Chiu, Richard Corbett,
-Matthew Field, Shaun D. Jackman, Karen Mungall et al.
+Matthew Field, Shaun D. Jackman, Karen Mungall, et al (2010).
 **De novo assembly and analysis of RNA-seq data**.
-*Nature methods* 7, no. 11 (2010): 909-912.
+*Nature methods*, 7(11), 909-912.
 [doi:10.1038/10.1038/nmeth.1517](http://dx.doi.org/10.1038/nmeth.1517)
 
 ## [ABySS-Explorer](http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=5290690)
 
-Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones.
+Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones (2009).
 **ABySS-Explorer: visualizing genome sequence assemblies**.
-*IEEE Transactions on Visualization and Computer Graphics*
-15, no. 6 (2009): 881-888.
+*IEEE Transactions on Visualization and Computer Graphics*, 15(6), 881-888.
 [doi:10.1109/TVCG.2009.116](http://dx.doi.org/10.1109/TVCG.2009.116)
 
 Support
