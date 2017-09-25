@@ -483,6 +483,13 @@ For example,
 Publications
 ============
 
+## [ABySS 2.0](http://doi.org/10.1101/gr.214346.116)
+
+Shaun D Jackman, Benjamin P Vandervalk, Hamid Mohamadi, Justin Chu, Sarah Yeo, S Austin Hammond, Golnaz Jahesh, Hamza Khan, Lauren Coombe, René L Warren, and Inanc Birol (2017).
+**ABySS 2.0: Resource-efficient assembly of large genomes using a Bloom filter**.
+*Genome research*, 27(5), 768-777.
+[doi:10.1101/gr.214346.116](http://doi.org/10.1101/gr.214346.116)
+
 ## [ABySS](http://genome.cshlp.org/content/19/6/1117)
 
 Simpson, Jared T., Kim Wong, Shaun D. Jackman, Jacqueline E. Schein,
