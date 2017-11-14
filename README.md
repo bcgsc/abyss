@@ -382,9 +382,9 @@ Parameters of the driver script, `abyss-pe`
  * `c`: minimum mean k-mer coverage of a unitig [`sqrt(median)`]
  * `d`: allowable error of a distance estimate (bp) [`6`]
  * `e`: minimum erosion k-mer coverage [`round(sqrt(median))`]
- * `E`: minimum erosion k-mer coverage per strand [1 if sqrt(median) > 2 else 0]
- * `G`: genome size, used to calculate NG50 [disabled]
- * `H`: number of Bloom filter hash functions [1]
+ * `E`: minimum erosion k-mer coverage per strand [1 if `sqrt(median) > 2` else 0]
+ * `G`: genome size, used to calculate NG50
+ * `H`: number of Bloom filter hash functions [`1`]
  * `j`: number of threads [`2`]
  * `k`: size of k-mer (when `K` is not set) or the span of a k-mer pair (when `K` is set)
  * `kc`: minimum k-mer count threshold for Bloom filter assembly [`2`]
@@ -399,7 +399,7 @@ Parameters of the driver script, `abyss-pe`
  * `s`: minimum unitig size required for building contigs (bp) [`1000`]
  * `S`: minimum contig size required for building scaffolds (bp) [`1000-10000`]
  * `t`: maximum length of blunt contigs to trim [`k`]
- * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose [`disabled`]
+ * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose
  * `x`: spaced seed (Bloom filter assembly only)
 
 Please see the
