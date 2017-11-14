@@ -202,7 +202,7 @@ options = [
 	Option ['G'] ["genome-size"] (ReqArg (OptGenomeSize . read) "N")
 		"expected genome size used to calculate NG50 [0]",
 	Option ['l'] ["length"] (ReqArg (OptLength . read) "N")
-		"exclude contigs shorter than N bp [200]",
+		"exclude contigs and alignments shorter than N bp [500]",
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
 	Option ['p'] ["print"] (NoArg OptPrint)
@@ -219,7 +219,7 @@ data Options = Options {
 }
 defaultOptions = Options {
 	optGenomeSize = 0,
-	optLength = 200,
+	optLength = 500,
 	optMapq = 10,
 	optPrint = False
 }
@@ -269,8 +269,8 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 		concatExcluded = concat excluded
 		qLengths = map qLength concatExcluded
 
-		-- Kepp long alignments with high mapping quality.
-		isGood x = mapq x >= optMapq && qLength x >= 500
+		-- Keep long alignments with high mapping quality.
+		isGood x = mapq x >= optMapq && qLength x >= optLength
 		good = filter (not . null) . map (filter isGood) $ excluded
 
 		-- Group contigs into scaffolds by their name.
@@ -311,7 +311,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	putStr "Number of break points: "
 	print $ length concatExcluded - length excluded
 
-	putStr "Number of Q10 break points longer than 500 bp: "
+	putStr $ "Number of Q10 break points longer than " ++ show optLength ++ " bp: "
 	print contig_breakpoints
 
 {-
@@ -343,7 +343,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	putStr $ "Aligned scaffold " ++ n50s ++ ": "
 	print $ n50f . scaffoldLengths $ colinearScaffs
 
-	putStr "Number of Q10 scaffold breakpoints longer than 500 bp: "
+	putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optLength ++ " bp: "
 	print scaffold_breakpoints
 
 	putStr "Number of contig and scaffold breakpoints: "
