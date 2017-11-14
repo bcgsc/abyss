@@ -208,8 +208,11 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 		handlePair(a0, sam);
 
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 104300
+#if BOOST_VERSION >= 104300 && BOOST_VERSION < 104800
 		// erase() is slow on older compilers so we use quick_erase()
+		// quick_erase() is no longer necessary with BOOST 1.48.0.
+		// quick_erase() is deprecated with BOOST 1.65.0.
+		// See http://www.boost.org/doc/libs/1_65_0/doc/html/unordered/changes.html
 		map.quick_erase(it.first);
 #else
 		map.erase(it.first);
