@@ -303,6 +303,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	let
 		n50s = if optGenomeSize > 0 then "NG50" else "N50"
 		n50f = if optGenomeSize > 0 then ng50 optGenomeSize else n50
+		contig_breakpoints = length (concat good) - length good
 
 	putStr $ "Mapped " ++ n50s ++ ": "
 	print $ n50f qLengths
@@ -311,7 +312,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	print $ length concatExcluded - length excluded
 
 	putStr "Number of Q10 break points longer than 500 bp: "
-	print $ length (concat good) - length good
+	print contig_breakpoints
 
 {-
 	-- Patch small gaps.
@@ -334,6 +335,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 		scaffoldLength = sum . map qLength
 		scaffoldLengths = map scaffoldLength
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
+		scaffold_breakpoints = length colinearScaffs - length scaffs
 
 	putStr $ "Scaffold " ++ n50s ++ ": "
 	print $ n50f . scaffoldLengths $ scaffs
@@ -342,7 +344,10 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 	print $ n50f . scaffoldLengths $ colinearScaffs
 
 	putStr "Number of Q10 scaffold breakpoints longer than 500 bp: "
-	print $ length colinearScaffs - length scaffs
+	print scaffold_breakpoints
+
+	putStr "Number of contig and scaffold breakpoints: "
+	print $ contig_breakpoints + scaffold_breakpoints
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
 main :: IO ()
