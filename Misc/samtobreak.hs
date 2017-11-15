@@ -306,9 +306,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		na50s = if optGenomeSize > 0 then "NGA50" else "NA50"
 		n50f = if optGenomeSize > 0 then ng50 optGenomeSize else n50
 		-- Contig metrics
+		mapped_contigs = length good
 		unmapped_contigs = length unmapped
-		unmapped_bases = sum . map seqLength $ unmapped
 		mapped_bases = sum qLengths
+		unmapped_bases = sum . map seqLength $ unmapped
 		contig_na50 = n50f qLengths
 		contig_breakpoints = length (concat good) - length good
 		-- Scaffold metrics
@@ -378,26 +379,28 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 	when (optFormat == FormatTSV) (do
 		when (recordIndex == 0) (
 			putStrLn ("File"
-				++ "\tUnmapped_contigs"
-				++ "\tUnmapped_bases"
-				++ "\tMapped_bases"
 				++ "\tContig_" ++ na50s
-				++ "\tContig_breakpoints"
 				++ "\tScaffold_" ++ n50s
 				++ "\tScaffold_" ++ na50s
+				++ "\tContig_breakpoints"
 				++ "\tScaffold_breakpoints"
-				++ "\tTotal_breakpoints")
+				++ "\tTotal_breakpoints"
+				++ "\tMapped_bases"
+				++ "\tUnmapped_bases"
+				++ "\tMapped_contigs"
+				++ "\tUnmapped_contigs")
 			)
 		putStr path
-		putStr $ '\t' : show unmapped_contigs
-		putStr $ '\t' : show unmapped_bases
-		putStr $ '\t' : show mapped_bases
 		putStr $ '\t' : show contig_na50
-		putStr $ '\t' : show contig_breakpoints
 		putStr $ '\t' : show scaffold_n50
 		putStr $ '\t' : show scaffold_na50
+		putStr $ '\t' : show contig_breakpoints
 		putStr $ '\t' : show scaffold_breakpoints
 		putStr $ '\t' : show total_breakpoints
+		putStr $ '\t' : show mapped_bases
+		putStr $ '\t' : show unmapped_bases
+		putStr $ '\t' : show mapped_contigs
+		putStr $ '\t' : show unmapped_contigs
 		putChar '\n'
 		)
 
