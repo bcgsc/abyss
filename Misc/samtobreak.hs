@@ -195,16 +195,18 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 	$ zip xs (tail xs)
 
 -- The command line options.
-data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int |
+data Opt = OptAlignmentLength Int | OptContigLength Int | OptGenomeSize Int | OptMapq Int |
 	OptSAM | OptText | OptTSV |
 	OptHelp | OptVersion
 	deriving Eq
 options :: [OptDescr Opt]
 options = [
+	Option ['a'] ["alignment-length"] (ReqArg (OptAlignmentLength . read) "N")
+		"exclude alignments with aligned query length shorter than N bp [500]",
+	Option ['l'] ["contig-length"] (ReqArg (OptContigLength . read) "N")
+		"exclude contigs shorter than N bp [200]",
 	Option ['G'] ["genome-size"] (ReqArg (OptGenomeSize . read) "N")
 		"expected genome size used to calculate NG50 [0]",
-	Option ['l'] ["length"] (ReqArg (OptLength . read) "N")
-		"exclude contigs and alignments shorter than N bp [500]",
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
 	Option [] ["sam"] (NoArg OptSAM)
@@ -219,25 +221,28 @@ options = [
 		"display version information and exit" ]
 data Format = FormatSAM | FormatText | FormatTSV deriving Eq
 data Options = Options {
-	optFormat :: Format,
+	optAlignmentLength :: Int,
+	optContigLength :: Int,
 	optGenomeSize :: Int,
-	optLength :: Int,
-	optMapq :: Int
+	optMapq :: Int,
+	optFormat :: Format
 }
 defaultOptions = Options {
-	optFormat = FormatTSV,
+	optAlignmentLength = 500,
+	optContigLength = 200,
 	optGenomeSize = 0,
-	optLength = 500,
-	optMapq = 10
+	optMapq = 10,
+	optFormat = FormatTSV
 }
 
 -- Parse the command line options.
 parseOptions :: [Opt] -> Options
 parseOptions = foldl parseOption defaultOptions
 	where parseOption opt x = case x of
-		OptGenomeSize g -> opt { optGenomeSize = g }
-		OptLength l -> opt { optLength = l }
-		OptMapq q -> opt { optMapq = q }
+		OptAlignmentLength n -> opt { optAlignmentLength = n }
+		OptContigLength n -> opt { optContigLength = n }
+		OptGenomeSize n -> opt { optGenomeSize = n }
+		OptMapq n -> opt { optMapq = n }
 		OptSAM -> opt { optFormat = FormatSAM }
 		OptText -> opt { optFormat = FormatText }
 		OptTSV -> opt { optFormat = FormatTSV }
@@ -260,7 +265,7 @@ parseArgs = do
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
 printStats :: Integer -> FilePath -> Options -> IO ()
-printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) = do
+printStats recordIndex path (Options optAlignmentLength optContigLength optGenomeSize optMapq optFormat) = do
 	s <- S.readFile path
 	when (S.null s) $ error $ "`" ++ path ++ "' is empty"
 
@@ -268,7 +273,7 @@ printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) 
 		-- Parse the SAM file and discard short contigs.
 		isHeader x = S.head x == '@'
 		(headers, alignments) = span isHeader . S.lines $ s
-		isLong x = seqLength x >= optLength
+		isLong x = seqLength x >= optContigLength
 		(unmapped, mapped) = partition isUnmapped
 			. filter isLong . map readSAM $ alignments
 
@@ -279,7 +284,7 @@ printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) 
 		qLengths = map qLength concatExcluded
 
 		-- Keep long alignments with high mapping quality.
-		isGood x = mapq x >= optMapq && qLength x >= optLength
+		isGood x = mapq x >= optMapq && qLength x >= optAlignmentLength
 		good = filter (not . null) . map (filter isGood) $ excluded
 
 		-- Group contigs into scaffolds by their name.
@@ -338,7 +343,7 @@ printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) 
 		putStr "Number of break points: "
 		print $ length concatExcluded - length excluded
 
-		putStr $ "Number of Q10 break points longer than " ++ show optLength ++ " bp: "
+		putStr $ "Number of Q10 break points longer than " ++ show optAlignmentLength ++ " bp: "
 		print contig_breakpoints
 
 		{-
@@ -363,7 +368,7 @@ printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) 
 		putStr $ "Aligned scaffold " ++ n50s ++ ": "
 		print scaffold_na50
 
-		putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optLength ++ " bp: "
+		putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optAlignmentLength ++ " bp: "
 		print scaffold_breakpoints
 
 		putStr "Number of contig and scaffold breakpoints: "
