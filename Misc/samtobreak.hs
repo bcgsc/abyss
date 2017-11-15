@@ -195,7 +195,9 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 	$ zip xs (tail xs)
 
 -- The command line options.
-data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int | OptPrint | OptHelp | OptVersion
+data Opt = OptGenomeSize Int | OptLength Int | OptMapq Int |
+	OptSAM | OptText | OptTSV |
+	OptHelp | OptVersion
 	deriving Eq
 options :: [OptDescr Opt]
 options = [
@@ -205,23 +207,28 @@ options = [
 		"exclude contigs and alignments shorter than N bp [500]",
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
-	Option ['p'] ["print"] (NoArg OptPrint)
-		"print scaffold breakpoints in SAM format",
+	Option [] ["sam"] (NoArg OptSAM)
+		"output scaffold breakpoints in SAM format",
+	Option [] ["text"] (NoArg OptText)
+		"output report in plain text format",
+	Option [] ["tsv"] (NoArg OptTSV)
+		"output report in TSV format [default]",
 	Option [] ["help"] (NoArg OptHelp)
 		"display this help and exit",
 	Option [] ["version"] (NoArg OptVersion)
 		"display version information and exit" ]
+data Format = FormatSAM | FormatText | FormatTSV deriving Eq
 data Options = Options {
+	optFormat :: Format,
 	optGenomeSize :: Int,
 	optLength :: Int,
-	optMapq :: Int,
-	optPrint :: Bool
+	optMapq :: Int
 }
 defaultOptions = Options {
+	optFormat = FormatTSV,
 	optGenomeSize = 0,
 	optLength = 500,
-	optMapq = 10,
-	optPrint = False
+	optMapq = 10
 }
 
 -- Parse the command line options.
@@ -231,7 +238,9 @@ parseOptions = foldl parseOption defaultOptions
 		OptGenomeSize g -> opt { optGenomeSize = g }
 		OptLength l -> opt { optLength = l }
 		OptMapq q -> opt { optMapq = q }
-		OptPrint -> opt { optPrint = True }
+		OptSAM -> opt { optFormat = FormatSAM }
+		OptText -> opt { optFormat = FormatText }
+		OptTSV -> opt { optFormat = FormatTSV }
 
 -- Parse the command line arguments.
 parseArgs :: IO (Options, [String])
@@ -250,8 +259,8 @@ parseArgs = do
 \Calculate contig and scaffold contiguity and correctness metrics.\n"
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
-printStats :: Options -> FilePath -> IO ()
-printStats (Options optGenomeSize optLength optMapq optPrint) path = do
+printStats :: Integer -> FilePath -> Options -> IO ()
+printStats recordIndex path (Options optFormat optGenomeSize optLength optMapq) = do
 	s <- S.readFile path
 	when (S.null s) $ error $ "`" ++ path ++ "' is empty"
 
@@ -279,7 +288,7 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 		oneHit = concat . filter ((== 1) . length) $ good
 		scaffs = groupBy ((==) `on` scaffoldName) $ oneHit
 
-	when optPrint (do
+	when (optFormat == FormatSAM) (do
 		-- Print scaffold breakpoints.
 		S.putStr $ S.unlines headers
 		putStr $ concat
@@ -287,75 +296,111 @@ printStats (Options optGenomeSize optLength optMapq optPrint) path = do
 			$ concatMap filterNonColinear scaffs
 		exitSuccess)
 
-	-- Calculate contig metrics.
-	putStr "Number of unmapped contigs: "
-	print $ length unmapped
-
-	putStr "Total length of unmapped contigs: "
-	print $ sum . map seqLength $ unmapped
-
-	putStr "Number of alignments dropped due to excessive overlaps: "
-	print $ length mapped - length concatExcluded
-
-	putStr "Mapped contig bases: "
-	print $ sum qLengths
-
 	let
 		n50s = if optGenomeSize > 0 then "NG50" else "N50"
+		na50s = if optGenomeSize > 0 then "NGA50" else "NA50"
 		n50f = if optGenomeSize > 0 then ng50 optGenomeSize else n50
+		-- Contig metrics
+		unmapped_contigs = length unmapped
+		unmapped_bases = sum . map seqLength $ unmapped
+		mapped_bases = sum qLengths
+		contig_na50 = n50f qLengths
 		contig_breakpoints = length (concat good) - length good
-
-	putStr $ "Mapped " ++ n50s ++ ": "
-	print $ n50f qLengths
-
-	putStr "Number of break points: "
-	print $ length concatExcluded - length excluded
-
-	putStr $ "Number of Q10 break points longer than " ++ show optLength ++ " bp: "
-	print contig_breakpoints
-
-{-
-	-- Patch small gaps.
-	let
-		patched = map patchGaps excluded
-		concatPatched = concat patched
-
-		patchedGood = map patchGaps good
-		concatPatchedGood = concat patchedGood
-
-	putStr "Number of break points after patching gaps shorter than 500 bp: "
-	print $ length concatPatched - length patched
-
-	putStr "Number of Q10 break points longer than 500 bp after gap patching: "
-	print $ length concatPatchedGood - length patchedGood
--}
-
-	-- Calculate scaffold metrics.
-	let
+		-- Scaffold metrics
 		scaffoldLength = sum . map qLength
 		scaffoldLengths = map scaffoldLength
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
+		scaffold_n50 = n50f . scaffoldLengths $ scaffs
+		scaffold_na50 = n50f . scaffoldLengths $ colinearScaffs
 		scaffold_breakpoints = length colinearScaffs - length scaffs
+		total_breakpoints = contig_breakpoints + scaffold_breakpoints
 
-	putStr $ "Scaffold " ++ n50s ++ ": "
-	print $ n50f . scaffoldLengths $ scaffs
+	when (optFormat == FormatText) (do
+		when (recordIndex > 0) (putChar '\n')
 
-	putStr $ "Aligned scaffold " ++ n50s ++ ": "
-	print $ n50f . scaffoldLengths $ colinearScaffs
+		putStrLn $ "File: " ++ path
 
-	putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optLength ++ " bp: "
-	print scaffold_breakpoints
+		putStr "Number of unmapped contigs: "
+		print unmapped_contigs
 
-	putStr "Number of contig and scaffold breakpoints: "
-	print $ contig_breakpoints + scaffold_breakpoints
+		putStr "Total length of unmapped contigs: "
+		print unmapped_bases
+
+		putStr "Number of alignments dropped due to excessive overlaps: "
+		print $ length mapped - length concatExcluded
+
+		putStr "Mapped contig bases: "
+		print mapped_bases
+
+		putStr $ "Mapped " ++ n50s ++ ": "
+		print contig_na50
+
+		putStr "Number of break points: "
+		print $ length concatExcluded - length excluded
+
+		putStr $ "Number of Q10 break points longer than " ++ show optLength ++ " bp: "
+		print contig_breakpoints
+
+		{-
+		-- Patch small gaps.
+		let
+			patched = map patchGaps excluded
+			concatPatched = concat patched
+
+			patchedGood = map patchGaps good
+			concatPatchedGood = concat patchedGood
+
+		putStr "Number of break points after patching gaps shorter than 500 bp: "
+		print $ length concatPatched - length patched
+
+		putStr "Number of Q10 break points longer than 500 bp after gap patching: "
+		print $ length concatPatchedGood - length patchedGood
+		-}
+
+		putStr $ "Scaffold " ++ n50s ++ ": "
+		print scaffold_n50
+
+		putStr $ "Aligned scaffold " ++ n50s ++ ": "
+		print scaffold_na50
+
+		putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optLength ++ " bp: "
+		print scaffold_breakpoints
+
+		putStr "Number of contig and scaffold breakpoints: "
+		print total_breakpoints
+		)
+
+	when (optFormat == FormatTSV) (do
+		when (recordIndex == 0) (
+			putStrLn ("File"
+				++ "\tUnmapped_contigs"
+				++ "\tUnmapped_bases"
+				++ "\tMapped_bases"
+				++ "\tContig_" ++ na50s
+				++ "\tContig_breakpoints"
+				++ "\tScaffold_" ++ n50s
+				++ "\tScaffold_" ++ na50s
+				++ "\tScaffold_breakpoints"
+				++ "\tTotal_breakpoints")
+			)
+		putStr path
+		putStr $ '\t' : show unmapped_contigs
+		putStr $ '\t' : show unmapped_bases
+		putStr $ '\t' : show mapped_bases
+		putStr $ '\t' : show contig_na50
+		putStr $ '\t' : show contig_breakpoints
+		putStr $ '\t' : show scaffold_n50
+		putStr $ '\t' : show scaffold_na50
+		putStr $ '\t' : show scaffold_breakpoints
+		putStr $ '\t' : show total_breakpoints
+		putChar '\n'
+		)
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
 main :: IO ()
 main = do
 	(opt, files) <- parseArgs
 	case files of
-		[] -> printStats opt "/dev/stdin"
-		[path] -> printStats opt path
-		otherwise -> mapM_ (\path -> do
-			putStr $ "==> " ++ path ++ " <==\n"
-			printStats opt path) files
+		[] -> printStats 0 "/dev/stdin" opt
+		otherwise -> mapM_ (\(recordIndex, path) -> do
+			printStats recordIndex path opt) (zip [0..] files)
