@@ -91,8 +91,8 @@ readCigar s = map (readS *** S.head) . pairs
 -- Return the left and right soft-clipping.
 getSoftClip :: SAM -> (Int, Int)
 getSoftClip sam = (
-		if snd x == 'S' then fst x else 0,
-		if snd y == 'S' then fst y else 0)
+		if elem (snd x) "HS" then fst x else 0,
+		if elem (snd y) "HS" then fst y else 0)
 	where
 	(x, y) = (head xs, last xs)
 	xs = readCigar $ cigar sam
@@ -146,9 +146,9 @@ readSAM :: ByteString -> SAM
 readSAM s = SAM qname (readS flag) rname (readS pos)
 		(readS mapq) cigar lengthQseq
 	where
-	lengthQseq = if S.head qseq == '*'
-		then cigarLength "IMS" cigar
-		else fromIntegral $ S.length qseq
+	lengthQseq = if S.head cigar == '*'
+		then fromIntegral $ S.length qseq
+		else cigarLength "HIMS" cigar
 	(qname:flag:rname:pos:mapq:cigar:_:_:_:qseq:_) = S.words s
 
 -- Print a SAM record.
