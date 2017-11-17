@@ -196,7 +196,7 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 
 -- The command line options.
 data Opt = OptAlignmentLength Int | OptContigLength Int | OptGenomeSize Int | OptMapq Int |
-	OptSAM | OptText | OptTSV |
+	OptSAM | OptSAMContigs | OptSAMScaffolds | OptText | OptTSV |
 	OptHelp | OptVersion
 	deriving Eq
 options :: [OptDescr Opt]
@@ -210,6 +210,10 @@ options = [
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
 	Option [] ["sam"] (NoArg OptSAM)
+		"output contig and scaffold breakpoints in SAM format",
+	Option [] ["sam-contigs"] (NoArg OptSAMContigs)
+		"output contig breakpoints in SAM format",
+	Option [] ["sam-scaffolds"] (NoArg OptSAMScaffolds)
 		"output scaffold breakpoints in SAM format",
 	Option [] ["text"] (NoArg OptText)
 		"output report in plain text format",
@@ -219,7 +223,7 @@ options = [
 		"display this help and exit",
 	Option [] ["version"] (NoArg OptVersion)
 		"display version information and exit" ]
-data Format = FormatSAM | FormatText | FormatTSV deriving Eq
+data Format = FormatSAM | FormatSAMContigs | FormatSAMScaffolds | FormatText | FormatTSV deriving Eq
 data Options = Options {
 	optAlignmentLength :: Int,
 	optContigLength :: Int,
@@ -244,6 +248,8 @@ parseOptions = foldl parseOption defaultOptions
 		OptGenomeSize n -> opt { optGenomeSize = n }
 		OptMapq n -> opt { optMapq = n }
 		OptSAM -> opt { optFormat = FormatSAM }
+		OptSAMContigs -> opt { optFormat = FormatSAMContigs }
+		OptSAMScaffolds -> opt { optFormat = FormatSAMScaffolds }
 		OptText -> opt { optFormat = FormatText }
 		OptTSV -> opt { optFormat = FormatTSV }
 
@@ -293,12 +299,21 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		oneHit = concat . filter ((== 1) . length) $ good
 		scaffs = groupBy ((==) `on` scaffoldName) $ oneHit
 
-	when (optFormat == FormatSAM) (do
-		-- Print scaffold breakpoints.
+	-- Print contig breakpoints.
+	when (optFormat == FormatSAMContigs || optFormat == FormatSAM) (do
+		mapM_ (putStrLn . showSAM) $ concat $ filter ((> 1) . length) $ good
+		)
+
+	-- Print scaffold breakpoints.
+	when (optFormat == FormatSAMScaffolds || optFormat == FormatSAM) (do
 		S.putStr $ S.unlines headers
 		putStr $ concat
 			$ map (\(a, b) -> unlines [showSAM a, showSAM b])
 			$ concatMap filterNonColinear scaffs
+		)
+
+	-- Exit after printing the breakpoints.
+	when (optFormat == FormatSAM || optFormat == FormatSAMContigs || optFormat == FormatSAMScaffolds) (do
 		exitSuccess)
 
 	let
