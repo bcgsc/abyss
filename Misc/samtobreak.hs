@@ -298,7 +298,7 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		excluded = map excludeOverlaps
 			. groupBy ((==) `on` qname) $ mapped
 		concatExcluded = concat excluded
-		qLengths = map qLength concatExcluded
+		alignedContigLengths = map qLength concatExcluded
 
 		-- Keep long alignments with high mapping quality.
 		isGood x = mapq x >= optMapq && qLength x >= optAlignmentLength
@@ -333,15 +333,30 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		-- Contig metrics
 		mapped_contigs = length good
 		unmapped_contigs = length unmapped
-		mapped_bases = sum qLengths
-		unmapped_bases = sum . map seqLength $ unmapped
-		contig_ng50 = ng50 . map seqLength $ filter isLong primaryContigs
-		contig_nga50 = ng50 qLengths
+		mapped_bases = sum alignedContigLengths
+		unmapped_contig_bases = sum . map seqLength $ unmapped
+		contigLengths = map seqLength $ filter isLong primaryContigs
+		contig_n50 = n50 contigLengths
+		contig_na50 = n50 alignedContigLengths
+		contig_ng50 = ng50 contigLengths
+		contig_nga50 = ng50 alignedContigLengths
+		contig_max = maximum contigLengths
+		contig_aligned_max = maximum alignedContigLengths
+		contigs = length contigLengths
 		contig_breakpoints = length (concat good) - length good
+
 		-- Scaffold metrics
-		scaffold_n50 = ng50 . filter (>= optContigLength) . map (sum . map seqLength) $ primaryScaffolds
+		scaffoldLengths = filter (>= optContigLength) . map (sum . map seqLength) $ primaryScaffolds
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
-		scaffold_na50 = ng50 . map (sum . map qLength) $ colinearScaffs
+		alignedScaffoldLengths = map (sum . map qLength) $ colinearScaffs
+		scaffold_n50 = n50 scaffoldLengths
+		scaffold_na50 = n50 alignedScaffoldLengths
+		scaffold_ng50 = ng50 scaffoldLengths
+		scaffold_nga50 = ng50 alignedScaffoldLengths
+		scaffold_max = maximum scaffoldLengths
+		scaffold_aligned_max = maximum alignedScaffoldLengths
+		scaffolds = length scaffoldLengths
+		total_bases = sum scaffoldLengths
 		scaffold_breakpoints = length colinearScaffs - length scaffs
 		total_breakpoints = contig_breakpoints + scaffold_breakpoints
 
@@ -354,7 +369,7 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		print unmapped_contigs
 
 		putStr "Total length of unmapped contigs: "
-		print unmapped_bases
+		print unmapped_contig_bases
 
 		putStr "Number of alignments dropped due to excessive overlaps: "
 		print $ length mapped - length concatExcluded
@@ -362,11 +377,23 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		putStr "Mapped contig bases: "
 		print mapped_bases
 
+		putStr $ "Contig N50: "
+		print contig_n50
+
+		putStr $ "Contig NA50: "
+		print contig_na50
+
 		putStr $ "Contig NG50: "
 		print contig_ng50
 
-		putStr $ "Mapped NG50: "
+		putStr $ "Contig NGA50: "
 		print contig_nga50
+
+		putStr $ "Contig max: "
+		print contig_max
+
+		putStr $ "Contig aligned max: "
+		print contig_aligned_max
 
 		putStr "Number of break points: "
 		print $ length concatExcluded - length excluded
@@ -390,11 +417,23 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		print $ length concatPatchedGood - length patchedGood
 		-}
 
-		putStr $ "Scaffold NG50: "
+		putStr $ "Scaffold N50: "
 		print scaffold_n50
 
-		putStr $ "Aligned scaffold NG50: "
+		putStr $ "Scaffold NA50: "
 		print scaffold_na50
+
+		putStr $ "Scaffold NG50: "
+		print scaffold_ng50
+
+		putStr $ "Scaffold NGA50: "
+		print scaffold_nga50
+
+		putStr $ "Scaffold max: "
+		print scaffold_max
+
+		putStr $ "Scaffold aligned max: "
+		print scaffold_aligned_max
 
 		putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optAlignmentLength ++ " bp: "
 		print scaffold_breakpoints
@@ -406,32 +445,54 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 	when (optFormat == FormatTSV) (do
 		when (recordIndex == 0) (
 			putStrLn ("File"
+				++ "\tContig_N50"
+				++ "\tContig_NA50"
 				++ "\tContig_NG50"
 				++ "\tContig_NGA50"
+				++ "\tContig_max"
+				++ "\tContig_aligned_max"
+				++ "\tScaffold_N50"
+				++ "\tScaffold_NA50"
 				++ "\tScaffold_NG50"
 				++ "\tScaffold_NGA50"
+				++ "\tScaffold_max"
+				++ "\tScaffold_aligned_max"
 				++ "\tContig_breakpoints"
 				++ "\tScaffold_breakpoints"
 				++ "\tTotal_breakpoints"
 				++ "\tReference_bases"
+				++ "\tTotal_bases"
 				++ "\tMapped_bases"
-				++ "\tUnmapped_bases"
+				++ "\tUnmapped_contig_bases"
+				++ "\tContigs"
 				++ "\tMapped_contigs"
-				++ "\tUnmapped_contigs")
+				++ "\tUnmapped_contigs"
+				++ "\tScaffolds")
 			)
 		putStr path
+		putStr $ '\t' : show contig_n50
+		putStr $ '\t' : show contig_na50
 		putStr $ '\t' : show contig_ng50
 		putStr $ '\t' : show contig_nga50
+		putStr $ '\t' : show contig_max
+		putStr $ '\t' : show contig_aligned_max
 		putStr $ '\t' : show scaffold_n50
 		putStr $ '\t' : show scaffold_na50
+		putStr $ '\t' : show scaffold_ng50
+		putStr $ '\t' : show scaffold_nga50
+		putStr $ '\t' : show scaffold_max
+		putStr $ '\t' : show scaffold_aligned_max
 		putStr $ '\t' : show contig_breakpoints
 		putStr $ '\t' : show scaffold_breakpoints
 		putStr $ '\t' : show total_breakpoints
 		putStr $ '\t' : show reference_bases
+		putStr $ '\t' : show total_bases
 		putStr $ '\t' : show mapped_bases
-		putStr $ '\t' : show unmapped_bases
+		putStr $ '\t' : show unmapped_contig_bases
+		putStr $ '\t' : show contigs
 		putStr $ '\t' : show mapped_contigs
 		putStr $ '\t' : show unmapped_contigs
+		putStr $ '\t' : show scaffolds
 		putChar '\n'
 		)
 
