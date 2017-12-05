@@ -279,9 +279,19 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		-- Parse the SAM file and discard short contigs.
 		isHeader x = S.head x == '@'
 		(headers, alignments) = span isHeader . S.lines $ s
+		allContigs = map readSAM $ alignments
+
+		-- Keep the first (primary) alignment of each contig.
+		primaryContigs = map head . groupBy ((==) `on` qname) $ allContigs
+
+		-- Group the contigs into scaffolds by their name.
+		isScaffoldDelimiter c = c == '_' || c == ':'
+		scaffoldName = S.takeWhile (not . isScaffoldDelimiter) . qname
+		primaryScaffolds = groupBy ((==) `on` scaffoldName) $ primaryContigs
+
+		-- Separate the mapped and unmapped contigs, and discard short contigs.
 		isLong x = seqLength x >= optContigLength
-		(unmapped, mapped) = partition isUnmapped
-			. filter isLong . map readSAM $ alignments
+		(unmapped, mapped) = partition isUnmapped $ filter isLong allContigs
 
 		-- Exclude overlapping alignments.
 		excluded = map excludeOverlaps
@@ -293,9 +303,8 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		isGood x = mapq x >= optMapq && qLength x >= optAlignmentLength
 		good = filter (not . null) . map (filter isGood) $ excluded
 
+		-- Discard contigs that have more than one alignment.
 		-- Group contigs into scaffolds by their name.
-		isScaffoldDelimiter c = c == '_' || c == ':'
-		scaffoldName = S.takeWhile (not . isScaffoldDelimiter) . qname
 		oneHit = concat . filter ((== 1) . length) $ good
 		scaffs = groupBy ((==) `on` scaffoldName) $ oneHit
 
@@ -325,14 +334,13 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		unmapped_contigs = length unmapped
 		mapped_bases = sum qLengths
 		unmapped_bases = sum . map seqLength $ unmapped
+		contig_n50 = n50f . map seqLength $ filter isLong primaryContigs
 		contig_na50 = n50f qLengths
 		contig_breakpoints = length (concat good) - length good
 		-- Scaffold metrics
-		scaffoldLength = sum . map qLength
-		scaffoldLengths = map scaffoldLength
+		scaffold_n50 = n50f . filter (>= optContigLength) . map (sum . map seqLength) $ primaryScaffolds
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
-		scaffold_n50 = n50f . scaffoldLengths $ scaffs
-		scaffold_na50 = n50f . scaffoldLengths $ colinearScaffs
+		scaffold_na50 = n50f . map (sum . map qLength) $ colinearScaffs
 		scaffold_breakpoints = length colinearScaffs - length scaffs
 		total_breakpoints = contig_breakpoints + scaffold_breakpoints
 
@@ -352,6 +360,9 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 
 		putStr "Mapped contig bases: "
 		print mapped_bases
+
+		putStr $ "Contig " ++ n50s ++ ": "
+		print contig_n50
 
 		putStr $ "Mapped " ++ n50s ++ ": "
 		print contig_na50
@@ -394,6 +405,7 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 	when (optFormat == FormatTSV) (do
 		when (recordIndex == 0) (
 			putStrLn ("File"
+				++ "\tContig_" ++ n50s
 				++ "\tContig_" ++ na50s
 				++ "\tScaffold_" ++ n50s
 				++ "\tScaffold_" ++ na50s
@@ -406,6 +418,7 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 				++ "\tUnmapped_contigs")
 			)
 		putStr path
+		putStr $ '\t' : show contig_n50
 		putStr $ '\t' : show contig_na50
 		putStr $ '\t' : show scaffold_n50
 		putStr $ '\t' : show scaffold_na50
