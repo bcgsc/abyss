@@ -10,7 +10,7 @@ import qualified Data.ByteString.Lazy.Char8 as S
 import Data.Char (isDigit)
 import Data.Function (on)
 import Data.List (find, groupBy, intercalate, partition, sortBy, span)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromJust, fromMaybe)
 import System.Console.GetOpt
 import System.Environment (getArgs)
 import System.Exit (exitFailure, exitSuccess)
@@ -49,10 +49,6 @@ ngx x g = sumAtLeast $ ceiling $ x * fromIntegral g
 -- Calculate Nx.
 nx :: Double -> [Int] -> Int
 nx x xs = ngx x (sum xs) xs
-
--- Calculate NG50.
-ng50 :: Int -> [Int] -> Int
-ng50 = ngx 0.5
 
 -- Calculate N50.
 n50 :: [Int] -> Int
@@ -281,6 +277,11 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		(headers, alignments) = span isHeader . S.lines $ s
 		allContigs = map readSAM $ alignments
 
+		-- Calculate the size of the reference genome.
+		sq = filter ((S.pack "@SQ" ==) . head) . map S.words $ headers
+		referenceLengths = map (readS . S.drop 3 . fromJust . find (S.isPrefixOf $ S.pack "LN:")) sq
+		reference_bases = sum referenceLengths
+
 		-- Keep the first (primary) alignment of each contig.
 		primaryContigs = map head . groupBy ((==) `on` qname) $ allContigs
 
@@ -326,21 +327,21 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		exitSuccess)
 
 	let
-		n50s = if optGenomeSize > 0 then "NG50" else "N50"
-		na50s = if optGenomeSize > 0 then "NGA50" else "NA50"
-		n50f = if optGenomeSize > 0 then ng50 optGenomeSize else n50
+		genomeSize = if optGenomeSize > 0 then optGenomeSize else reference_bases
+		ng50 = ngx 0.5 genomeSize
+
 		-- Contig metrics
 		mapped_contigs = length good
 		unmapped_contigs = length unmapped
 		mapped_bases = sum qLengths
 		unmapped_bases = sum . map seqLength $ unmapped
-		contig_n50 = n50f . map seqLength $ filter isLong primaryContigs
-		contig_na50 = n50f qLengths
+		contig_ng50 = ng50 . map seqLength $ filter isLong primaryContigs
+		contig_nga50 = ng50 qLengths
 		contig_breakpoints = length (concat good) - length good
 		-- Scaffold metrics
-		scaffold_n50 = n50f . filter (>= optContigLength) . map (sum . map seqLength) $ primaryScaffolds
+		scaffold_n50 = ng50 . filter (>= optContigLength) . map (sum . map seqLength) $ primaryScaffolds
 		colinearScaffs = concatMap (groupBy' isColinear) scaffs
-		scaffold_na50 = n50f . map (sum . map qLength) $ colinearScaffs
+		scaffold_na50 = ng50 . map (sum . map qLength) $ colinearScaffs
 		scaffold_breakpoints = length colinearScaffs - length scaffs
 		total_breakpoints = contig_breakpoints + scaffold_breakpoints
 
@@ -361,11 +362,11 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		putStr "Mapped contig bases: "
 		print mapped_bases
 
-		putStr $ "Contig " ++ n50s ++ ": "
-		print contig_n50
+		putStr $ "Contig NG50: "
+		print contig_ng50
 
-		putStr $ "Mapped " ++ n50s ++ ": "
-		print contig_na50
+		putStr $ "Mapped NG50: "
+		print contig_nga50
 
 		putStr "Number of break points: "
 		print $ length concatExcluded - length excluded
@@ -389,10 +390,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		print $ length concatPatchedGood - length patchedGood
 		-}
 
-		putStr $ "Scaffold " ++ n50s ++ ": "
+		putStr $ "Scaffold NG50: "
 		print scaffold_n50
 
-		putStr $ "Aligned scaffold " ++ n50s ++ ": "
+		putStr $ "Aligned scaffold NG50: "
 		print scaffold_na50
 
 		putStr $ "Number of Q10 scaffold breakpoints longer than " ++ show optAlignmentLength ++ " bp: "
@@ -405,26 +406,28 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 	when (optFormat == FormatTSV) (do
 		when (recordIndex == 0) (
 			putStrLn ("File"
-				++ "\tContig_" ++ n50s
-				++ "\tContig_" ++ na50s
-				++ "\tScaffold_" ++ n50s
-				++ "\tScaffold_" ++ na50s
+				++ "\tContig_NG50"
+				++ "\tContig_NGA50"
+				++ "\tScaffold_NG50"
+				++ "\tScaffold_NGA50"
 				++ "\tContig_breakpoints"
 				++ "\tScaffold_breakpoints"
 				++ "\tTotal_breakpoints"
+				++ "\tReference_bases"
 				++ "\tMapped_bases"
 				++ "\tUnmapped_bases"
 				++ "\tMapped_contigs"
 				++ "\tUnmapped_contigs")
 			)
 		putStr path
-		putStr $ '\t' : show contig_n50
-		putStr $ '\t' : show contig_na50
+		putStr $ '\t' : show contig_ng50
+		putStr $ '\t' : show contig_nga50
 		putStr $ '\t' : show scaffold_n50
 		putStr $ '\t' : show scaffold_na50
 		putStr $ '\t' : show contig_breakpoints
 		putStr $ '\t' : show scaffold_breakpoints
 		putStr $ '\t' : show total_breakpoints
+		putStr $ '\t' : show reference_bases
 		putStr $ '\t' : show mapped_bases
 		putStr $ '\t' : show unmapped_bases
 		putStr $ '\t' : show mapped_contigs
