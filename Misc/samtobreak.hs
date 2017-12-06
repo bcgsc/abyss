@@ -467,7 +467,11 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 				++ "\tContigs"
 				++ "\tMapped_contigs"
 				++ "\tUnmapped_contigs"
-				++ "\tScaffolds")
+				++ "\tScaffolds"
+				++ "\talignment-length"
+				++ "\tcontig-length"
+				++ "\tmapq"
+				++ "\tgenome-size")
 			)
 		putStr path
 		putStr $ '\t' : show contig_n50
@@ -493,6 +497,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		putStr $ '\t' : show mapped_contigs
 		putStr $ '\t' : show unmapped_contigs
 		putStr $ '\t' : show scaffolds
+		putStr $ '\t' : show optAlignmentLength
+		putStr $ '\t' : show optContigLength
+		putStr $ '\t' : show optMapq
+		putStr $ '\t' : show genomeSize
 		putChar '\n'
 		)
 
