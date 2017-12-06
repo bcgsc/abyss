@@ -9,7 +9,7 @@ import Data.ByteString.Lazy.Char8 (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as S
 import Data.Char (isDigit)
 import Data.Function (on)
-import Data.List (find, groupBy, intercalate, partition, sortBy, span)
+import Data.List (find, findIndex, groupBy, intercalate, partition, sortBy, span)
 import Data.Maybe (fromJust, fromMaybe)
 import System.Console.GetOpt
 import System.Environment (getArgs)
@@ -35,6 +35,13 @@ pairs (x:y:ys) = (x, y) : pairs ys
 readS :: ByteString -> Int
 readS s = x where Just (x, _) = S.readInt s
 
+-- Return the rank of the smallest element x for which the sum of the elements x or larger is at least c.
+rankSumAtLeast :: Int -> [Int] -> Int
+rankSumAtLeast c xs = i
+	where
+	i = fromMaybe 0 $ findIndex ((>= c) . snd) $ zip ws $ scanl1 (+) ws
+	ws = sortBy (flip compare) xs
+
 -- Return the smallest element x for which the sum of the elements x or larger is at least c.
 sumAtLeast :: Int -> [Int] -> Int
 sumAtLeast c xs = x
@@ -46,13 +53,17 @@ sumAtLeast c xs = x
 ngx :: Double -> Int -> [Int] -> Int
 ngx x g = sumAtLeast $ ceiling $ x * fromIntegral g
 
--- Calculate Nx.
-nx :: Double -> [Int] -> Int
-nx x xs = ngx x (sum xs) xs
-
 -- Calculate N50.
 n50 :: [Int] -> Int
-n50 = nx 0.5
+n50 xs = ngx 0.5 (sum xs) xs
+
+-- Calculate LGx.
+lgx :: Double -> Int -> [Int] -> Int
+lgx x g = rankSumAtLeast $ ceiling $ x * fromIntegral g
+
+-- Calculate L50.
+l50 :: [Int] -> Int
+l50 xs = lgx 0.5 (sum xs) xs
 
 -- A SAM record.
 -- qname flag rname pos mapq cigar rnext pnext tlen seq qual
@@ -329,6 +340,7 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 	let
 		genomeSize = if optGenomeSize > 0 then optGenomeSize else reference_bases
 		ng50 = ngx 0.5 genomeSize
+		lg50 = lgx 0.5 genomeSize
 
 		-- Contig metrics
 		mapped_contigs = length good
@@ -342,6 +354,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		contig_nga50 = ng50 alignedContigLengths
 		contig_max = maximum contigLengths
 		contig_aligned_max = maximum alignedContigLengths
+		contig_l50 = l50 contigLengths
+		contig_la50 = l50 alignedContigLengths
+		contig_lg50 = lg50 contigLengths
+		contig_lga50 = lg50 alignedContigLengths
 		contigs = length contigLengths
 		contig_breakpoints = length (concat good) - length good
 
@@ -355,6 +371,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		scaffold_nga50 = ng50 alignedScaffoldLengths
 		scaffold_max = maximum scaffoldLengths
 		scaffold_aligned_max = maximum alignedScaffoldLengths
+		scaffold_l50 = l50 scaffoldLengths
+		scaffold_la50 = l50 alignedScaffoldLengths
+		scaffold_lg50 = lg50 scaffoldLengths
+		scaffold_lga50 = lg50 alignedScaffoldLengths
 		scaffolds = length scaffoldLengths
 		total_bases = sum scaffoldLengths
 		scaffold_breakpoints = length colinearScaffs - length scaffs
@@ -460,6 +480,14 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 				++ "\tContig_breakpoints"
 				++ "\tScaffold_breakpoints"
 				++ "\tTotal_breakpoints"
+				++ "\tContig_L50"
+				++ "\tContig_LA50"
+				++ "\tContig_LG50"
+				++ "\tContig_LGA50"
+				++ "\tScaffold_L50"
+				++ "\tScaffold_LA50"
+				++ "\tScaffold_LG50"
+				++ "\tScaffold_LGA50"
 				++ "\tReference_bases"
 				++ "\tTotal_bases"
 				++ "\tMapped_bases"
@@ -489,6 +517,14 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		putStr $ '\t' : show contig_breakpoints
 		putStr $ '\t' : show scaffold_breakpoints
 		putStr $ '\t' : show total_breakpoints
+		putStr $ '\t' : show contig_l50
+		putStr $ '\t' : show contig_la50
+		putStr $ '\t' : show contig_lg50
+		putStr $ '\t' : show contig_lga50
+		putStr $ '\t' : show scaffold_l50
+		putStr $ '\t' : show scaffold_la50
+		putStr $ '\t' : show scaffold_lg50
+		putStr $ '\t' : show scaffold_lga50
 		putStr $ '\t' : show reference_bases
 		putStr $ '\t' : show total_bases
 		putStr $ '\t' : show mapped_bases
