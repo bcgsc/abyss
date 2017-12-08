@@ -320,6 +320,10 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		oneHit = concat . filter ((== 1) . length) $ good
 		scaffs = groupBy ((==) `on` scaffoldName) $ oneHit
 
+	-- Print SAM headers.
+	when (optFormat == FormatSAM || optFormat == FormatSAMContigs || optFormat == FormatSAMScaffolds) (do
+		S.putStr $ S.unlines headers)
+
 	-- Print contig breakpoints.
 	when (optFormat == FormatSAMContigs || optFormat == FormatSAM) (do
 		mapM_ (putStrLn . showSAM) $ concat $ filter ((> 1) . length) $ good
@@ -327,7 +331,6 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 
 	-- Print scaffold breakpoints.
 	when (optFormat == FormatSAMScaffolds || optFormat == FormatSAM) (do
-		S.putStr $ S.unlines headers
 		putStr $ concat
 			$ map (\(a, b) -> unlines [showSAM a, showSAM b])
 			$ concatMap filterNonColinear scaffs
