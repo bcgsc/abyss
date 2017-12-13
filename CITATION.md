@@ -1,39 +1,42 @@
-Citation
-================================================================================
+# Citation
 
-+ [doi:10.1101/gr.089532.108](http://dx.doi.org/10.1101/gr.089532.108)
-+ [PubMed PMID: 19251739](http://www.ncbi.nlm.nih.gov/pubmed/19251739)
-+ [Google Scholar](http://scholar.google.ca/scholar?q=doi%3A10.1101%2Fgr.089532.108)
-+ [Genome Research](http://genome.cshlp.org/content/19/6/1117.short)
-+ [PDF](http://genome.cshlp.org/content/19/6/1117.full.pdf)
+Shaun D Jackman, Benjamin P Vandervalk, Hamid Mohamadi, Justin Chu, Sarah Yeo, S Austin Hammond, Golnaz Jahesh, Hamza Khan, Lauren Coombe, René L Warren, and Inanc Birol (2017).
+**ABySS 2.0: Resource-efficient assembly of large genomes using a Bloom filter**.
+*Genome research*, 27(5), 768-777.
+[doi:10.1101/gr.214346.116](http://doi.org/10.1101/gr.214346.116)
 
-BibTeX
-------------------------------------------------------------
+- [PDF](http://genome.cshlp.org/content/27/5/768.full.pdf)
+- [Genome Research](http://genome.cshlp.org/content/27/5/768)
+- [PubMed PMID: 28232478](https://www.ncbi.nlm.nih.gov/pubmed/28232478)
+- [Google Scholar](http://scholar.google.ca/scholar?q=10.1101/gr.214346.116)
+
+# BibTeX
 
 ```bibtex
-@article{simpson2009abyss,
-  title={ABySS: a parallel assembler for short read sequence data},
-  author={Simpson, Jared T and Wong, Kim and Jackman, Shaun D and Schein, Jacqueline E and Jones, Steven JM and Birol, Inan{\c{c}}},
-  journal={Genome research},
-  volume={19},
-  number={6},
-  pages={1117--1123},
-  year={2009},
-  publisher={Cold Spring Harbor Lab}
+@article{Jackman_2017,
+title={ABySS 2.0: resource-efficient assembly of large genomes using a Bloom filter},
+volume={27},
+ISSN={1549-5469},
+url={http://doi.org/10.1101/gr.214346.116},
+DOI={10.1101/gr.214346.116},
+number={5},
+journal={Genome Research},
+publisher={Cold Spring Harbor Laboratory},
+author={Jackman, Shaun D. and Vandervalk, Benjamin P. and Mohamadi, Hamid and Chu, Justin and Yeo, Sarah and Hammond, S. Austin and Jahesh, Golnaz and Khan, Hamza and Coombe, Lauren and Warren, Rene L. and et al.},
+year={2017},
+month={Feb},
+pages={768–777}
 }
 ```
 
-MLA
-------------------------------------------------------------
+# MLA
 
-Simpson, Jared T., et al. "ABySS: a parallel assembler for short read sequence data." *Genome research* 19.6 (2009): 1117-1123.
+Jackman, Shaun D., et al. "ABySS 2.0: resource-efficient assembly of large genomes using a Bloom filter." Genome research 27.5 (2017): 768-777.
 
-APA
-------------------------------------------------------------
+# APA
 
-Simpson, J. T., Wong, K., Jackman, S. D., Schein, J. E., Jones, S. J., & Birol, I. (2009). ABySS: a parallel assembler for short read sequence data. *Genome research*, 19(6), 1117-1123.
+Jackman, S. D., Vandervalk, B. P., Mohamadi, H., Chu, J., Yeo, S., Hammond, S. A., ... & Birol, I. (2017). ABySS 2.0: resource-efficient assembly of large genomes using a Bloom filter. Genome research, 27(5), 768-777.
 
-Chicago
-------------------------------------------------------------
+# Chicago
 
-Simpson, Jared T., Kim Wong, Shaun D. Jackman, Jacqueline E. Schein, Steven JM Jones, and Inanç Birol. "ABySS: a parallel assembler for short read sequence data." *Genome research* 19, no. 6 (2009): 1117-1123.
+Jackman, Shaun D., Benjamin P. Vandervalk, Hamid Mohamadi, Justin Chu, Sarah Yeo, S. Austin Hammond, Golnaz Jahesh et al. "ABySS 2.0: resource-efficient assembly of large genomes using a Bloom filter." Genome research 27, no. 5 (2017): 768-777.
