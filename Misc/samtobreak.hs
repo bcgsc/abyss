@@ -217,7 +217,7 @@ options = [
 		"exclude alignments with mapq less than N [10]",
 	Option ['g'] ["patch-gaps"] (ReqArg (OptPatchGaps . read) "N")
 		"join alignments separated by a gap shorter than INT bp (with --text only) [500]",
-	Option [] ["sam"] (NoArg OptSAM)
+	Option ['p'] ["sam"] (NoArg OptSAM)
 		"output contig and scaffold breakpoints in SAM format",
 	Option [] ["sam-contigs"] (NoArg OptSAMContigs)
 		"output contig breakpoints in SAM format",
