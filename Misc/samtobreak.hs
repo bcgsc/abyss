@@ -177,30 +177,13 @@ excludeOverlaps xs = reverse . foldl accum [] $ xs
 compareTStart :: SAM -> SAM -> Ordering
 compareTStart a b = compare (rname a, pos a) (rname b, pos b)
 
--- Create a CIGAR string with the specified alignment coordinates.
-createCIGAR :: Int -> Int -> Int -> ByteString
-createCIGAR qstart qlength tlength = S.pack $
-			show qstart ++ "H" ++
-			show (min qlength tlength) ++ "M" ++
-			(if tlength > qlength then show (tlength - qlength) ++ "D"
-				else if qlength > tlength then show (qlength - tlength) ++ "I"
-				else "")
-
--- Merge two SAM records.
-mergeSAM :: SAM -> SAM -> SAM
-mergeSAM x y = SAM yqname yflag yrname xpos ymapq zcigar yseqLength
-	where
-		(SAM xqname xflag xrname xpos xmapq xcigar xseqLength) = x
-		(SAM yqname yflag yrname ypos ymapq ycigar yseqLength) = y
-		zcigar = createCIGAR (qStart' x) (qEnd' y - qStart' x) (tEnd y - tStart x)
-
 -- Patch gaps in the alignments that are shorter than 500 bp.
 patchGaps :: Int -> [SAM] -> [SAM]
 patchGaps optPatchGaps ws = reverse . foldl accum [] $ xs
 	where
 	xs = sortBy compareTStart ws
 	accum [] x = [x]
-	accum (y:ys) x = if isSmallGap y x then (mergeSAM y x):ys else x:y:ys
+	accum (y:ys) x = if isSmallGap y x then x:ys else x:y:ys
 	isSmallGap q p = (rname p, isRC p) == (rname q, isRC q)
 			&& max gapt gapq < optPatchGaps
 		where
