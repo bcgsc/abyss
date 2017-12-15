@@ -216,7 +216,7 @@ options = [
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
 	Option ['g'] ["patch-gaps"] (ReqArg (OptPatchGaps . read) "N")
-		"join alignments separated by a gap shorter than INT bp [0]",
+		"join alignments separated by a gap shorter than INT bp (with --text only) [500]",
 	Option [] ["sam"] (NoArg OptSAM)
 		"output contig and scaffold breakpoints in SAM format",
 	Option [] ["sam-contigs"] (NoArg OptSAMContigs)
@@ -245,7 +245,7 @@ defaultOptions = Options {
 	optContigLength = 200,
 	optGenomeSize = 0,
 	optMapq = 10,
-	optPatchGaps = 0,
+	optPatchGaps = 500,
 	optFormat = FormatTSV
 }
 
