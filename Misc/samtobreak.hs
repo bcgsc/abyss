@@ -173,23 +173,21 @@ excludeOverlaps xs = reverse . foldl accum [] $ xs
 			start = max (qStart x) (qStart y)
 			end = min (qEnd x) (qEnd y)
 
-{-
 -- Compare the target position.
 compareTStart :: SAM -> SAM -> Ordering
 compareTStart a b = compare (rname a, pos a) (rname b, pos b)
 
 -- Patch gaps in the alignments that are shorter than 500 bp.
-patchGaps :: [SAM] -> [SAM]
-patchGaps ws
+patchGaps :: Int -> [SAM] -> [SAM]
+patchGaps optPatchGaps ws
 	= (x:) $ map snd . filter (not . isSmallGap) $ zip (x:xs) xs
 	where
 	(x:xs) = sortBy compareTStart ws
 	isSmallGap (q, p) = (rname p, isRC p) == (rname q, isRC q)
-			&& max gapt gapq < 500
+			&& max gapt gapq < optPatchGaps
 		where
 		gapt = abs (tStart p - tEnd q)
 		gapq = abs (qStart' p - qEnd' q)
--}
 
 -- Return whether the pair of aligned contigs are colinear.
 isColinear :: SAM -> SAM -> Bool
@@ -202,7 +200,7 @@ filterNonColinear xs = filter (not . uncurry isColinear)
 	$ zip xs (tail xs)
 
 -- The command line options.
-data Opt = OptAlignmentLength Int | OptContigLength Int | OptGenomeSize Int | OptMapq Int |
+data Opt = OptAlignmentLength Int | OptContigLength Int | OptGenomeSize Int | OptMapq Int | OptPatchGaps Int |
 	OptSAM | OptSAMContigs | OptSAMScaffolds | OptText | OptTSV |
 	OptHelp | OptVersion
 	deriving Eq
@@ -216,6 +214,8 @@ options = [
 		"expected genome size used to calculate NG50 [0]",
 	Option ['q'] ["mapq"] (ReqArg (OptMapq . read) "N")
 		"exclude alignments with mapq less than N [10]",
+	Option ['g'] ["patch-gaps"] (ReqArg (OptPatchGaps . read) "N")
+		"join alignments separated by a gap shorter than INT bp [0]",
 	Option [] ["sam"] (NoArg OptSAM)
 		"output contig and scaffold breakpoints in SAM format",
 	Option [] ["sam-contigs"] (NoArg OptSAMContigs)
@@ -236,6 +236,7 @@ data Options = Options {
 	optContigLength :: Int,
 	optGenomeSize :: Int,
 	optMapq :: Int,
+	optPatchGaps :: Int,
 	optFormat :: Format
 }
 defaultOptions = Options {
@@ -243,6 +244,7 @@ defaultOptions = Options {
 	optContigLength = 200,
 	optGenomeSize = 0,
 	optMapq = 10,
+	optPatchGaps = 0,
 	optFormat = FormatTSV
 }
 
@@ -254,6 +256,7 @@ parseOptions = foldl parseOption defaultOptions
 		OptContigLength n -> opt { optContigLength = n }
 		OptGenomeSize n -> opt { optGenomeSize = n }
 		OptMapq n -> opt { optMapq = n }
+		OptPatchGaps n -> opt { optPatchGaps = n }
 		OptSAM -> opt { optFormat = FormatSAM }
 		OptSAMContigs -> opt { optFormat = FormatSAMContigs }
 		OptSAMScaffolds -> opt { optFormat = FormatSAMScaffolds }
@@ -278,7 +281,7 @@ parseArgs = do
 
 -- Calculate contig and scaffold contiguity and correctness metrics.
 printStats :: Integer -> FilePath -> Options -> IO ()
-printStats recordIndex path (Options optAlignmentLength optContigLength optGenomeSize optMapq optFormat) = do
+printStats recordIndex path (Options optAlignmentLength optContigLength optGenomeSize optMapq optPatchGaps optFormat) = do
 	s <- S.readFile path
 	when (S.null s) $ error $ "`" ++ path ++ "' is empty"
 
@@ -424,21 +427,21 @@ printStats recordIndex path (Options optAlignmentLength optContigLength optGenom
 		putStr $ "Number of Q10 break points longer than " ++ show optAlignmentLength ++ " bp: "
 		print contig_breakpoints
 
-		{-
 		-- Patch small gaps.
-		let
-			patched = map patchGaps excluded
-			concatPatched = concat patched
+		when (optPatchGaps > 0) (do
+			let
+				patched = map (patchGaps optPatchGaps) excluded
+				concatPatched = concat patched
 
-			patchedGood = map patchGaps good
-			concatPatchedGood = concat patchedGood
+				patchedGood = filter (not . null) . map (filter isGood) $ patched
+				concatPatchedGood = concat patchedGood
 
-		putStr "Number of break points after patching gaps shorter than 500 bp: "
-		print $ length concatPatched - length patched
+			putStr "Number of break points after patching gaps shorter than 500 bp: "
+			print $ length concatPatched - length patched
 
-		putStr "Number of Q10 break points longer than 500 bp after gap patching: "
-		print $ length concatPatchedGood - length patchedGood
-		-}
+			putStr "Number of Q10 break points longer than 500 bp after gap patching: "
+			print $ length concatPatchedGood - length patchedGood
+			)
 
 		putStr $ "Scaffold N50: "
 		print scaffold_n50
