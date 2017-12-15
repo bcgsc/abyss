@@ -13,7 +13,7 @@ using boost::graph_traits;
 
 /** Write a graph in GFA format. */
 template <typename Graph>
-std::ostream& write_gfa(std::ostream& out, Graph& g)
+std::ostream& write_gfa1(std::ostream& out, Graph& g)
 {
 	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename graph_traits<Graph>::edge_iterator Eit;
@@ -60,6 +60,77 @@ std::ostream& write_gfa(std::ostream& out, Graph& g)
 			out << '\t' << -distance << "M\n";
 		else
 			out << "\t*\n";
+		assert(out);
+	}
+	return out;
+}
+
+/** Write a graph in GFA 2 format. */
+template <typename Graph>
+std::ostream& write_gfa2(std::ostream& out, Graph& g)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor E;
+	typedef typename graph_traits<Graph>::edge_iterator Eit;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_iterator Vit;
+	typedef typename vertex_bundle_type<Graph>::type VP;
+
+	out << "H\tVN:Z:2.0\n";
+	assert(out);
+
+	std::pair<Vit, Vit> vrange = vertices(g);
+	for (Vit uit = vrange.first; uit != vrange.second; ++uit, ++uit) {
+		V u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		const VP& vp = g[u];
+		out << "S\t" << get(vertex_contig_name, g, u)
+			<< '\t' << vp.length << "\t*";
+		if (vp.coverage > 0)
+			out << "\tKC:i:" << vp.coverage;
+		out << '\n';
+	}
+
+	std::pair<Eit, Eit> erange = edges(g);
+	for (Eit eit = erange.first; eit != erange.second; ++eit) {
+		E e = *eit;
+		V u = source(e, g);
+		V v = target(e, g);
+		if (get(vertex_removed, g, u))
+			continue;
+
+		// Output only the canonical edge.
+		if (u > get(vertex_complement, g, v))
+			continue;
+
+		assert(!get(vertex_removed, g, v));
+		int distance = g[e].distance;
+		assert(distance <= 0);
+		unsigned overlap = -distance;
+		unsigned ulen = g[u].length;
+		unsigned vlen = g[v].length;
+		bool usense = get(vertex_sense, g, u);
+		bool vsense = get(vertex_sense, g, v);
+		unsigned ustart = usense ? 0 : ulen - overlap;
+		unsigned uend = usense ? overlap : ulen;
+		unsigned vstart = !vsense ? 0 : vlen - overlap;
+		unsigned vend = !vsense ? overlap : vlen;
+		out << "E\t*"
+			<< '\t' << get(vertex_name, g, u)
+			<< '\t' << get(vertex_name, g, v);
+		out << '\t' << ustart;
+		if (ustart == ulen)
+			out << '$';
+		out << '\t' << uend;
+		if (uend == ulen)
+			out << '$';
+		out << '\t' << vstart;
+		if (vstart == vlen)
+			out << '$';
+		out << '\t' << vend;
+		if (vend == vlen)
+			out << '$';
+		out << '\t' << overlap << 'M' << "\n";
 		assert(out);
 	}
 	return out;
@@ -152,12 +223,20 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			break;
 		  }
 
+		  case '#': // comment
+		  case 'C': // GFA1 containment
+		  case 'F': // GFA2 fragment
+		  case 'G': // GFA2 gap
+		  case 'O': // GFA2 ordered path
+		  case 'P': // GFA1 path
+		  case 'U': // GFA2 unordered set
+			in >> Ignore('\n');
+			break;
+
 		  default: {
 			std::string s;
-			in >> s;
-			std::cerr << "error: unknown record type: `"
-				<< s << "'\n";
-			exit(EXIT_FAILURE);
+			in >> s >> Ignore('\n');
+			std::cerr << "warning: unknown record type: `" << s << "'\n";
 		  }
 		}
 	}

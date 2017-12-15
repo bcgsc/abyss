@@ -41,7 +41,9 @@ static const char USAGE_MESSAGE[] =
 "      --dot             output the graph in GraphViz format [default]\n"
 "      --gv              output the graph in GraphViz format\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
-"      --gfa             output the graph in GFA format\n"
+"      --gfa             output the graph in GFA1 format\n"
+"      --gfa1            output the graph in GFA1 format\n"
+"      --gfa2            output the graph in GFA2 format\n"
 "      --sam             output the graph in SAM format\n"
 "  -e, --estimate output distance estimates\n"
 "      --add-complements add missing complementary edges\n"
@@ -78,7 +80,9 @@ static const struct option longopts[] = {
 	{ "dot",     no_argument,       &opt::format, DOT },
 	{ "gv",      no_argument,       &opt::format, DOT },
 	{ "dot-meancov", no_argument,   &opt::format, DOT_MEANCOV },
-	{ "gfa",     no_argument,       &opt::format, GFA },
+	{ "gfa",     no_argument,       &opt::format, GFA1 },
+	{ "gfa1",    no_argument,       &opt::format, GFA1 },
+	{ "gfa2",    no_argument,       &opt::format, GFA2 },
 	{ "sam",     no_argument,       &opt::format, SAM },
 	{ "estimate", no_argument,      NULL, 'e' },
 	{ "add-complements", no_argument, &opt::addComplementaryEdges, true },
