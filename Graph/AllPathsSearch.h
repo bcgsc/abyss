@@ -27,7 +27,6 @@ PathSearchResult allPathsSearch(
 	unsigned maxDepth,
 	std::vector< Path<typename boost::graph_traits<IncidenceGraph>::vertex_descriptor> >& pathsFound)
 {
-    BOOST_CONCEPT_ASSERT((boost::IncidenceGraphConcept<IncidenceGraph>));
     typedef typename boost::graph_traits<IncidenceGraph>::vertex_descriptor V;
     typedef typename boost::graph_traits<IncidenceGraph>::out_edge_iterator EdgeIter;
 	typedef typename std::pair<EdgeIter,EdgeIter> EdgeIterPair;
