@@ -276,13 +276,10 @@ DistanceEst?=DistanceEst$(ssq_t)
 l?=40
 s?=1000
 n?=10
-libs=$(pe) $(mp)
-$(foreach i,$(libs),$(eval $i_l?=$l))
-$(foreach i,$(libs),$(eval $i_s?=$s))
-$(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v $(dbopt) -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
-	$(DISTANCEEST_OPTIONS)
-scaffold_deopt=--dot --mean $(deopt)
+$(foreach i,$(pe),$(eval $i_l?=$l))
+$(foreach i,$(pe),$(eval $i_s?=$s))
+$(foreach i,$(pe),$(eval $i_n?=$n))
+override deopt=$v $(dbopt) -j$j -k$k $(DISTANCEEST_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 
 # SimpleGraph parameters
 sgopt += $(dbopt)
@@ -307,8 +304,16 @@ pcopt += -p$p
 mcopt += $v $(dbopt) -k$k
 
 # Scaffold parameters
+L?=$l
 S?=1000-10000
 N?=$n
+SCAFFOLD_DE_S?=$(shell echo $S | sed 's/-.*//')
+SCAFFOLD_DE_N?=$N
+SCAFFOLD_DE_OPTIONS?=$(DISTANCEEST_OPTIONS)
+$(foreach i,$(mp),$(eval $i_l?=$L))
+$(foreach i,$(mp),$(eval $i_s?=$(SCAFFOLD_DE_S)))
+$(foreach i,$(mp),$(eval $i_n?=$(SCAFFOLD_DE_N)))
+override scaffold_deopt=$v $(dbopt) --dot --mean -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 scopt += $v $(dbopt) $(SS) -k$k
 ifdef G
 scopt += -G$G
@@ -825,7 +830,7 @@ $(name)-stats.tab:
 
 override varList := a b c d e E G j k l m n N p q s S t v cs pi \
 	np pe lib mp se SS hostname xtip \
-	ssq ssq_ti libs path name in mpirun \
+	ssq ssq_ti path name in mpirun \
 	aligner long ref fixmate DistanceEst \
 	map deref abyssopt fgopt pbopt \
 	align mapopt fmopt deopt \
