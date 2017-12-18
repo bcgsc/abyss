@@ -60,6 +60,10 @@ static const char USAGE_MESSAGE[] =
 "      --adj             output the graph in adj format\n"
 "      --dot             output the graph in dot format [default]\n"
 "      --dot-meancov     same as above but give the mean coverage\n"
+"      --gfa             output the graph in GFA1 format\n"
+"      --gfa1            output the graph in GFA1 format\n"
+"      --gfa2            output the graph in GFA2 format\n"
+"      --gv              output the graph in GraphViz format\n"
 "      --sam             output the graph in SAM format\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -105,6 +109,10 @@ static const struct option longopts[] = {
 	{ "adj", no_argument, &opt::format, ADJ },
 	{ "dot", no_argument, &opt::format, DOT },
 	{ "dot-meancov", no_argument, &opt::format, DOT_MEANCOV },
+	{ "gfa", no_argument, &opt::format, GFA1 },
+	{ "gfa1", no_argument, &opt::format, GFA1 },
+	{ "gfa2", no_argument, &opt::format, GFA2 },
+	{ "gv", no_argument, &opt::format, DOT },
 	{ "sam", no_argument, &opt::format, SAM },
 	{ "graph", required_argument, NULL, 'g' },
 	{ "kmer",        required_argument, NULL, 'k' },
