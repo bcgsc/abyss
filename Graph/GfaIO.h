@@ -152,22 +152,36 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 	while (in && in.peek() != EOF) {
 		switch (in.peek()) {
 		  case 'H':
-			in >> expect("H\tVN:Z:1.0\n");
+			in >> expect("H\tVN:Z:");
+			if (in.peek() == '1')
+				in >> expect("1.0\n");
+			else
+				in >> expect("2.0\n");
 			assert(in);
 			break;
 
 		  case 'S': {
-			std::string uname, seq;
-			in >> expect("S\t") >> uname >> seq;
+			std::string uname;
+			in >> expect("S\t") >> uname >> expect("\t");
 			assert(in);
-			assert(!seq.empty());
 
+			std::string seq;
 			unsigned length = 0;
-			if (seq == "*") {
-				in >> expect(" LN:i:") >> length;
+			if (isdigit(in.peek())) {
+				// GFA 2
+				in >> length >> seq;
 				assert(in);
-			} else
-				length = seq.size();
+			} else {
+				// GFA 1
+				in >> seq;
+				assert(in);
+				assert(!seq.empty());
+				if (seq == "*") {
+					in >> expect(" LN:i:") >> length;
+					assert(in);
+				} else
+					length = seq.size();
+			}
 
 			unsigned coverage = 0;
 			if (in.peek() == '\t' && in.get() == '\t' && in.peek() == 'K') {
@@ -220,6 +234,31 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 				add_edge(u, v, ep, g);
 			} else
 				add_edge(u, v, g);
+			break;
+		  }
+
+		  case 'E': {
+			std::string ename, uname, vname;
+			in >> expect("E\t") >> ename >> uname >> vname;
+			assert(in);
+			unsigned ustart, uend, vstart, vend;
+			in >> ustart >> Skip('$')
+				>> uend >> Skip('$')
+				>> vstart >> Skip('$')
+				>> vend >> Skip('$')
+				>> Ignore('\n');
+			assert(in);
+			unsigned ulength = uend - ustart;
+			unsigned vlength = vend - vstart;
+			if (ulength != vlength) {
+				std::cerr << "error: alignment contains gaps: " << ename << '\t' << uname << '\t' << vname << '\n';
+				exit(EXIT_FAILURE);
+			}
+			V u = find_vertex(uname, g);
+			V v = find_vertex(vname, g);
+			int d = -ulength;
+			EP ep(d);
+			add_edge(u, v, ep, g);
 			break;
 		  }
 
