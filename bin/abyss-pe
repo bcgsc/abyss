@@ -86,7 +86,7 @@ np?=$(SLURM_NTASKS)
 endif
 
 # Determine the path to mpirun
-mpirun?=$(shell which mpirun)
+mpirun?=$(shell command -v mpirun)
 ifeq ($(mpirun),)
 mpirun=mpirun
 endif
@@ -98,7 +98,7 @@ gzip=gzip
 endif
 
 # Determine the path to the ABySS executables
-path?=$(shell dirname `which $(MAKEFILE_LIST)`)
+path?=$(shell dirname `command -v $(MAKEFILE_LIST)`)
 ifdef path
 PATH:=$(path):$(PATH)
 endif
@@ -777,7 +777,7 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 # Calculate assembly contiguity statistics
 
 stats: $(name)-stats.tab $(name)-stats $(name)-stats.csv $(name)-stats.md
-ifneq ($(shell which $(MARKDOWN) 2>/dev/null),)
+ifneq ($(shell command -v $(MARKDOWN)),)
 stats: $(name)-stats.html
 endif
 
