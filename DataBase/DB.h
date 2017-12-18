@@ -119,6 +119,10 @@ public:
 
 	DB()
 	{
+		// suppress unused variable warnings under clang++
+		(void)db;
+		(void)stmt;
+
 		initVars.resize(3);
 		peVars.resize(3);
 		exp = NO_INIT;
