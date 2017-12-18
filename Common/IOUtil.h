@@ -79,6 +79,19 @@ static inline std::istream& operator>>(std::istream& in, Ignore o)
 	return in.ignore(o.n, o.delim);
 }
 
+/** Skip the specified character if it's next in the input stream. */
+struct Skip {
+	char c;
+	Skip(const char c) : c(c) { }
+};
+
+static inline std::istream& operator>>(std::istream& in, Skip o)
+{
+	if (in.peek() == o.c)
+		in.ignore(1);
+	return in;
+}
+
 /** Read a file and store it in the specified vector. */
 template <typename Vector>
 static inline void readFile(const char* path, Vector& s)
