@@ -65,6 +65,7 @@ if test "x$ac_cv_type_std__tr1__tuple_int_" = "xyes"; then
 	AC_DEFINE(BOOST_HAS_TR1_TUPLE, [1],
 	[Define to disable declaration of std::tr1::tuple by boost])
 fi
+AM_CONDITIONAL([HAVE_TR1_TUPLE], [test x"$ac_cv_type_std__tr1__tuple_int_" = x"yes"])
 AC_LANG_POP([C++])
 
 # Checks for library functions.

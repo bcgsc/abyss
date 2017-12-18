@@ -4,10 +4,15 @@
 # See: http://stackoverflow.com/questions/17841140/os-x-clang-pthread
 AM_CXXFLAGS += $(PTHREAD_CFLAGS) -Wno-error
 AM_LDFLAGS = $(PTHREAD_LIBS)
+
 AM_CPPFLAGS = \
-	-DGTEST_USE_OWN_TR1_TUPLE=0 \
 	-I$(top_srcdir) \
 	-I$(top_srcdir)/lib/gtest-1.7.0/include
+
+if HAVE_TR1_TUPLE
+AM_CPPFLAGS += -DGTEST_USE_OWN_TR1_TUPLE=0
+endif
+
 LDADD = $(top_builddir)/lib/gtest-1.7.0/libgtest_main.a
 
 check_PROGRAMS = common_stringutil
