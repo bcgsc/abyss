@@ -84,6 +84,12 @@ ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
+# Parallelize gzip with pigz if available.
+gzip?=$(shell command -v pigz)
+ifeq ($(gzip),)
+gzip=gzip
+endif
+
 # Determine the path to the ABySS executables
 path?=$(shell dirname `which $(MAKEFILE_LIST)`)
 ifdef path
@@ -539,7 +545,7 @@ endif
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|gzip >$*-3.sam.gz
+		|$(gzip) >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
@@ -629,7 +635,7 @@ endif
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|gzip >$*-6.sam.gz
+		|$(gzip) >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
@@ -696,7 +702,7 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 
 %-8.sam.gz: $(name)-8.fa.bwt
 	bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
-		|gzip >$@
+		|$(gzip) >$@
 
 %-8.dist.dot: %-8.sam.gz
 	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
@@ -801,7 +807,7 @@ $(name)-stats.tab:
 # Align the contigs to the reference
 
 %-$(ref).sam.gz: %.fa
-	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |gzip >$@
+	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |$(gzip) >$@
 
 # Find breakpoints in the alignments
 
