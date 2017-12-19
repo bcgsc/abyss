@@ -46,16 +46,25 @@ struct DistanceEst
 	friend std::ostream& operator<<(std::ostream& out,
 			const DistanceEst& o)
 	{
-		if (opt::format != DIST) {
+		if (opt::format == DIST) {
+			return out << o.distance << ',' << o.numPairs << ','
+				<< std::fixed << std::setprecision(1) << o.stdDev;
+		} else if (opt::format == GFA1 || opt::format == GFA2) {
+			out << o.distance;
+			if (o.stdDev > 0 || o.numPairs > 0)
+				out << '\t' << std::fixed << std::setprecision(1) << o.stdDev
+					<< '\t' << "FC:i:" << o.numPairs;
+			else
+				out << "\t*";
+			return out;
+		} else {
 			out << "d=" << o.distance;
 			if (o.stdDev > 0 || o.numPairs > 0)
 				out << " e=" << std::fixed << std::setprecision(1)
 					<< o.stdDev
 					<< " n=" << o.numPairs;
 			return out;
-		} else
-			return out << o.distance << ',' << o.numPairs << ','
-				<< std::fixed << std::setprecision(1) << o.stdDev;
+		}
 	}
 
 	friend std::istream& operator>>(std::istream& in, DistanceEst& o)

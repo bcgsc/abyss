@@ -11,6 +11,9 @@
 
 using boost::graph_traits;
 
+struct Distance;
+struct DistanceEst;
+
 /** Write a graph in GFA format. */
 template <typename Graph>
 std::ostream& write_gfa1(std::ostream& out, Graph& g)
@@ -65,31 +68,14 @@ std::ostream& write_gfa1(std::ostream& out, Graph& g)
 	return out;
 }
 
-/** Write a graph in GFA 2 format. */
+/** Write overlap edges in GFA 2 format. */
 template <typename Graph>
-std::ostream& write_gfa2(std::ostream& out, Graph& g)
+std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
+	const Distance*)
 {
 	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename graph_traits<Graph>::edge_iterator Eit;
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
-	typedef typename graph_traits<Graph>::vertex_iterator Vit;
-	typedef typename vertex_bundle_type<Graph>::type VP;
-
-	out << "H\tVN:Z:2.0\n";
-	assert(out);
-
-	std::pair<Vit, Vit> vrange = vertices(g);
-	for (Vit uit = vrange.first; uit != vrange.second; ++uit, ++uit) {
-		V u = *uit;
-		if (get(vertex_removed, g, u))
-			continue;
-		const VP& vp = g[u];
-		out << "S\t" << get(vertex_contig_name, g, u)
-			<< '\t' << vp.length << "\t*";
-		if (vp.coverage > 0)
-			out << "\tKC:i:" << vp.coverage;
-		out << '\n';
-	}
 
 	std::pair<Eit, Eit> erange = edges(g);
 	for (Eit eit = erange.first; eit != erange.second; ++eit) {
@@ -134,6 +120,65 @@ std::ostream& write_gfa2(std::ostream& out, Graph& g)
 		assert(out);
 	}
 	return out;
+}
+
+/** Write gap edges in GFA 2 format. */
+template <typename Graph>
+std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
+	const DistanceEst*)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor E;
+	typedef typename graph_traits<Graph>::edge_iterator Eit;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	std::pair<Eit, Eit> erange = edges(g);
+	for (Eit eit = erange.first; eit != erange.second; ++eit) {
+		E e = *eit;
+		V u = source(e, g);
+		V v = target(e, g);
+		if (get(vertex_removed, g, u))
+			continue;
+
+		// Output only the canonical edge.
+		if (u > get(vertex_complement, g, v))
+			continue;
+
+		assert(!get(vertex_removed, g, v));
+		out << "G\t*"
+			<< '\t' << get(vertex_name, g, u)
+			<< '\t' << get(vertex_name, g, v)
+			<< '\t' << get(edge_bundle, g, eit)
+			<< '\n';
+	}
+	return out;
+}
+
+/** Write a graph in GFA 2 format. */
+template <typename Graph>
+std::ostream& write_gfa2(std::ostream& out, Graph& g)
+{
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename graph_traits<Graph>::vertex_iterator Vit;
+	typedef typename vertex_bundle_type<Graph>::type VP;
+	typedef typename edge_bundle_type<Graph>::type EP;
+
+	out << "H\tVN:Z:2.0\n";
+	assert(out);
+
+	std::pair<Vit, Vit> vrange = vertices(g);
+	for (Vit uit = vrange.first; uit != vrange.second; ++uit, ++uit) {
+		V u = *uit;
+		if (get(vertex_removed, g, u))
+			continue;
+		const VP& vp = g[u];
+		out << "S\t" << get(vertex_contig_name, g, u)
+			<< '\t' << vp.length << "\t*";
+		if (vp.coverage > 0)
+			out << "\tKC:i:" << vp.coverage;
+		out << '\n';
+	}
+
+	return write_gfa2_edges(out, g, (EP*)NULL);
 }
 
 /** Read a graph in GFA format. */
