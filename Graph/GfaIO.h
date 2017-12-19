@@ -307,10 +307,22 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			break;
 		  }
 
+		  case 'G': {
+			std::string ename, uname, vname;
+			in >> expect("G\t") >> ename >> uname >> vname;
+			assert(in);
+			EP ep;
+			in >> ep >> Ignore('\n');
+			assert(in);
+			V u = find_vertex(uname, g);
+			V v = find_vertex(vname, g);
+			add_edge(u, v, ep, g);
+			break;
+		  }
+
 		  case '#': // comment
 		  case 'C': // GFA1 containment
 		  case 'F': // GFA2 fragment
-		  case 'G': // GFA2 gap
 		  case 'O': // GFA2 ordered path
 		  case 'P': // GFA1 path
 		  case 'U': // GFA2 unordered set

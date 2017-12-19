@@ -70,6 +70,7 @@ struct DistanceEst
 	friend std::istream& operator>>(std::istream& in, DistanceEst& o)
 	{
 		if (in >> std::ws && in.peek() == 'd') {
+			// Graphviz
 			if (!(in >> expect("d =") >> o.distance >> std::ws))
 				return in;
 			if (in.peek() == ']') {
@@ -81,10 +82,24 @@ struct DistanceEst
 			else
 				return in >> expect(" e =") >> o.stdDev
 					>> expect(" n =") >> o.numPairs;
-		} else
-			return in >> o.distance >> expect(",")
-				>> o.numPairs >> expect(",")
-				>> o.stdDev;
+		} else {
+			in >> o.distance;
+			if (in.peek() == ',') {
+				// ABySS dist
+				return in >> expect(",")
+					>> o.numPairs >> expect(",")
+					>> o.stdDev;
+			} else {
+				// GFA 2
+				in >> o.stdDev;
+				if (in.peek() == '\n')
+					return in;
+				in >> expect("\t");
+				if (in.peek() == 'F')
+					in >> expect("FC:i:") >> o.numPairs;
+				return in;
+			}
+		}
 	}
 };
 
