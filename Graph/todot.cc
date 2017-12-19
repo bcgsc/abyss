@@ -175,6 +175,11 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::estimate) {
+		// GFA outputs only the canonical edges, so
+		// both complementary edges must be present.
+		if (opt::format == GFA1 || opt::format == GFA2)
+			opt::addComplementaryEdges = true;
+
 		ContigGraph<DirectedGraph<ContigProperties, DistanceEst> > g;
 		readGraphs(g, argv + optind, argv + argc,
 				BetterDistanceEst());
