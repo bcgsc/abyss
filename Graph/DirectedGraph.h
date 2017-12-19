@@ -133,9 +133,15 @@ class adjacency_iterator : public Edges::const_iterator
   public:
 	adjacency_iterator() { }
 	adjacency_iterator(const It& it) : It(it) { }
+
 	vertex_descriptor operator*() const
 	{
 		return It::operator*().target();
+	}
+
+	const edge_property_type& get_property() const
+	{
+		return It::operator*().get_property();
 	}
 };
 
@@ -170,6 +176,11 @@ class edge_iterator
 	edge_descriptor operator*() const
 	{
 		return edge_descriptor(*m_vit, *m_eit);
+	}
+
+	const edge_property_type& get_property() const
+	{
+		return m_eit->get_property();
 	}
 
 	bool operator==(const edge_iterator& it) const
@@ -734,7 +745,16 @@ void put(vertex_removed_t tag, DirectedGraph<VP, EP>& g,
 	g.put(tag, u, flag);
 }
 
-/** Return the properties of the edge of iterator eit. */
+/** Return the edge properties of the edge iterator eit. */
+template <typename VP, typename EP>
+const typename DirectedGraph<VP, EP>::edge_property_type&
+get(edge_bundle_t, const DirectedGraph<VP, EP>&,
+		typename DirectedGraph<VP, EP>::edge_iterator eit)
+{
+	return eit.get_property();
+}
+
+/** Return the edge properties of the out-edge iterator eit. */
 template <typename VP, typename EP>
 const typename DirectedGraph<VP, EP>::edge_property_type&
 get(edge_bundle_t, const DirectedGraph<VP, EP>&,
