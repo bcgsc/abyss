@@ -39,8 +39,6 @@ private:
 #else
 	void* db;
 	void* stmt;
-	(void)db;
-	(void)stmt;
 #endif
 	std::string prog, cmd;
 	int exp;
