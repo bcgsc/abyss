@@ -52,7 +52,7 @@ struct DistanceEst
 		} else if (opt::format == GFA1 || opt::format == GFA2) {
 			out << o.distance;
 			if (o.stdDev > 0 || o.numPairs > 0)
-				out << '\t' << std::fixed << std::setprecision(1) << o.stdDev
+				out << '\t' << ceilf(o.stdDev)
 					<< '\t' << "FC:i:" << o.numPairs;
 			else
 				out << "\t*";
