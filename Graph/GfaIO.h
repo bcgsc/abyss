@@ -52,7 +52,6 @@ std::ostream& write_gfa1(std::ostream& out, Graph& g)
 		if (u > get(vertex_complement, g, v))
 			continue;
 
-		assert(!get(vertex_removed, g, v));
 		int distance = g[e].distance;
 		out << 'L'
 			<< '\t' << get(vertex_contig_name, g, u)
@@ -68,13 +67,75 @@ std::ostream& write_gfa1(std::ostream& out, Graph& g)
 	return out;
 }
 
-/** Write overlap edges in GFA 2 format. */
+/** Write a GFA 2 overlap edge. */
+template <typename Graph>
+std::ostream& write_gfa2_edge(std::ostream& out, const Graph& g,
+	typename graph_traits<Graph>::edge_iterator eit)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor E;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	E e = *eit;
+	V u = source(e, g);
+	V v = target(e, g);
+
+	int distance = get(edge_bundle, g, eit).distance;
+	assert(distance <= 0);
+	unsigned overlap = -distance;
+	unsigned ulen = g[u].length;
+	unsigned vlen = g[v].length;
+	bool usense = get(vertex_sense, g, u);
+	bool vsense = get(vertex_sense, g, v);
+	unsigned ustart = usense ? 0 : ulen - overlap;
+	unsigned uend = usense ? overlap : ulen;
+	unsigned vstart = !vsense ? 0 : vlen - overlap;
+	unsigned vend = !vsense ? overlap : vlen;
+	out << "E\t*"
+		<< '\t' << get(vertex_name, g, u)
+		<< '\t' << get(vertex_name, g, v);
+	out << '\t' << ustart;
+	if (ustart == ulen)
+		out << '$';
+	out << '\t' << uend;
+	if (uend == ulen)
+		out << '$';
+	out << '\t' << vstart;
+	if (vstart == vlen)
+		out << '$';
+	out << '\t' << vend;
+	if (vend == vlen)
+		out << '$';
+	out << '\t' << overlap << 'M' << "\n";
+	assert(out);
+	return out;
+}
+
+/** Write GFA 2 gap edge. */
+template <typename Graph>
+std::ostream& write_gfa2_gap(std::ostream& out, const Graph& g,
+	typename graph_traits<Graph>::edge_iterator eit)
+{
+	typedef typename graph_traits<Graph>::edge_descriptor E;
+	typedef typename graph_traits<Graph>::vertex_descriptor V;
+
+	E e = *eit;
+	V u = source(e, g);
+	V v = target(e, g);
+
+	return out << "G\t*"
+		<< '\t' << get(vertex_name, g, u)
+		<< '\t' << get(vertex_name, g, v)
+		<< '\t' << get(edge_bundle, g, eit)
+		<< '\n';
+}
+
+/** Write GFA 2 overlap edges. */
 template <typename Graph>
 std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
 	const Distance*)
 {
-	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename graph_traits<Graph>::edge_iterator Eit;
+	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 
 	std::pair<Eit, Eit> erange = edges(g);
@@ -88,41 +149,14 @@ std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
 		// Output only the canonical edge.
 		if (u > get(vertex_complement, g, v))
 			continue;
-
+	
 		assert(!get(vertex_removed, g, v));
-		int distance = g[e].distance;
-		assert(distance <= 0);
-		unsigned overlap = -distance;
-		unsigned ulen = g[u].length;
-		unsigned vlen = g[v].length;
-		bool usense = get(vertex_sense, g, u);
-		bool vsense = get(vertex_sense, g, v);
-		unsigned ustart = usense ? 0 : ulen - overlap;
-		unsigned uend = usense ? overlap : ulen;
-		unsigned vstart = !vsense ? 0 : vlen - overlap;
-		unsigned vend = !vsense ? overlap : vlen;
-		out << "E\t*"
-			<< '\t' << get(vertex_name, g, u)
-			<< '\t' << get(vertex_name, g, v);
-		out << '\t' << ustart;
-		if (ustart == ulen)
-			out << '$';
-		out << '\t' << uend;
-		if (uend == ulen)
-			out << '$';
-		out << '\t' << vstart;
-		if (vstart == vlen)
-			out << '$';
-		out << '\t' << vend;
-		if (vend == vlen)
-			out << '$';
-		out << '\t' << overlap << 'M' << "\n";
-		assert(out);
+		write_gfa2_edge(out, g, eit);
 	}
 	return out;
 }
 
-/** Write gap edges in GFA 2 format. */
+/** Write GFA 2 overlap and gap edges. */
 template <typename Graph>
 std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
 	const DistanceEst*)
@@ -130,6 +164,7 @@ std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
 	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename graph_traits<Graph>::edge_iterator Eit;
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
+	typedef typename edge_bundle_type<Graph>::type EP;
 
 	std::pair<Eit, Eit> erange = edges(g);
 	for (Eit eit = erange.first; eit != erange.second; ++eit) {
@@ -144,11 +179,11 @@ std::ostream& write_gfa2_edges(std::ostream& out, const Graph& g,
 			continue;
 
 		assert(!get(vertex_removed, g, v));
-		out << "G\t*"
-			<< '\t' << get(vertex_name, g, u)
-			<< '\t' << get(vertex_name, g, v)
-			<< '\t' << get(edge_bundle, g, eit)
-			<< '\n';
+		const EP& ep = get(edge_bundle, g, eit);
+		if (ep.stdDev > 0)
+			write_gfa2_gap(out, g, eit);
+		else
+			write_gfa2_edge(out, g, eit);
 	}
 	return out;
 }
