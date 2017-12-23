@@ -8,9 +8,9 @@
 export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
 export REPORTTIME=1
 ifneq ($(shell command -v zsh),)
-SHELL=zsh -opipefail
+SHELL=zsh -o pipefail
 else
-SHELL=bash -opipefail
+SHELL=bash -o pipefail
 endif
 
 # Define this environment variable on Mac OS X to read
