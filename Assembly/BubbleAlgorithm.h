@@ -237,7 +237,7 @@ void writeBubble(std::ostream& out, const BranchGroup& group, unsigned id)
 			<< currBranch.calculateBranchMultiplicity() << '\n'
 			<< contig.c_str() << '\n';
 	}
-	assert(out.good());
+	assert_good(out, opt::snpPath);
 }
 
 /** Collapse a bubble to a single path. */
