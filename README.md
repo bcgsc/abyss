@@ -131,6 +131,11 @@ specified to `configure`:
 
 	./configure --with-mpi=/usr/lib/openmpi
 
+While OpenMPI is assumed by default you can switch to LAM/MPI or MPICH
+using:
+        ./configure --enable-mpich   use MPICH (default is to use Open MPI)
+        ./configure --enable-lammpi  use LAM/MPI (default is to use Open MPI)
+
 ABySS should be built using the sparsehash library to reduce memory
 usage, although it will build without. sparsehash should be found in
 `/usr/include` or its location specified to `configure`:
@@ -142,11 +147,11 @@ specified to `configure`:
 
 	./configure --with-sqlite=/opt/sqlite3
 
-The default maximum k-mer size is 64 and may be decreased to reduce
+The default maximum k-mer size is 128 and may be decreased to reduce
 memory usage or increased at compile time. This value must be a
 multiple of 32 (i.e. 32, 64, 96, 128, etc):
 
-	./configure --enable-maxk=96
+	./configure --enable-maxk=160
 
 If you encounter compiler warnings, you may ignore them like so:
 
