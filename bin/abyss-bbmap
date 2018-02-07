@@ -9,6 +9,7 @@ Align the sequences of the files QUERY to those of the file
 TARGET using bbmap with strict requirement for min identity 96%
 but doing local alignment.
 The SAM stream will contain v1.4 CIGAR strings.
+See https://sourceforge.net/projects/bbmap for more details.
 EOF
 		exit
 		;;
