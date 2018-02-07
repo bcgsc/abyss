@@ -1,0 +1,65 @@
+#!/apps/gentoo/bin/bash
+set -eu
+
+case $1 in
+	--help)
+		cat <<EOF
+Usage: abyss-bbmap [OPTION]... QUERY... TARGET
+Align the sequences of the files QUERY to those of the file
+TARGET using bbmap with strict requirement for min identity 96%
+but doing local alignment.
+The SAM stream will contain v1.4 CIGAR strings.
+EOF
+		exit
+		;;
+	--version)
+		cat <<EOF
+abyss-bbmap (ABySS)
+Written by Martin Mokrejs.
+EOF
+		bwa 2>&1 |head -n4
+		exit
+		;;
+esac
+
+# Parse the command line.
+bbmap='bbmap.sh'
+while getopts :j:l:v opt; do
+	case $opt in
+		j) bbmap="$bbmap threads=$OPTARG";;
+		l) ;;
+		v) ;;
+		\?) echo >&2 "abyss-bbmap: invalid option: $OPTARG"; exit 1;;
+	esac
+done
+shift $((OPTIND-1))
+
+query=("$@")
+target=${query[${#query[@]}-1]}
+unset query[${#query[@]}-1]
+
+# Map the reads.
+echo >&2 abyss-tofastq "${query[@]}" \| $bbmap in=stdin.fastq out=stdout.sam ref=$target
+#exec $bbmap $target "${query[@]}" | abyss-tofastq -i "${query[@]}"
+
+
+
+exec abyss-tofastq "${query[@]}" \
+	|$bbmap ambiguous=toss interleaved=t local=t minid=0.96 idfilter=0.96 inserttag=t idtag=t in=stdin.fastq out=stdout.sam ref=$target \
+	|awk '
+BEGIN {
+	OFS = "\t"
+}
+/^@/ { print; next }
+$1 == x { next }
+{ x = $1 }
+sub("/1$", "", $1) > 0 {
+	$2 = or($2, 0x41)
+	print; next
+}
+sub("/[23]$", "", $1) > 0 {
+	$2 = or($2, 0x81)
+	print; next
+}
+{ print }
+'
