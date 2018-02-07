@@ -1,4 +1,4 @@
-#!/apps/gentoo/bin/bash
+#! /usr/bin/env bash
 set -eu
 
 case $1 in
@@ -21,7 +21,7 @@ EOF
 abyss-bbmap (ABySS)
 Written by Martin Mokrejs.
 EOF
-		bwa 2>&1 |head -n4
+		bbmap.sh 2>&1 |head -n4
 		exit
 		;;
 esac
