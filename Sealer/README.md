@@ -19,7 +19,7 @@ Synopsis
 
 For example:
 
-`abyss-sealer -b20G -k64 -k80 -k96 -k112 -k128 -k144 -o test -S scaffold.fa read1.fa read2.fa`
+`abyss-sealer -b20G -k64 -k80 -k96 -k112 -k128 -o test -S scaffold.fa read1.fa read2.fa`
 
 Description
 ===========
