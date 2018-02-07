@@ -7,7 +7,10 @@ case $1 in
 Usage: abyss-bbmap [OPTION]... QUERY... TARGET
 Align the sequences of the files QUERY to those of the file
 TARGET using bbmap with strict requirement for min identity 96%
-but doing local alignment.
+but doing local alignment. Currently bbmap cannot restrict matches
+by minimum alignment length and therefore, the -l argument will be
+ignored. However, it can record alignment length using SAM tags
+so the output SAM stream could be filtered.
 The SAM stream will contain v1.4 CIGAR strings.
 See https://sourceforge.net/projects/bbmap for more details.
 EOF
