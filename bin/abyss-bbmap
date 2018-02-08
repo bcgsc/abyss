@@ -27,12 +27,13 @@ EOF
 esac
 
 # Parse the command line.
+# "bbmap.sh kfilter=40" will allow only alignments that contain a 40-mer matching the reference - in other words, at least 40 bases in a row that match.
 bbmap='bbmap.sh'
 while getopts :j:l:v opt; do
 	case $opt in
 		j) bbmap="$bbmap threads=$OPTARG";;
 		l) ;;
-		v) ;;
+		v) "$bbmap" -version ;;
 		\?) echo >&2 "abyss-bbmap: invalid option: $OPTARG"; exit 1;;
 	esac
 done
