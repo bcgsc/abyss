@@ -34,7 +34,7 @@ static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
 "Write read pairs that map to the same contig to the file SAME.\n"
 "Write read pairs that map to different contigs to stdout.\n"
-"Alignments may be in FILE(s) or standard input.\n"
+"Alignments may be in SAM-formatted FILE(s) or standard input.\n"
 "\n"
 " Options:\n"
 "\n"
@@ -327,7 +327,7 @@ static void printHistogramStats(Histogram h)
 		"n: " << h.size() << " "
 		"min: " << h.minimum() << " "
 		"max: " << h.maximum() << " "
-		"ignored: " << n_orig - h.size() << '\n'
+		"ignored as outliers: " << n_orig - h.size() << '\n'
 		<< h.barplot() << endl;
 	if (!opt::db.empty()) {
 		vals = make_vector<int>()
@@ -452,14 +452,14 @@ int main(int argc, char* const* argv)
 		+ numFR + numRF + stats.numFF
 		+ stats.numDifferent;
 	cerr <<
-		"Mateless   " << percent(alignments.size(), sum) << "\n"
-		"Unaligned  " << percent(stats.bothUnaligned, sum) << "\n"
-		"Singleton  " << percent(stats.oneUnaligned, sum) << "\n"
-		"FR         " << percent(numFR, sum) << "\n"
-		"RF         " << percent(numRF, sum) << "\n"
-		"FF         " << percent(stats.numFF, sum) << "\n"
-		"Different  " << percent(stats.numDifferent, sum) << "\n"
-		"Total      " << sum << endl;
+		"Mateless (read has no mate or input ordering is wrong) " << percent(alignments.size(), sum) << "\n"
+		"Unaligned (both reads unaligned)                       " << percent(stats.bothUnaligned, sum) << "\n"
+		"Singleton (one read aligned, one unaligned)            " << percent(stats.oneUnaligned, sum) << "\n"
+		"FR (forward-reverse, commonly paired-end reads)        " << percent(numFR, sum) << "\n"
+		"RF (reverse-forward, true mate-pair reads)             " << percent(numRF, sum) << "\n"
+		"FF (unsupported by abyss)                              " << percent(stats.numFF, sum) << "\n"
+		"Different (each read maps to a different contig)       " << percent(stats.numDifferent, sum) << "\n"
+		"Total                                                  " << sum << endl;
 
 	if (!opt::db.empty()) {
 		vals = make_vector<int>()
@@ -488,7 +488,7 @@ int main(int argc, char* const* argv)
 
 	if (alignments.size() == sum) {
 		cerr << PROGRAM ": error: All reads are mateless. This "
-			"can happen when first and second read IDs do not match."
+			"can happen when first and second read IDs are not in same order."
 			<< endl;
 		exit(EXIT_FAILURE);
 	}
