@@ -91,10 +91,15 @@ ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
-# Parallelize gzip with pigz if available.
-gzip?=$(shell command -v pigz)
-ifeq ($(gzip),)
+# Use pigz or bgzip for parallel compression if available.
+ifneq ($(shell command -v pigz),)
+gzip=pigz -p$t
+else
+ifneq ($(shell command -v bgzip),)
+gzip=bgzip -@$t
+else
 gzip=gzip
+endif
 endif
 
 # Determine the path to the ABySS executables
