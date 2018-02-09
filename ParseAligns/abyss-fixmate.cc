@@ -495,7 +495,7 @@ int main(int argc, char* const* argv)
 
 	if (alignments.size() == sum) {
 		cerr << PROGRAM ": error: All reads are mateless. This "
-			"can happen when first and second read IDs are not in same order."
+			"can happen when first and second read IDs do not match."
 			<< endl;
 		exit(EXIT_FAILURE);
 	}
