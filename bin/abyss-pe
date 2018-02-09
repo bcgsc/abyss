@@ -3,14 +3,14 @@
 # Written by Shaun Jackman <sjackman@bcgsc.ca> and
 # Anthony Raymond <traymond@bcgsc.ca>.
 
-# Set pipefail to ensure that all commands of a pipe succeed.
-# Report run time and memory usage with zsh if available.
-export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
-export REPORTTIME=1
 ifneq ($(shell command -v zsh),)
-SHELL=zsh -o pipefail
+# Set pipefail to ensure that all commands of a pipe succeed.
+SHELL=zsh -e -o pipefail
+# Report run time and memory usage with zsh.
+export REPORTTIME=1
+export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
 else
-SHELL=bash -o pipefail
+SHELL=bash -e -o pipefail
 endif
 
 # Define this environment variable on Mac OS X to read
