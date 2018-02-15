@@ -67,8 +67,8 @@ static const char shortopts[] = "ilq:v";
 enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
-	{ "cat",              no_argument, &opt::interleave, 0 },
-	{ "interleave",       no_argument, &opt::interleave, 1 },
+	{ "cat",              no_argument, &opt::interleave, 1 },
+	{ "interleave",       no_argument, &opt::interleave, 0 },
 	{ "fasta",            no_argument, &opt::toFASTQ, 0 },
 	{ "fastq",            no_argument, &opt::toFASTQ, 1 },
 	{ "longranger",       no_argument, &opt::longranger, 1 },
