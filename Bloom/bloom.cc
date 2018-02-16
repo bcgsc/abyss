@@ -189,7 +189,8 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-void dieWithUsageError()
+__attribute__((noreturn))
+static void dieWithUsageError()
 {
 	cerr << "Try `" << PROGRAM
 		<< " --help' for more information.\n";
