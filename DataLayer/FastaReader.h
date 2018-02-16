@@ -131,7 +131,7 @@ struct FastaRecord
 	/** The sequence */
 	Sequence seq;
 
-	FastaRecord() { }
+	FastaRecord() : anchor(0) { }
 	FastaRecord(const std::string& id, const std::string& comment,
 			const Sequence& seq)
 		: id(id), comment(comment), anchor(0), seq(seq) { }
