@@ -1,0 +1,15 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: ubuntu:xenial
+    steps:
+      - run: |
+          apt-get update -qq
+          apt-get install -qq libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure --with-mpi=/usr/lib/openmpi
+          make
+          make distcheck
