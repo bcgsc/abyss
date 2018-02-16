@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: ubuntu:xenial
+      - image: ubuntu:bionic
     steps:
       - run: |
           apt-get update -qq
