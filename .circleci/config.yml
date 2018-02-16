@@ -6,10 +6,10 @@ jobs:
     steps:
       - run: |
           apt-get update -qq
-          apt-get install -qq autoconf automake g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+          apt-get install -qq autoconf automake clang g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
       - checkout
       - run: |
           ./autogen.sh
-          ./configure --with-mpi=/usr/lib/openmpi
+          ./configure CC=clang CXX=clang++ --with-mpi=/usr/lib/openmpi
           make -j
           make -j distcheck
