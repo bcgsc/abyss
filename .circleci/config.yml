@@ -11,5 +11,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=clang CXX=clang++ --with-mpi=/usr/lib/openmpi
-          make -j
-          make -j distcheck
+      - run: make -j
+      - run: make -j check
+      - run: make -j distcheck
