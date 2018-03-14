@@ -1,3 +1,63 @@
+2017-12-19  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.0.3
+	* Many compiler fixes for GCC >= 6, Boost >= 1.64
+	* Read and write GFA 2 assembly graphs with abyss-pe graph=gfa2
+	* Support reading CRAM via samtools
+
+	abyss-bloom:
+	* New `abyss-bloom build -t rolling-hash` option, to
+	pre-build input Bloom filters for `abyss-bloom-dbg`
+	* Fix incorrect output of `abyss-bloom kmers -r`
+	(thanks to @notestaff!)
+
+	abyss-bloom-dbg:
+	* New `-i` option to read Bloom filter files built by
+	`abyss-bloom build -t rolling-hash`
+	* Improved error branch trimming (reduces number of
+	small output sequences)
+	* Fix intermittent segfaults caused by non-null-terminated
+	strings
+
+	abyss-map:
+	* Append BX tag to SAM output (Chromium 10x Genomics data)
+
+	ABYSS-P:
+	* Increase default number of sparsehash buckets from
+	200,000,000 => 1,000,000,000
+	* Benefit: Allows larger datasets to be assembled without
+	time-consuming sparsehash resize operations (e.g. H. sapiens)
+	* Caveat: Increases minimum memory requirement per
+	CPU core from 89 MB to 358 MB
+
+	abyss-pe:
+	* Parallelize `gzip` with `pigz`, if available
+	* Report time/memory for each program with `zsh`, if available
+	* Fix: use `N` instead of `n` for scaffold stage,
+	when set by user
+
+	abyss-samtobreak:
+	* New `--alignment-length` (`-a`) option to exclude alignments
+	shorter than a given length
+	* New `--contig-length` (`-l`) option to exclude contigs
+	shorter than a given length
+	* New `--genome-size` (`-G`) option, for contiguity metrics
+	that depend on the reference genome size
+	* New `--mapq` (`-q`) option for minimum MAPQ score
+	* New `--patch-gaps` (`-g`) option to join alignments
+	separated by small gaps
+	* New TSV output format with additional contiguity
+	stats (e.g. L50, NG50)
+	* Fix handling of hard-clipped alignments
+
+	abyss-todot:
+	* New `--add-complements` option
+
+	abyss-tofastq:
+	* New `--bx` option to copy BX tag from from SAM/BAM
+	to FASTQ header comment (Chromium 10x Genomics
+	data)
+
 2016-10-21  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.0.2
