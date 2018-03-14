@@ -1,4 +1,4 @@
-2017-12-19  Ben Vandervalk <benv@bcgsc.ca>
+2017-03-14  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.0.3
 	* Many compiler fixes for GCC >= 6, Boost >= 1.64
