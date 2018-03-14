@@ -49,6 +49,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -l, --min-align=N       find matches at least N bp [1]\n"
 "  -j, --threads=N         use N parallel threads [1]\n"
+"  -C, --append-comment    append the FASTA/FASTQ comment to the SAM tags\n"
 "  -s, --sample=N          sample the suffix array [1]\n"
 "  -d, --dup               identify and print duplicate sequence\n"
 "                          IDs between QUERY and TARGET\n"
@@ -84,6 +85,9 @@ namespace opt {
 	/** Find matches at least k bp. */
 	static unsigned k;
 
+	/** Append the FASTA/FASTQ comment to the SAM tags. */
+	static int appendComment;
+
 	/** Sample the suffix array. */
 	static unsigned sampleSA;
 
@@ -115,7 +119,7 @@ namespace opt {
 // for sqlite params
 static bool haveDbParam(false);
 
-static const char shortopts[] = "j:k:l:s:dv";
+static const char shortopts[] = "Cj:k:l:s:dv";
 
 enum { OPT_HELP = 1, OPT_VERSION,
 	OPT_ALPHA, OPT_DNA, OPT_PROTEIN,
@@ -123,6 +127,7 @@ enum { OPT_HELP = 1, OPT_VERSION,
 };
 
 static const struct option longopts[] = {
+	{ "append-comment", no_argument, NULL, 'C' },
 	{ "sample", required_argument, NULL, 's' },
 	{ "min-align", required_argument, NULL, 'l' },
 	{ "dup", no_argument, NULL, 'd' },
@@ -437,6 +442,17 @@ static void find(const FastaIndex& faIndex, const FMIndex& fmIndex,
 			}
 			if (print) {
 				cout << sam;
+				if (opt::appendComment && !rec.comment.empty()) {
+					// Output the FASTQ comment, which should be formatted as SAM tags.
+					cout << '\t' << rec.comment;
+				} else if (startsWith(rec.comment, "BX:Z:")) {
+					// Output the BX tag if it's the first tag.
+					size_t i = rec.comment.find_first_of("\t ");
+					if (i == string::npos)
+						i = rec.comment.size();
+					cout << '\t';
+					cout.write(rec.comment.data(), i);
+				}
 #if SAM_SEQ_QUAL
 				if (alts.size() > 0)
 					cout << "\tXA:Z:" << join(alts, ";");
@@ -559,6 +575,7 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'C': opt::appendComment = 1; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': case 'l':
 				arg >> opt::k;

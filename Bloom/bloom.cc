@@ -18,6 +18,9 @@
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/BloomFilterWindow.h"
 #include "Bloom/CascadingBloomFilterWindow.h"
+#include "BloomDBG/BloomIO.h"
+#include "BloomDBG/HashAgnosticCascadingBloom.h"
+#include "lib/bloomfilter/BloomFilter.hpp"
 
 #include <cstdlib>
 #include <getopt.h>
@@ -64,7 +67,10 @@ static const char USAGE_MESSAGE[] =
 "  -b, --bloom-size=N         size of bloom filter [500M]\n"
 "  -B, --buffer-size=N        size of I/O buffer for each thread, in bytes [100000]\n"
 "  -j, --threads=N            use N parallel threads [1]\n"
-"  -h, --hash-seed=N          seed for hash function [0]\n"
+"  -h, --hash-seed=N          seed for hash function (only works with\n"
+"                             `-t konnector') [0]\n"
+"  -H, --num-hashes=N         number of hash functions (only works with\n"
+"                             `-t rolling-hash') [1]\n"
 "  -l, --levels=N             build a cascading bloom filter with N levels\n"
 "                             and output the last level\n"
 "  -L, --init-level='N=FILE'  initialize level N of cascading bloom filter\n"
@@ -77,6 +83,7 @@ static const char USAGE_MESSAGE[] =
 "  -n, --num-locks=N          number of write locks on bloom filter [1000]\n"
 "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
 "                             quality is less than the threshold\n"
+"  -t, --bloom-type=STR       'konnector' or 'rolling-hash' [konnector]\n"
 "      --standard-quality     zero quality is `!' (33)\n"
 "                             default for FASTQ and SAM files\n"
 "      --illumina-quality     zero quality is `@' (64)\n"
@@ -102,6 +109,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";;
 
+enum BloomFilterType { BT_KONNECTOR, BT_ROLLING_HASH, BT_UNKNOWN };
 enum OutputFormat { BED, FASTA, RAW };
 
 namespace opt {
@@ -117,6 +125,9 @@ namespace opt {
 
 	/** Seed for Bloom filter hash function. */
 	size_t hashSeed = 0;
+
+	/** Number of hash functions (only works with `-t rolling-hash') */
+	unsigned numHashes = 1;
 
 	/** The size of a k-mer. */
 	unsigned k;
@@ -135,6 +146,9 @@ namespace opt {
 	 * the -j option.
 	 */
 	size_t numLocks = 1000;
+
+	/** The type of Bloom filter to build */
+	BloomFilterType bloomType = BT_KONNECTOR;
 
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
@@ -157,14 +171,16 @@ namespace opt {
 	OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "b:B:h:j:k:l:L:m:n:q:rvw:";
+static const char shortopts[] = "b:B:h:H:j:k:l:L:m:n:q:rvt:w:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
 static const struct option longopts[] = {
 	{ "bloom-size", required_argument, NULL, 'b' },
+	{ "bloom-type", required_argument, NULL, 't' },
 	{ "buffer-size", required_argument, NULL, 'B' },
-	{ "hash-seed",        required_argument, NULL, 'h' },
+	{ "hash-seed", required_argument, NULL, 'h' },
+	{ "num-hashes", required_argument, NULL, 'H' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "kmer", required_argument, NULL, 'k' },
 	{ "levels", required_argument, NULL, 'l' },
@@ -350,105 +366,55 @@ void printCascadingBloomStats(ostream& os, BF& bloom)
 	}
 }
 
-int build(int argc, char** argv)
+template <typename BF>
+void printHashAgnosticCascadingBloomStats(ostream& os, BF& bloom)
 {
-	parseGlobalOpts(argc, argv);
-
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
-		istringstream arg(optarg != NULL ? optarg : "");
-		switch (c) {
-		  case '?':
-			dieWithUsageError();
-		  case 'b':
-			opt::bloomSize = SIToBytes(arg); break;
-		  case 'B':
-			arg >> opt::bufferSize; break;
-		  case 'h':
-			arg >> opt::hashSeed; break;
-		  case 'j':
-			arg >> opt::threads; break;
-		  case 'l':
-			arg >> opt::levels; break;
-		  case 'L':
-			{
-				unsigned level;
-				arg >> level >> expect("=");
-				if (arg.fail() || arg.eof())
-					break;
-				string path;
-				arg >> path;
-				if (arg.fail())
-					break;
-				if (level > opt::levelInitPaths.size())
-					opt::levelInitPaths.resize(level);
-				opt::levelInitPaths[level-1].push_back(path);
-				break;
-			}
-		  case 'n':
-			arg >> opt::numLocks; break;
-		  case 'q':
-			arg >> opt::qualityThreshold; break;
-		  case 'w':
-			arg >> opt::windowIndex;
-			arg >> expect("/");
-			arg >> opt::windows;
-			break;
-		}
-		if (optarg != NULL && (!arg.eof() || arg.fail())) {
-			cerr << PROGRAM ": invalid option: `-"
-				<< (char)c << optarg << "'\n";
-			exit(EXIT_FAILURE);
-		}
+	for (unsigned i = 0; i < opt::levels; i++) {
+		os << "Stats for Bloom filter level " << i+1 << ":\n"
+			<< "\tBloom size (bits): "
+			<< bloom.getBloomFilter(i).getFilterSize() << "\n"
+			<< "\tBloom popcount (bits): "
+			<< bloom.getBloomFilter(i).getPop() << "\n"
+			<< "\tBloom filter FPR: " << setprecision(3)
+			<< 100 * bloom.getBloomFilter(i).getFPR() << "%\n";
 	}
+}
 
-	if (!opt::levelInitPaths.empty() && opt::levels < 2)
-	{
-		cerr << PROGRAM ": -L can only be used with cascading bloom "
-			"filters (-l >= 2)\n";
-		dieWithUsageError();
+/**
+ * Convert string argument from `-t' option to an equivalent
+ * BloomFilterType value.
+ */
+static inline BloomFilterType strToBloomType(const std::string& str)
+{
+	if (str == "konnector")
+		return BT_KONNECTOR;
+	else if (str == "rolling-hash")
+		return BT_ROLLING_HASH;
+	else
+		return BT_UNKNOWN;
+}
+
+static inline string bloomTypeToStr(const BloomFilterType type)
+{
+	assert(type != BT_UNKNOWN);
+	if (type == BT_KONNECTOR) {
+		return string("konnector");
+	} else {
+		assert(type == BT_ROLLING_HASH);
+		return string("rolling-hash");
 	}
+}
 
-	if (opt::levelInitPaths.size() > opt::levels) {
-		cerr << PROGRAM ": level arg to -L is greater than number"
-			" of bloom filter levels (-l)\n";
-		dieWithUsageError();
-	}
+/** Build a konnector-style Bloom filter. */
 
-#if _OPENMP
-	if (opt::threads > 0)
-		omp_set_num_threads(opt::threads);
-#endif
-
-	// bloom filter size in bits
-	size_t bits = opt::bloomSize * 8;
-
-	if (bits % opt::levels != 0) {
-		cerr << PROGRAM ": bloom filter size (-b) must be evenly divisible "
-			<< "by number of bloom filter levels (-l)\n";
-		dieWithUsageError();
-	}
-
-	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
-		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
-			<< "b is bloom filter size (-b), "
-			<< "l is number of levels (-l), and "
-			<< "w is number of windows (-w)\n";
-		dieWithUsageError();
-	}
-
-	if (argc - optind < 2) {
-		cerr << PROGRAM ": missing arguments\n";
-		dieWithUsageError();
-	}
-
+static inline void buildKonnectorBloom(size_t bits, string outputPath,
+	int argc, char** argv)
+{
 	// if we are building a cascading bloom filter, reduce
 	// the size of each level so that the overall bloom filter
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
 
-	string outputPath(argv[optind]);
-	optind++;
 	if (opt::windows == 0) {
 
 		if (opt::levels == 1) {
@@ -504,6 +470,159 @@ int build(int argc, char** argv)
 			printCascadingBloomStats(cerr, cascadingBloom);
 			writeBloom(cascadingBloom, outputPath);
 		}
+	}
+}
+
+/** Build a rolling-hash based Bloom filter (used by `abyss-bloom-dbg`) */
+static inline void buildRollingHashBloom(size_t bits, string outputPath,
+	int argc, char** argv)
+{
+	/* BloomFilter class requires size to be a multiple of 64 */
+	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
+		bits / opt::levels, (size_t)64);
+
+	/* use cascading Bloom filter to remove error k-mers */
+	HashAgnosticCascadingBloom cascadingBloom(
+		bloomLevelSize, opt::numHashes, opt::levels, opt::k);
+
+	/* load reads into Bloom filter */
+	for (int i = optind; i < argc; ++i)
+		BloomDBG::loadFile(cascadingBloom, argv[i], opt::verbose);
+
+	if (opt::verbose)
+		printHashAgnosticCascadingBloomStats(cerr, cascadingBloom);
+
+	writeBloom(cascadingBloom, outputPath);
+}
+
+/**
+ * Build Bloom filter file of type 'konnector' or 'rolling-hash', as
+ * per `-t` option.
+ */
+int build(int argc, char** argv)
+{
+	parseGlobalOpts(argc, argv);
+
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+		  case '?':
+			dieWithUsageError();
+		  case 'b':
+			opt::bloomSize = SIToBytes(arg); break;
+		  case 'B':
+			arg >> opt::bufferSize; break;
+		  case 'h':
+			arg >> opt::hashSeed; break;
+		  case 'H':
+			arg >> opt::numHashes; break;
+		  case 'j':
+			arg >> opt::threads; break;
+		  case 'l':
+			arg >> opt::levels; break;
+		  case 'L':
+			{
+				unsigned level;
+				arg >> level >> expect("=");
+				if (arg.fail() || arg.eof())
+					break;
+				string path;
+				arg >> path;
+				if (arg.fail())
+					break;
+				if (level > opt::levelInitPaths.size())
+					opt::levelInitPaths.resize(level);
+				opt::levelInitPaths[level-1].push_back(path);
+				break;
+			}
+		  case 'n':
+			arg >> opt::numLocks; break;
+		  case 'q':
+			arg >> opt::qualityThreshold; break;
+		  case 't':
+			{
+				std::string str;
+				arg >> str;
+				opt::bloomType = strToBloomType(str);
+			}
+			break;
+		  case 'w':
+			arg >> opt::windowIndex;
+			arg >> expect("/");
+			arg >> opt::windows;
+			break;
+		}
+		if (optarg != NULL && (!arg.eof() || arg.fail())) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (!opt::levelInitPaths.empty() && opt::levels < 2)
+	{
+		cerr << PROGRAM ": -L can only be used with cascading bloom "
+			"filters (-l >= 2)\n";
+		dieWithUsageError();
+	}
+
+	if (opt::levelInitPaths.size() > opt::levels) {
+		cerr << PROGRAM ": level arg to -L is greater than number"
+			" of bloom filter levels (-l)\n";
+		dieWithUsageError();
+	}
+
+	if (opt::bloomType == BT_UNKNOWN) {
+		cerr << PROGRAM ": unrecognized argument to `-t' "
+			<< "(should be 'konnector' or 'rolling-hash')\n";
+		dieWithUsageError();
+	}
+
+	if (opt::bloomType == BT_KONNECTOR && opt::numHashes != 1) {
+		cerr << PROGRAM ": warning: -H option has no effect"
+			" when using `-t konnector'\n";
+		opt::numHashes = 1;
+	}
+
+#if _OPENMP
+	if (opt::threads > 0)
+		omp_set_num_threads(opt::threads);
+#endif
+
+	// bloom filter size in bits
+	size_t bits = opt::bloomSize * 8;
+
+	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
+		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
+			<< "b is bloom filter size (-b), "
+			<< "l is number of levels (-l), and "
+			<< "w is number of windows (-w)\n";
+		dieWithUsageError();
+	}
+
+	if (argc - optind < 2) {
+		cerr << PROGRAM ": missing arguments\n";
+		dieWithUsageError();
+	}
+
+	string outputPath(argv[optind]);
+	optind++;
+
+	if (opt::verbose) {
+		cerr << "Building a Bloom filter of type '"
+			<< bloomTypeToStr(opt::bloomType) << "' with "
+			<< opt::levels << " level(s), "
+			<< opt::numHashes << " hash function(s), and a total size of "
+			<< opt::bloomSize << " bytes" << endl;
+	}
+
+	assert(opt::bloomType != BT_UNKNOWN);
+	if (opt::bloomType == BT_KONNECTOR) {
+		buildKonnectorBloom(bits, outputPath, argc, argv);
+	} else {
+		assert(opt::bloomType == BT_ROLLING_HASH);
+		buildRollingHashBloom(bits, outputPath, argc, argv);
 	}
 
 	return 0;

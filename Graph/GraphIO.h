@@ -31,8 +31,10 @@ std::ostream& write_graph(std::ostream& out, const Graph& g,
 		return write_dist(out, g);
 	  case DOT: case DOT_MEANCOV:
 		return out << dot_writer(g);
-	  case GFA:
-		return write_gfa(out, g);
+	  case GFA1:
+		return write_gfa1(out, g);
+	  case GFA2:
+		return write_gfa2(out, g);
 	  case SAM:
 		return write_sam(out, g, program, commandLine);
 	  default:

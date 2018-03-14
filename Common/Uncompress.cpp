@@ -47,6 +47,7 @@ static const char* zcatExec(const string& path)
 		endsWith(path, ".xz") ? "xzdec -c" :
 		endsWith(path, ".zip") ? "unzip -p" :
 		endsWith(path, ".bam") ? "samtools view -h" :
+		endsWith(path, ".cram") ? "samtools view -h" :
 		endsWith(path, ".jf") ? "jellyfish dump" :
 		endsWith(path, ".jfq") ? "jellyfish qdump" :
 		endsWith(path, ".sra") ? "fastq-dump -Z --split-spot" :

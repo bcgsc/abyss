@@ -128,7 +128,6 @@ Parameters of `abyss-sealer`
 * `--print-flanks`: outputs flank files
 * `-S`,`--input-scaffold=FILE`: load scaffold from FILE
 * `-L`,`--flank-length=N`: length of flanks to be used as pseudoreads [`100`]
-* `-D`,`--flank-distance=N`: distance of flank from gap [0]
 * `-j`,`--threads=N`: use N parallel threads [1]
 * `-k`,`--kmer=N`: the size of a k-mer
 * `-b`,`--bloom-size=N`: size of bloom filter. Required when not using pre-built Bloom filter(s).

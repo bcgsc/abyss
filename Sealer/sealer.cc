@@ -138,9 +138,6 @@ namespace opt {
 	/** Length of flank. */
 	int flankLength = 100;
 
-	/** Distance of flank from gap. */
-	unsigned flankDistance = 0;
-
 	/** Max gap size to fill */
 	unsigned maxGapLength = 800;
 
@@ -239,7 +236,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:D:b:B:d:ef:F:G:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "S:L:b:B:d:ef:F:G:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -248,7 +245,6 @@ static const struct option longopts[] = {
 	{ "print-flanks",     no_argument, &opt::printFlanks, 1},
 	{ "input-scaffold",   required_argument, NULL, 'S' },
 	{ "flank-length",     required_argument, NULL, 'L' },
-	{ "flank-distance",   required_argument, NULL, 'D' },
 	{ "max-gap-length",   required_argument, NULL, 'G' },
 	{ "bloom-size",       required_argument, NULL, 'b' },
 	{ "max-branches",     required_argument, NULL, 'B' },
@@ -721,8 +717,6 @@ int main(int argc, char** argv)
 			arg >> opt::inputScaffold; break;
 		  case 'L':
 			arg >> opt::flankLength; break;
-		  case 'D':
-			arg >> opt::flankDistance; break;
 		  case 'G':
 			arg >> opt::maxGapLength; break;
 		  case 'b':

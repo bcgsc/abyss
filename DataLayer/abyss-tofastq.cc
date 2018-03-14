@@ -36,7 +36,7 @@ static const char USAGE_MESSAGE[] =
 "  -i, --interleave        interleave the records\n"
 "      --fastq             ouput FASTQ format [default]\n"
 "      --fasta             ouput FASTA format\n"
-"  -l, --longranger        copy SAM BX tag to output FASTA comment\n"
+"      --bx                copy SAM BX tag to output FASTA comment\n"
 "      --chastity          discard unchaste reads [default]\n"
 "      --no-chastity       do not discard unchaste reads\n"
 "      --trim-masked       trim masked bases from the ends of reads\n"
@@ -62,16 +62,16 @@ namespace opt {
 	static int verbose;
 }
 
-static const char shortopts[] = "ilq:v";
+static const char shortopts[] = "iq:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_BX };
 
 static const struct option longopts[] = {
 	{ "cat",              no_argument, &opt::interleave, 0 },
 	{ "interleave",       no_argument, &opt::interleave, 1 },
 	{ "fasta",            no_argument, &opt::toFASTQ, 0 },
 	{ "fastq",            no_argument, &opt::toFASTQ, 1 },
-	{ "longranger",       no_argument, &opt::longranger, 1 },
+	{ "bx",               no_argument, &opt::bxTag, 1 },
 	{ "chastity",         no_argument, &opt::chastityFilter, 1 },
 	{ "no-chastity",      no_argument, &opt::chastityFilter, 0 },
 	{ "trim-masked",      no_argument, &opt::trimMasked, 1 },
@@ -151,14 +151,14 @@ int main(int argc, char** argv)
 			case 'i':
 				opt::interleave = true;
 				break;
-			case 'l':
-				opt::longranger = true;
-				break;
 			case 'q':
 				arg >> opt::qualityThreshold;
 				break;
 			case 'v':
 				opt::verbose++;
+				break;
+			case OPT_BX:
+				opt::bxTag = true;
 				break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;

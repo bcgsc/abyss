@@ -3,8 +3,15 @@
 # Written by Shaun Jackman <sjackman@bcgsc.ca> and
 # Anthony Raymond <traymond@bcgsc.ca>.
 
-# Set pipefail to require that all commands of a pipe must succeed.
-SHELL=/bin/bash -o pipefail
+ifneq ($(shell command -v zsh),)
+# Set pipefail to ensure that all commands of a pipe succeed.
+SHELL=zsh -e -o pipefail
+# Report run time and memory usage with zsh.
+export REPORTTIME=1
+export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
+else
+SHELL=bash -e -o pipefail
+endif
 
 # Define this environment variable on Mac OS X to read
 # compressed files.
@@ -79,13 +86,24 @@ np?=$(SLURM_NTASKS)
 endif
 
 # Determine the path to mpirun
-mpirun?=$(shell which mpirun)
+mpirun?=$(shell command -v mpirun)
 ifeq ($(mpirun),)
 mpirun=mpirun
 endif
 
+# Use pigz or bgzip for parallel compression if available.
+ifneq ($(shell command -v pigz),)
+gzip=pigz -p$t
+else
+ifneq ($(shell command -v bgzip),)
+gzip=bgzip -@$t
+else
+gzip=gzip
+endif
+endif
+
 # Determine the path to the ABySS executables
-path?=$(shell dirname `which $(MAKEFILE_LIST)`)
+path?=$(shell dirname `command -v $(MAKEFILE_LIST)`)
 ifdef path
 PATH:=$(path):$(PATH)
 endif
@@ -263,13 +281,10 @@ DistanceEst?=DistanceEst$(ssq_t)
 l?=40
 s?=1000
 n?=10
-libs=$(pe) $(mp)
-$(foreach i,$(libs),$(eval $i_l?=$l))
-$(foreach i,$(libs),$(eval $i_s?=$s))
-$(foreach i,$(libs),$(eval $i_n?=$n))
-deopt=$v $(dbopt) -j$j -k$k -l$($*_l) -s$($*_s) -n$($*_n) $($*_de) \
-	$(DISTANCEEST_OPTIONS)
-scaffold_deopt=--dot --mean $(deopt)
+$(foreach i,$(pe),$(eval $i_l?=$l))
+$(foreach i,$(pe),$(eval $i_s?=$s))
+$(foreach i,$(pe),$(eval $i_n?=$n))
+override deopt=$v $(dbopt) -j$j -k$k $(DISTANCEEST_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 
 # SimpleGraph parameters
 sgopt += $(dbopt)
@@ -294,8 +309,16 @@ pcopt += -p$p
 mcopt += $v $(dbopt) -k$k
 
 # Scaffold parameters
+L?=$l
 S?=1000-10000
 N?=$n
+SCAFFOLD_DE_S?=$(shell echo $S | sed 's/-.*//')
+SCAFFOLD_DE_N?=$N
+SCAFFOLD_DE_OPTIONS?=$(DISTANCEEST_OPTIONS)
+$(foreach i,$(mp),$(eval $i_l?=$L))
+$(foreach i,$(mp),$(eval $i_s?=$(SCAFFOLD_DE_S)))
+$(foreach i,$(mp),$(eval $i_n?=$(SCAFFOLD_DE_N)))
+override scaffold_deopt=$v $(dbopt) --dot --mean -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 scopt += $v $(dbopt) $(SS) -k$k
 ifdef G
 scopt += -G$G
@@ -348,7 +371,7 @@ help:
 	@echo 'Report bugs to https://github.com/bcgsc/abyss/issues or abyss-users@bcgsc.ca.'
 
 version:
-	@echo "abyss-pe (ABySS) 2.0.1"
+	@echo "abyss-pe (ABySS) 2.0.2"
 	@echo "Written by Shaun Jackman and Anthony Raymond."
 	@echo
 	@echo "Copyright 2012 Canada's Michael Smith Genome Science Centre"
@@ -515,7 +538,7 @@ endif
 	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
 
 %-2.fa %-2.$g: %-1.fa %-2.$g1 %-1.path
-	MergeContigs $(mcopt) -g $*-2.$g -o $*-2.fa $^
+	MergeContigs --$g $(mcopt) -g $*-2.$g -o $*-2.fa $^
 
 # Pop bubbles
 
@@ -539,7 +562,7 @@ endif
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
-		|gzip >$*-3.sam.gz
+		|$(gzip) >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
@@ -629,7 +652,7 @@ endif
 	$(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
-		|gzip >$*-6.sam.gz
+		|$(gzip) >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
 	$(align) $(mapopt) $(strip $($*)) $< \
@@ -696,7 +719,7 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 
 %-8.sam.gz: $(name)-8.fa.bwt
 	bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
-		|gzip >$@
+		|$(gzip) >$@
 
 %-8.dist.dot: %-8.sam.gz
 	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
@@ -764,7 +787,7 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 # Calculate assembly contiguity statistics
 
 stats: $(name)-stats.tab $(name)-stats $(name)-stats.csv $(name)-stats.md
-ifneq ($(shell which $(MARKDOWN) 2>/dev/null),)
+ifneq ($(shell command -v $(MARKDOWN)),)
 stats: $(name)-stats.html
 endif
 
@@ -801,7 +824,7 @@ $(name)-stats.tab:
 # Align the contigs to the reference
 
 %-$(ref).sam.gz: %.fa
-	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |gzip >$@
+	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |$(gzip) >$@
 
 # Find breakpoints in the alignments
 
@@ -812,7 +835,7 @@ $(name)-stats.tab:
 
 override varList := a b c d e E G j k l m n N p q s S t v cs pi \
 	np pe lib mp se SS hostname xtip \
-	ssq ssq_ti libs path name in mpirun \
+	ssq ssq_ti path name in mpirun \
 	aligner long ref fixmate DistanceEst \
 	map deref abyssopt fgopt pbopt \
 	align mapopt fmopt deopt \

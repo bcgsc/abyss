@@ -12,8 +12,8 @@ using namespace std;
 
 TEST(BloomFilter, base)
 {
-	BloomFilter x(100);
-	EXPECT_EQ(x.size(), 100U);
+	BloomFilter x(10000);
+	EXPECT_EQ(x.size(), 10000U);
 
 	Kmer::setLength(16);
 	Kmer a("AGATGTGCTGCCGCCT");
@@ -75,7 +75,7 @@ TEST(BloomFilter, serialization)
 
 TEST(BloomFilter, union_)
 {
-	size_t bits = 100;
+	size_t bits = 10000;
 	BloomFilter bloom1(bits);
 	BloomFilter bloom2(bits);
 
@@ -110,7 +110,7 @@ TEST(BloomFilter, union_)
 
 TEST(BloomFilter, intersect)
 {
-	size_t bits = 100;
+	size_t bits = 10000;
 	BloomFilter bloom1(bits);
 	BloomFilter bloom2(bits);
 
@@ -152,8 +152,8 @@ TEST(BloomFilter, intersect)
 
 TEST(CascadingBloomFilter, base)
 {
-	CascadingBloomFilter x(100, 2);
-	EXPECT_EQ(x.size(), 100U);
+	CascadingBloomFilter x(10000, 2);
+	EXPECT_EQ(x.size(), 10000U);
 
 	Kmer::setLength(16);
 	Kmer a("AGATGTGCTGCCGCCT");

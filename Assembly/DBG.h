@@ -13,6 +13,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <iomanip>
@@ -103,15 +104,21 @@ SequenceCollectionHash()
 	// architecture and 2 bits per element on a 32-bit architecture.
 	// The number of elements is rounded up to a power of two.
 	if (opt::rank >= 0) {
-		// Initialize sparsehash size to 2 billion empty buckets.
-		// Memory overhead is 2 bits per empty bucket,
-		// so the initial memory footprint per CPU core is 512 MB.
-		// Setting the initialize sparehash size to a large
+		// Initialize sparsehash size to 2^30 (~1 billion) empty buckets.
+		// Setting the initial sparsehash size to a large
 		// number avoids the prohibitively slow step of resizing
 		// the hash table and rehashing *every* element when the
-		// maximum load factor is reached. (For sparehash, the
-		// default max load factor appears to be ~0.7.)
-		m_data.rehash(2000000000);
+		// maximum load factor is exceeded.
+		//
+		// The initial memory footprint per CPU core is
+		// 2^30 * 2.67 / 8 ~= 0.358 GB. The value of 2^30 buckets
+		// was chosen to accomodate a k=144 32-thread assembly of human
+		// (NA24143) uncorrected Illumina reads with ~70X coverage and
+		// 20,317,980,431 distinct 144-mers, without requiring sparsehash
+		// resizing. For further details on the test dataset, see:
+		// "ABySS 2.0: Resource-efficient assembly of large genomes
+		// using a Bloom filter".
+		m_data.rehash((size_t)pow(2, 30));
 		m_data.min_load_factor(0.2);
 	} else {
 		// Allocate a big hash for a single processor.

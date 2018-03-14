@@ -2,8 +2,8 @@
 #define DATALAYER_OPTIONS 1
 
 namespace opt {
+	extern int bxTag;
 	extern int chastityFilter;
-	extern int longranger;
 	extern int trimMasked;
 	extern int qualityOffset;
 	extern int qualityThreshold;

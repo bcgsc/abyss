@@ -1,13 +1,18 @@
 #ifndef BLOOM_DBG_H
 #define BLOOM_DBG_H 1
 
+#include "BloomDBG/AssemblyParams.h"
+#include "BloomDBG/AssemblyCounters.h"
 #include "BloomDBG/RollingHashIterator.h"
 #include "Common/Uncompress.h"
 #include "Common/IOUtil.h"
+#include "Common/Sequence.h"
 #include "DataLayer/FastaReader.h"
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
 #include "Graph/BreadthFirstSearch.h"
+#include "BloomDBG/BloomIO.h"
+#include "BloomDBG/Checkpoint.h"
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingBloomDBG.h"
@@ -32,162 +37,6 @@ namespace BloomDBG {
 	 * Type for a vertex in the de Bruijn graph.
 	 */
 	typedef RollingBloomDBGVertex Vertex;
-
-	/**
-	 * Parameters controlling assembly.
-	 */
-	struct AssemblyParams
-	{
-		/** Bloom filter size (in bits) */
-		size_t bloomSize;
-
-		/** minimum k-mer coverage threshold */
-		unsigned minCov;
-
-		/** WIG track containing 0/1 for sufficient k-mer cov */
-		std::string covTrackPath;
-
-		/** path for output GraphViz file */
-		string graphPath;
-
-		/** num Bloom filter hash functions */
-		unsigned numHashes;
-
-		/** the number of parallel threads. */
-		unsigned threads;
-
-		/** the size of a k-mer. */
-		unsigned k;
-
-		/** the size of a single k-mer in a k-mer pair */
-		unsigned K;
-
-		/** reference genome */
-		std::string refPath;
-
-		/** Quadratic Residue (QR) seed length */
-		unsigned qrSeedLen;
-
-		/** spaced seed */
-		string spacedSeed;
-
-		/** maximum length of branches to trim */
-		unsigned trim;
-
-		/** verbose level for progress messages */
-		int verbose;
-
-		/** output contigs path (empty string indicates STDOUT) */
-		std::string outputPath;
-
-		/** output path for trace file (-T) option */
-		std::string tracePath;
-
-		/** Default constructor */
-		AssemblyParams() : bloomSize(0), minCov(2), graphPath(),
-			numHashes(1), threads(1), k(0), K(0), qrSeedLen(0),
-			spacedSeed(), trim(std::numeric_limits<unsigned>::max()),
-			verbose(0), outputPath(), tracePath() {}
-
-		/** Return true if all required members are initialized */
-		bool initialized() const {
-			return bloomSize > 0 && k > 0 &&
-				trim != std::numeric_limits<unsigned>::max();
-		}
-
-		/** Reset all spaced seed params to their default values */
-		void resetSpacedSeedParams() {
-			spacedSeed.clear();
-			K = 0;
-			qrSeedLen = 0;
-		}
-	};
-
-	/**
-	 * Round up `num` to the nearest multiple of `base`.
-	 */
-	template <typename T>
-	inline static T roundUpToMultiple(T num, T base)
-	{
-		if (base == 0)
-			return num;
-		T remainder = num % base;
-		if (remainder == 0)
-			return num;
-		return num + base - remainder;
-	}
-
-	/**
-	 * Load DNA sequence into Bloom filter using rolling hash.
-	 *
-	 * @param bloom target Bloom filter
-	 * @param seq DNA sequence
-	 */
-	template <typename BF>
-	inline static void loadSeq(BF& bloom, const std::string& seq)
-	{
-		const unsigned k = bloom.getKmerSize();
-		const unsigned numHashes = bloom.getHashNum();
-		for (RollingHashIterator it(seq, numHashes, k);
-			it != RollingHashIterator::end(); ++it) {
-			bloom.insert(*it);
-		}
-	}
-
-	/**
-	 * Load sequences contents of FASTA file into Bloom filter using
-	 * rolling hash.
-	 * @param bloom target Bloom filter
-	 * @param path path to FASTA file
-	 * @param verbose if true, print progress messages to STDERR
-	 */
-	template <typename BF>
-	inline static void loadFile(BF& bloom, const std::string& path,
-		bool verbose = false)
-	{
-		const size_t BUFFER_SIZE = 1000000;
-		const size_t LOAD_PROGRESS_STEP = 10000;
-
-		assert(!path.empty());
-		if (verbose)
-			std::cerr << "Reading `" << path << "'..." << std::endl;
-
-		FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
-		uint64_t readCount = 0;
-#pragma omp parallel
-		for (std::vector<std::string> buffer(BUFFER_SIZE);;) {
-			buffer.clear();
-			size_t bufferSize = 0;
-			bool good = true;
-#pragma omp critical(in)
-			for (; good && bufferSize < BUFFER_SIZE;) {
-				std::string seq;
-				good = in >> seq;
-				if (good) {
-					buffer.push_back(seq);
-					bufferSize += seq.length();
-				}
-			}
-			if (buffer.size() == 0)
-				break;
-			for (size_t j = 0; j < buffer.size(); j++) {
-				loadSeq(bloom, buffer.at(j));
-				if (verbose)
-#pragma omp critical(cerr)
-				{
-					readCount++;
-					if (readCount % LOAD_PROGRESS_STEP == 0)
-						std::cerr << "Loaded " << readCount
-							<< " reads into Bloom filter\n";
-				}
-			}
-		}
-		assert(in.eof());
-		if (verbose) {
-			std::cerr << "Loaded " << readCount << " reads from `"
-					  << path << "` into Bloom filter\n";
-		}
-	}
 
 	/**
 	 * Return true if all of the k-mers in `seq` are contained in `bloom`
@@ -447,24 +296,6 @@ namespace BloomDBG {
 		/* Return true if sequence was successfully extended */
 		return result;
 	}
-
-
-	/**
-	 * Counters for tracking assembly statistics and producing
-	 * progress messages.
-	 */
-	struct AssemblyCounters
-	{
-		/** reads consisting entirely of solid k-mers */
-		size_t solidReads;
-		size_t readsExtended;
-		size_t readsProcessed;
-		size_t basesAssembled;
-		size_t contigID;
-
-		AssemblyCounters() : solidReads(0), readsExtended(0), readsProcessed(0),
-			basesAssembled(0), contigID(0) {}
-	};
 
 	/** Print an intermediate progress message during assembly */
 	void printProgressMessage(AssemblyCounters counters)
@@ -775,18 +606,21 @@ namespace BloomDBG {
 	 * (e.g. k-mer coverage threshold)
 	 * @param counters counter variables used for generating assembly
 	 * progress messages.
-	 * @param out output stream for contigs
-	 * @param traceOut output stream for trace file (-T option)
+	 * @param streams input/output streams used during assembly
 	 */
-	template <typename GraphT, typename BloomT>
+	template <typename GraphT, typename BloomT, typename AssemblyStreamsT>
 	inline static void extendRead(const FastaRecord& read,
 		const GraphT& dbg, BloomT& assembledKmerSet,
 		const AssemblyParams& params, AssemblyCounters& counters,
-		std::ostream& out, std::ostream& traceOut)
+		AssemblyStreamsT& streams)
 	{
 		const unsigned k = params.k;
 		const unsigned numHashes = params.numHashes;
 		const unsigned minBranchLen = params.trim + 1;
+
+		std::ostream& out = streams.out;
+		std::ostream& checkpointOut = streams.checkpointOut;
+		std::ostream& traceOut = streams.traceOut;
 
 		if (params.verbose >= 2) {
 #pragma omp critical(cerr)
@@ -857,6 +691,11 @@ namespace BloomDBG {
 				/* add contig to output FASTA */
 				printContig(seq, counters.contigID, read.id, k, out);
 
+				/* add contig to checkpoint FASTA file */
+				if (params.checkpointsEnabled())
+					printContig(seq, counters.contigID, read.id, k,
+						checkpointOut);
+
 				/* update counters / trace results */
 				traceResult.redundantContig = false;
 				traceResult.contigID = counters.contigID;
@@ -882,6 +721,98 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Return true if the left end of the given sequence is a blunt end
+	 * in the Bloom filterde Bruijn graph. PRECONDITION: `seq` does not contain
+	 * any non-ACGT chars.
+	 */
+	template <typename GraphT>
+		inline static unsigned leftIsBluntEnd(const Sequence& seq, const GraphT& graph,
+			const AssemblyParams& params)
+	{
+		unsigned k = params.k;
+		unsigned numHashes = params.numHashes;
+		unsigned fpLookAhead = 5;
+
+		if (seq.length() < k)
+			return false;
+
+		Sequence firstKmerStr(seq, 0, k);
+		Path<Vertex> path = seqToPath(firstKmerStr, k, numHashes);
+		Vertex& firstKmer = path.front();
+
+		return !lookAhead(firstKmer, REVERSE, fpLookAhead, graph);
+	}
+
+	/**
+	 * Return true if the left and/or right end of the sequence is a blunt
+	 * end in the de Bruijn graph.  Such reads likely have read errors
+	 * and thus we should not try to extend these into contings.
+	 * When testing for a blunt end, we account for the possibility of
+	 * false positive extensions by using a small amount of look-ahead
+	 * (as dictated by params.fpLookAhead).
+	 */
+	template <typename GraphT>
+	inline static bool hasBluntEnd(const Sequence& seq, const GraphT& graph,
+		const AssemblyParams& params)
+	{
+		if (leftIsBluntEnd(seq, graph, params))
+			return true;
+
+		Sequence rc = reverseComplement(seq);
+		if (leftIsBluntEnd(rc, graph, params))
+			return true;
+
+		return false;
+	}
+
+	/**
+	 * Decide if a read should be extended and if so extend it into a contig.
+	 */
+	template <typename SolidKmerSetT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	static inline void processRead(const FastaRecord& rec,
+		const SolidKmerSetT& solidKmerSet, AssembledKmerSetT& assembledKmerSet,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
+	{
+		/* Boost graph API for Bloom filter */
+		RollingBloomDBG<SolidKmerSetT> graph(solidKmerSet);
+
+		unsigned k = params.k;
+		const Sequence& seq = rec.seq;
+
+		/* we can't extend reads shorter than k */
+		if (seq.length() < k)
+			return;
+
+		/* skip reads with non-ACGT chars */
+		if (!allACGT(seq))
+			return;
+
+		/* don't extend reads that are tips */
+		if (hasBluntEnd(seq, graph, params))
+			return;
+
+		/* only extend "solid" reads */
+		if (!allKmersInBloom(seq, solidKmerSet))
+			return;
+
+#pragma omp atomic
+		counters.solidReads++;
+
+		/* skip reads in previously assembled regions */
+		if (allKmersInBloom(seq, assembledKmerSet))
+			return;
+
+		/* extend the read into a contig */
+		extendRead(rec, graph, assembledKmerSet, params,
+			counters, streams);
+
+#pragma omp atomic
+		counters.readsExtended++;
+	}
+
+	/**
 	 * Perform a Bloom-filter-based de Bruijn graph assembly.
 	 * Contigs are generated by extending reads left/right within
 	 * the de Bruijn graph, up to the next branching point or dead end.
@@ -897,18 +828,30 @@ namespace BloomDBG {
 	 * @param verbose set to true to print progress messages to
 	 * STDERR
 	 */
-	template <typename BloomT>
-	inline static void assemble(int argc, char** argv, const BloomT& goodKmerSet,
-		const AssemblyParams& params, std::ostream& out)
+	template <typename SolidKmerSetT>
+		inline static void assemble(int argc, char** argv,
+			SolidKmerSetT& solidKmerSet, const AssemblyParams& params,
+			std::ostream& out)
 	{
-		assert(params.initialized());
+		/* k-mers in previously assembled contigs */
+		BTL::BloomFilter visitedKmerSet(solidKmerSet.size(),
+			solidKmerSet.getHashNum(), solidKmerSet.getKmerSize());
 
-		/* per-thread I/O buffer (size is in bases) */
-		const size_t SEQ_BUFFER_SIZE = 1000000;
+		/* counters for progress messages */
+		AssemblyCounters counters;
 
-		/* print progress message after processing this many reads */
-		const unsigned progressStep = 1000;
-		const unsigned k = goodKmerSet.getKmerSize();
+		/* input reads */
+		FastaConcat in(argv, argv + argc, FastaReader::FOLD_CASE);
+
+		/* duplicate FASTA output for checkpoints */
+		std::ofstream checkpointOut;
+		if (params.checkpointsEnabled()) {
+			assert(!params.checkpointPathPrefix.empty());
+			std::string path = params.checkpointPathPrefix
+				+ CHECKPOINT_FASTA_EXT + CHECKPOINT_TMP_EXT;
+			checkpointOut.open(path.c_str());
+			assert_good(checkpointOut, path);
+		}
 
 		/* trace file output ('-T' option) */
 		std::ofstream traceOut;
@@ -919,89 +862,115 @@ namespace BloomDBG {
 			assert_good(traceOut, params.tracePath);
 		}
 
-		/* k-mers in previously assembled contigs */
-		BloomFilter assembledKmerSet(goodKmerSet.size(),
-			goodKmerSet.getHashNum(), goodKmerSet.getKmerSize());
-		/* counters for progress messages */
-		AssemblyCounters counters;
+		/* bundle output streams */
+		AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut);
 
-		/* Boost graph API over Bloom filter */
-		RollingBloomDBG<BloomT> graph(goodKmerSet);
+		/* run the assembly */
+		assemble(solidKmerSet, visitedKmerSet, counters, params, streams);
+	}
+
+	/**
+	 * Perform a Bloom-filter-based de Bruijn graph assembly.
+	 * Contigs are generated by extending reads left/right within
+	 * the de Bruijn graph, up to the next branching point or dead end.
+	 * Short branches due to Bloom filter false positives are
+	 * ignored.
+	 *
+	 * @param argc number of input FASTA files
+	 * @param argv array of input FASTA filenames
+	 * @param genomeSize approx genome size
+	 * @param goodKmerSet Bloom filter containing k-mers that
+	 * occur more than once in the input data
+	 * @param visitedKmerSet Bloom filter containing k-mers that have
+	 * already been included in contigs
+	 * @param in input stream for sequencing reads (FASTA)
+	 * @param out output stream for contigs (FASTA)
+	 * @param verbose set to true to print progress messages to
+	 * STDERR
+	 */
+	template <typename SolidKmerSetT, typename VisitedKmerSetT,
+		typename InputReadStreamT>
+	inline static void assemble(const SolidKmerSetT& goodKmerSet,
+		VisitedKmerSetT& assembledKmerSet, AssemblyCounters& counters,
+		const AssemblyParams& params,
+		AssemblyStreams<InputReadStreamT>& streams)
+	{
+		assert(params.initialized());
+
+		/* per-thread I/O buffer (size is in bases) */
+		const size_t SEQ_BUFFER_SIZE = 1000000;
+		/* controls frequency of progress messages */
+		const unsigned PROGRESS_STEP = 1000;
 
 		if (params.verbose)
 			std::cerr << "Trimming branches " << params.trim
 				<< " k-mers or shorter" << std::endl;
 
-		FastaConcat in(argv, argv + argc, FastaReader::FOLD_CASE);
+		InputReadStreamT& in = streams.in;
+		std::ostream& checkpointOut = streams.checkpointOut;
+
+		while (true)
+		{
+			size_t readsUntilCheckpoint = params.readsPerCheckpoint;
+
 #pragma omp parallel
-		for (std::vector<FastaRecord> buffer;;) {
-
-			/* read sequences in batches to reduce I/O contention */
-			buffer.clear();
-			size_t bufferSize;
-			bool good = true;
+			for (std::vector<FastaRecord> buffer;;)
+			{
+				/* read sequences in batches to reduce I/O contention */
+				buffer.clear();
+				size_t bufferSize;
+				bool good = true;
 #pragma omp critical(in)
-			for (bufferSize = 0; bufferSize < SEQ_BUFFER_SIZE;) {
-				FastaRecord rec;
-				good = in >> rec;
-				if (!good)
+				for (bufferSize = 0; bufferSize < SEQ_BUFFER_SIZE
+					&& readsUntilCheckpoint > 0;)
+				{
+					FastaRecord rec;
+					good = in >> rec;
+					if (!good)
+						break;
+#pragma omp atomic
+					readsUntilCheckpoint--;
+					buffer.push_back(rec);
+					bufferSize += rec.seq.length();
+				}
+				if (buffer.size() == 0)
 					break;
-				buffer.push_back(rec);
-				bufferSize += rec.seq.length();
-			}
-			if (buffer.size() == 0)
+
+				for (std::vector<FastaRecord>::iterator it = buffer.begin();
+					 it != buffer.end(); ++it)
+				{
+					processRead(*it, goodKmerSet, assembledKmerSet,
+						params, counters, streams);
+
+#pragma omp atomic
+					counters.readsProcessed++;
+					if (params.verbose && counters.readsProcessed % PROGRESS_STEP == 0)
+						printProgressMessage(counters);
+				}
+
+			} /* for batch of reads between I/O operations */
+
+			if (readsUntilCheckpoint > 0) {
+				assert(in.eof());
 				break;
+			}
 
-			for (std::vector<FastaRecord>::iterator it = buffer.begin();
-				 it != buffer.end(); ++it) {
+			/* save assembly state to checkpoint files */
+			checkpointOut.flush();
+			createCheckpoint(goodKmerSet, assembledKmerSet, counters,
+				params);
 
-				const FastaRecord& rec = *it;
-				bool skip = false;
-
-				/* we can't extend reads shorter than k */
-				if (rec.seq.length() < k)
-					skip = true;
-
-				/* only extend error-free reads */
-				if (!skip && !allKmersInBloom(rec.seq, goodKmerSet))
-					skip = true;
-
-				if (!skip) {
-#pragma omp atomic
-					counters.solidReads++;
-				}
-
-				/* skip reads in previously assembled regions */
-				if (!skip && allKmersInBloom(rec.seq, assembledKmerSet))
-					skip = true;
-
-				/* extend the read left and right within the DBG */
-				if (!skip) {
-					extendRead(rec, graph, assembledKmerSet, params,
-						counters, out, traceOut);
-#pragma omp atomic
-					counters.readsExtended++;
-				}
-
-#pragma omp atomic
-				counters.readsProcessed++;
-				if (params.verbose && counters.readsProcessed % progressStep == 0)
-					printProgressMessage(counters);
-
-			} /* for each read */
-
-		} /* for each batch of reads (parallel) */
+		} /* for each batch of reads between checkpoints */
 
 		assert(in.eof());
-		if (!params.tracePath.empty()) {
-			traceOut.close();
-			assert_good(traceOut, params.tracePath);
-		}
 
 		if (params.verbose) {
 			printProgressMessage(counters);
 			std::cerr << "Assembly complete" << std::endl;
 		}
+
+		if (params.checkpointsEnabled() && !params.keepCheckpoint)
+			removeCheckpointData(params);
 	}
 
 	/**

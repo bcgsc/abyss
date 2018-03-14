@@ -42,17 +42,23 @@ class HashAgnosticCascadingBloom
 	{
 		m_data.reserve(levels);
 		for (unsigned i = 0; i < levels; i++)
-			m_data.push_back(new BloomFilter(size, hashes, k));
+			m_data.push_back(new BTL::BloomFilter(size, hashes, k));
+	}
+
+	/**
+	 * Constructor to load a single-level BTL::BloomFilter from
+	 * files.  This is used to make BTL::BloomFilter support the
+	 * same interface as HashAgnosticCascadingBloom.
+	 */
+	HashAgnosticCascadingBloom(const string& bloomPath)
+	{
+		loadFilter(bloomPath);
 	}
 
 	/** Destructor */
 	~HashAgnosticCascadingBloom()
 	{
-		typedef std::vector<BloomFilter*>::iterator Iterator;
-		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
-			assert(*i != NULL);
-			delete *i;
-		}
+		clear();
 	}
 
 	/** Return k-mer size used by Bloom filter. */
@@ -73,6 +79,12 @@ class HashAgnosticCascadingBloom
 	{
 		assert(m_data.back() != NULL);
 		return m_data.back()->getPop();
+	}
+
+	/** Return number of levels in cascading Bloom filter */
+	unsigned levels() const
+	{
+		return m_data.size();
 	}
 
 	/** Return the estimated false positive rate */
@@ -126,20 +138,54 @@ class HashAgnosticCascadingBloom
 	}
 
 	/** Get the Bloom filter for a given level */
-	BloomFilter& getBloomFilter(unsigned level)
+	BTL::BloomFilter& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);
 	}
 
+	/** Operator for writing the Bloom filter to a stream */
+	friend std::ostream& operator<<(std::ostream& out,
+		const HashAgnosticCascadingBloom& o)
+	{
+		assert(o.m_data.size() > 0);
+		assert(o.m_data.back() != NULL);
+		/* o.m_data.back()->storeFilter(out); */
+		out << *o.m_data.back();
+		return out;
+	}
+
+	/** Load a Bloom filter from a file */
+	void loadFilter(const string& bloomPath)
+	{
+		clear();
+		BTL::BloomFilter* bloom = new BTL::BloomFilter(bloomPath);
+		m_k = bloom->getKmerSize();
+		m_hashes = bloom->getHashNum();
+		m_data.push_back(bloom);
+	}
+
   private:
+
+	/** Free all allocated memory and reset parameters to defaults */
+	void clear()
+	{
+		m_k = 0;
+		m_hashes = 0;
+		typedef std::vector<BTL::BloomFilter*>::iterator Iterator;
+		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
+			assert(*i != NULL);
+			delete *i;
+		}
+		m_data.clear();
+	}
 
 	/** k-mer length */
 	unsigned m_k;
 	/** number of hash functions */
 	unsigned m_hashes;
 	/** the array of Bloom filters */
-	std::vector<BloomFilter*> m_data;
+	std::vector<BTL::BloomFilter*> m_data;
 };
 
 #endif

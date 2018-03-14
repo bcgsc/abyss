@@ -1,6 +1,7 @@
 #ifndef SEQUENCE_H
 #define SEQUENCE_H 1
 
+#include <cstring>
 #include <stdint.h>
 #include <string>
 #include <cassert>
@@ -20,6 +21,15 @@ static inline bool isACGT(char c)
 {
 	return c == 'A' || c == 'C' || c == 'G' || c == 'T'
 		|| c == 'a' || c == 'c' || c == 'g' || c == 't';
+}
+
+/**
+ * Return true if a sequence consists entirely of ACGT chars
+ * (case insensitive).
+ */
+static inline bool allACGT(const Sequence& seq)
+{
+	return strspn(seq.c_str(), "acgtACGT") == seq.length();
 }
 
 /**

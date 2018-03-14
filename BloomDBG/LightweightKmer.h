@@ -28,10 +28,12 @@ public:
 	LightweightKmer() {}
 
 	/** Constructor */
-	LightweightKmer(const char* kmer) : m_kmer(new char[Kmer::length()])
+	LightweightKmer(const char* kmer) : m_kmer(new char[Kmer::length() + 1])
 	{
 		const unsigned k = Kmer::length();
 		std::copy(kmer, kmer + k, m_kmer.get());
+		/* null-terminate k-mer string */
+		*(m_kmer.get() + k) = '\0';
 	}
 
 	/** Get pointer to raw char array for k-mer */
