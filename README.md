@@ -79,6 +79,12 @@ ABySS requires a C++ compiler that supports
 ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
 since they contain a bug. Later versions of Boost compile without error.
 
+## Optional dependencies
+
+- [pigz](https://zlib.net/pigz/) for parallel gzip
+- [samtools](https://samtools.github.io) for reading BAM files
+- [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
+
 Compiling ABySS from GitHub
 ===========================
 
