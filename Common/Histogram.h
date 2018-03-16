@@ -315,6 +315,29 @@ namespace std {
 	inline void swap(Histogram&, Histogram&) { assert(false); }
 }
 
+/** Print assembly contiguity statistics header. */
+static inline std::ostream& printContiguityStatsHeader(
+		std::ostream& out,
+		unsigned minSize,
+		const std::string& sep = "\t",
+		const long long unsigned expSize = 0)
+{
+	out << "n" << sep
+		<< "n:" << minSize << sep
+		<< "L50" << sep;
+	if (expSize > 0)
+		out << "LG50" << sep
+			<< "NG50" << sep;
+	return out << "min" << sep
+		<< "N80" << sep
+		<< "N50" << sep
+		<< "N20" << sep
+		<< "E-size" << sep
+		<< "max" << sep
+		<< "sum" << sep
+		<< "name" << '\n';
+}
+
 /** Print assembly contiguity statistics. */
 static inline std::ostream& printContiguityStats(
 		std::ostream& out, const Histogram& h0,
@@ -323,22 +346,8 @@ static inline std::ostream& printContiguityStats(
 		const long long unsigned expSize = 0)
 {
 	Histogram h = h0.trimLow(minSize);
-	if (printHeader) {
-		out << "n" << sep
-			<< "n:" << minSize << sep
-			<< "L50" << sep;
-		if (expSize > 0)
-			out << "LG50" << sep
-				<< "NG50" << sep;
-		out << "min" << sep
-			<< "N80" << sep
-			<< "N50" << sep
-			<< "N20" << sep
-			<< "E-size" << sep
-			<< "max" << sep
-			<< "sum" << sep
-			<< "name" << '\n';
-	}
+	if (printHeader)
+		printContiguityStatsHeader(out, minSize, sep, expSize);
 	unsigned n50 = h.n50();
 	out << toEng(h0.size()) << sep
 		<< toEng(h.size()) << sep
