@@ -12,6 +12,15 @@ export REPORTTIME=1
 export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
 endif
 
+# Record run time and memory usage in a file using GNU time.
+ifdef time
+ifneq ($(shell command -v gtime),)
+gtime=command gtime -v -o $@.time
+else
+gtime=command time -v -o $@.time
+endif
+endif
+
 # Define this environment variable on Mac OS X to read
 # compressed files.
 export DYLD_FORCE_FLAT_NAMESPACE=1
@@ -122,6 +131,13 @@ MARKDOWN=pandoc
 
 map=$(foreach a,$(2),$(call $(1),$(a)))
 deref=$($1)
+
+ifdef lr
+ifndef lib
+lib:=$(pe) $(lr)
+endif
+endif
+
 ifdef lib
 in?=$(call map, deref, $(lib))
 else
@@ -130,6 +146,7 @@ lib?=$(name)
 $(lib)?=$(in)
 endif
 endif
+
 pe?=$(lib)
 mp?=$(pe)
 
@@ -139,6 +156,9 @@ override in:=$(strip $(in))
 endif
 ifdef se
 override se:=$(strip $(se))
+endif
+ifdef lr
+override lr_reads=$(strip $(call map, deref, $(lr)))
 endif
 
 # Graph file format
@@ -345,9 +365,9 @@ ifndef k
 error::
 	@>&2 echo 'abyss-pe: missing parameter `k`'
 endif
-ifeq ($(lib)$(in)$(se),)
+ifeq ($(lib)$(in)$(se)$(lr),)
 error::
-	@>&2 echo 'abyss-pe: missing parameter `lib`, `in` or `se`'
+	@>&2 echo 'abyss-pe: missing parameter `lib`, `in`, `se`, or `lr`'
 endif
 
 default:
@@ -688,8 +708,101 @@ endif
 %-8.$g: %-7.$g %-7.path
 	PathOverlap --overlap $(poopt) --$g $^ >$@
 
+# Scaffold using linked reads
+ifdef lr
+
+# Tigmint
+
+# Options for mapping the reads to the draft assembly.
+lr_l=$l
+override lrmapopt=$v -j$j -l$(lr_l) $(LR_MAP_OPTIONS)
+
+# Options for abyss-scaffold
+lr_s=$S
+lr_n=10
+
+# Minimum AS/Read length ratio
+tigmint_as=0.65
+
+# Maximum number of mismatches
+tigmint_nm=5
+
+# Minimum mapping quality threshold
+tigmint_mapq=0
+
+# Maximum distance between reads to be considered the same molecule
+tigmint_d=50000
+
+# Minimum number of spanning molecules
+tigmint_n=$(lr_n)
+
+# Size of the window that must be spanned by moecules
+tigmint_w=1000
+
+# Align paired-end reads to the draft genome and sort by BX tag.
+%.lr.sortbx.bam: %.fa
+	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
+	| samtools sort -@$j -tBX -T$$(mktemp -u -t $@.XXXXXX) -o $@
+
+# Filter the BAM file, create molecule extents TSV
+%.lr.tsv: %.lr.sortbx.bam
+	$(gtime) tigmint-molecule -b $< -o $@ -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d)
+
+# Create a BED file of molecule extents.
+%.lr.bed: %.lr.tsv
+	awk 'NR>1 { print $$1"\t"$$2-1"\t"$$3-1"\tReads="$$7",Size="$$4",Mapq="$$8",AS="$$9",NM="$$10",BX="$$5",MI="$$6"\t"$$7 }' $< \
+		| sort -k1,1 -k2,2n -k3,3n >$@
+
+# Cut sequences at assembly errors.
+%.tigmint.fa: %.lr.bed %.fa %.fa.fai
+	$(gtime) tigmint-cut -p$j -n$(tigmint_n) -w$(tigmint_w) -o $@ $*.fa $<
+
+# ARCS
+arcs_c=2
+arcs_d=0
+arcs_e=30000
+arcs_l=0
+arcs_m=4-20000
+arcs_r=0.05
+arcs_s=98
+arcs_z=500
+
+# Align reads and create a graph of linked contigs using ARCS.
+%.arcs.dist.gv: %.fa
+	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
+	| abyss-fixmate --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
+	| arcs $v -c$(arcs_c) -d$(arcs_d) -e$(arcs_e) -l$(arcs_l) -m$(arcs_m) -r$(arcs_r) -s$(arcs_s) -z$(arcs_z) \
+		-g $*.arcs.dist.gv --tsv=$*.arcs.tsv --barcode-counts=$*.arcs.barcode-counts.tsv /dev/stdin
+
+# Align paired-end reads to the draft genome and do not sort.
+%.lr.sortn.sam.gz: %.fa
+	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
+	| abyss-fixmate --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
+	| $(gzip) >$@
+
+# Create a graph of linked contigs using ARCS.
+%.arcs.dist.gv: %.lr.sortn.sam.gz
+	gunzip -c $< \
+	| arcs $v -c$(arcs_c) -d$(arcs_d) -e$(arcs_e) -l$(arcs_l) -m$(arcs_m) -r$(arcs_r) -s$(arcs_s) -z$(arcs_z) \
+		-g $*.arcs.dist.gv --tsv=$*.arcs.tsv --barcode-counts=$*.arcs.barcode-counts.tsv /dev/stdin
+
+# Scaffold using ARCS and abyss-scaffold.
+%.arcs.path: %.arcs.dist.gv
+	abyss-scaffold $(scopt) -s$(lr_s) -n$(lr_n) -g $@.dot $(LR_SCAFFOLD_OPTIONS) $< >$@
+
+# Create the FASTA file of ARCS scaffolds.
+%.arcs.fa: %.fa %.arcs.path
+	MergeContigs $(mcopt) -o $@ $^
+
+%-scaffolds.fa: %-8.tigmint.arcs.fa
+	ln -sf $< $@
+
+else
+
 %-scaffolds.fa: %-8.fa
 	ln -sf $< $@
+
+endif
 
 %-scaffolds.$g: %-8.$g
 	ln -sf $< $@

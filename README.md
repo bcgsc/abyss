@@ -79,6 +79,11 @@ ABySS requires a C++ compiler that supports
 ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
 since they contain a bug. Later versions of Boost compile without error.
 
+## Dependencies for linked reads
+
+- [ARCS](https://github.com/bcgsc/arcs) to scaffold
+- [Tigmint](https://github.com/bcgsc/tigmint) to correct assembly errors
+
 ## Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
@@ -223,6 +228,22 @@ files named `pea-3.hist` and `peb-3.hist`. These files may be
 plotted to check that the empirical distribution agrees with the
 expected distribution. The assembled contigs will be stored in
 `${name}-contigs.fa`.
+
+Assembling linked reads
+================================================================================
+
+ABySS can assembl linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequenced and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome).
+
+The reads will be used for the de Bruijn Graph sequence assembly. The paired-end information will be used to assemble contigs. The barcodes will be used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The barcodes will be used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs).
+
+	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
+
+ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for linked-reads scaffolding using ARCS.
+
+	abyss-pe k=64 name=hsapiens \
+		pe='pea' pea='lra.fastq.gz' \
+		mp='mpa' mpa='lra.fastq.gz' \
+		lr='lra' lra='lra.fastq.gz'
 
 Scaffolding
 ===========
@@ -412,6 +433,8 @@ Parameters of the driver script, `abyss-pe`
  * `t`: maximum length of blunt contigs to trim [`k`]
  * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose
  * `x`: spaced seed (Bloom filter assembly only)
+ * `lr_s`: minimum contig size required for building scaffolds with linked reads (bp) [`S`]
+ * `lr_n`: minimum number of barcodes required for building scaffolds with linked reads [`10`]
 
 Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
