@@ -275,6 +275,8 @@ struct SAMRecord : SAMAlignment {
 	{
 		flag &= ~(FPROPER_PAIR | FMUNMAP | FMREVERSE);
 		flag |= FPAIRED;
+		if (rname == o.rname && isReverse() != o.isReverse())
+			flag |= FPROPER_PAIR;
 		if (o.isUnmapped())
 			flag |= FMUNMAP;
 		if (o.isReverse())
