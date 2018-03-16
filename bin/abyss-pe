@@ -93,10 +93,10 @@ endif
 
 # Use pigz or bgzip for parallel compression if available.
 ifneq ($(shell command -v pigz),)
-gzip=pigz -p$t
+gzip=pigz -p$j
 else
 ifneq ($(shell command -v bgzip),)
-gzip=bgzip -@$t
+gzip=bgzip -@$j
 else
 gzip=gzip
 endif
