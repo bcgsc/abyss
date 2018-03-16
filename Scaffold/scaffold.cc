@@ -85,7 +85,7 @@ namespace opt {
 	unsigned k; // used by ContigProperties
 
 	/** Minimum number of pairs. */
-	static unsigned minNumPairs;
+	static unsigned minEdgeWeight;
 
 	/** Minimum contig length. */
 	static unsigned minContigLength = 200;
@@ -171,16 +171,17 @@ struct InvalidEdge {
 
 /** Return whether the specified edges has sufficient support. */
 struct PoorSupport {
-	PoorSupport(Graph& g) : m_g(g) { }
+	PoorSupport(Graph& g, unsigned minEdgeWeight) : m_g(g), m_minEdgeWeight(minEdgeWeight) { }
 	bool operator()(graph_traits<Graph>::edge_descriptor e) const
 	{
-		return m_g[e].numPairs < opt::minNumPairs;
+		return m_g[e].numPairs < m_minEdgeWeight;
 	}
 	const Graph& m_g;
+	unsigned m_minEdgeWeight;
 };
 
 /** Remove short vertices and unsupported edges from the graph. */
-static void filterGraph(Graph& g, unsigned minContigLength)
+static void filterGraph(Graph& g, unsigned minEdgeWeight, unsigned minContigLength)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_descriptor V;
@@ -203,7 +204,7 @@ static void filterGraph(Graph& g, unsigned minContigLength)
 
 	// Remove poorly-supported edges.
 	unsigned numBefore = num_edges(g);
-	remove_edge_if(PoorSupport(g), static_cast<DG&>(g));
+	remove_edge_if(PoorSupport(g, minEdgeWeight), static_cast<DG&>(g));
 	unsigned numRemovedE = numBefore - num_edges(g);
 	if (opt::verbose > 0)
 		cerr << "Removed " << numRemovedE << " edges.\n";
@@ -651,13 +652,14 @@ static void addCntgStatsToDb(
  * @param output write the results
  * @return the scaffold N50
  */
-unsigned scaffold(const Graph& g0, unsigned minContigLength,
+unsigned scaffold(const Graph& g0,
+		unsigned minEdgeWeight, unsigned minContigLength,
 		bool output)
 {
 	Graph g(g0);
 
 	// Filter the graph.
-	filterGraph(g, minContigLength);
+	filterGraph(g, minEdgeWeight, minContigLength);
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);
 
@@ -778,6 +780,38 @@ unsigned scaffold(const Graph& g0, unsigned minContigLength,
 	return h.trimLow(STATS_MIN_LENGTH).n50();
 }
 
+/** Find the value of s that maximizes the scaffold N50. */
+static void optimize_s(const Graph& g,
+		unsigned minEdgeWeight,
+		std::pair<unsigned, unsigned> minContigLength)
+{
+	unsigned bests = 0, bestN50 = 0;
+	const double STEP = cbrt(10); // Three steps per decade.
+	unsigned ilast = (unsigned)round(
+			log(minContigLength.second) / log(STEP));
+	for (unsigned i = (unsigned)round(
+				log(minContigLength.first) / log(STEP));
+			i <= ilast; ++i) {
+		unsigned s = (unsigned)pow(STEP, (int)i);
+
+		// Round to 1 figure.
+		double nearestDecade = pow(10, floor(log10(s)));
+		s = unsigned(round(s / nearestDecade) * nearestDecade);
+
+		unsigned n50 = scaffold(g, minEdgeWeight, s, false);
+		if (opt::verbose > 0)
+			cerr << '\n';
+		if (n50 > bestN50) {
+			bestN50 = n50;
+			bests = s;
+		}
+	}
+
+	bestN50 = scaffold(g, minEdgeWeight, bests, true);
+	cerr << "Best scaffold N50 is " << bestN50
+		<< " at s=" << bests << ".\n";
+}
+
 /** Run abyss-scaffold. */
 int main(int argc, char** argv)
 {
@@ -806,7 +840,7 @@ int main(int argc, char** argv)
 			arg >> opt::graphPath;
 			break;
 		  case 'n':
-			arg >> opt::minNumPairs;
+			arg >> opt::minEdgeWeight;
 			break;
 		  case 'o':
 			arg >> opt::out;
@@ -908,37 +942,11 @@ int main(int argc, char** argv)
 	if (!opt::db.empty())
 		addToDb(db, "Edges_invalid", numRemoved);
 
-	if (opt::minContigLengthEnd == 0) {
-		scaffold(g, opt::minContigLength, true);
-		return 0;
-	}
-
-	// Find the value of s that maximizes the scaffold N50.
-	unsigned bests = 0, bestN50 = 0;
-	const double STEP = cbrt(10); // Three steps per decade.
-	unsigned ilast = (unsigned)round(
-			log(opt::minContigLengthEnd) / log(STEP));
-	for (unsigned i = (unsigned)round(
-				log(opt::minContigLength) / log(STEP));
-			i <= ilast; ++i) {
-		unsigned s = (unsigned)pow(STEP, (int)i);
-
-		// Round to 1 figure.
-		double nearestDecade = pow(10, floor(log10(s)));
-		s = unsigned(round(s / nearestDecade) * nearestDecade);
-
-		unsigned n50 = scaffold(g, s, false);
-		if (opt::verbose > 0)
-			cerr << '\n';
-		if (n50 > bestN50) {
-			bestN50 = n50;
-			bests = s;
-		}
-	}
-
-	bestN50 = scaffold(g, bests, true);
-	cerr << "Best scaffold N50 is " << bestN50
-		<< " at s=" << bests << ".\n";
+	if (opt::minContigLengthEnd == 0)
+		scaffold(g, opt::minEdgeWeight, opt::minContigLength, true);
+	else
+		optimize_s(g, opt::minEdgeWeight,
+				std::make_pair(opt::minContigLength, opt::minContigLengthEnd));
 
 	return 0;
 }
