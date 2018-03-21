@@ -945,7 +945,9 @@ optimize_line_search(const Graph& g,
 
 	ScaffoldMemo memo;
 	std::string metrics_table;
-	ScaffoldResult best(minEdgeWeight.first, minContigLength.second, 0, "");
+	ScaffoldResult best(
+			(minEdgeWeight.first + minEdgeWeight.second) / 2,
+			minContigLength.second, 0, "");
 	// An upper limit on the number of iterations.
 	const unsigned MAX_ITERATIONS = 1 + (minEdgeWeight.second - minEdgeWeight.first) / opt::minEdgeWeightStep;
 	for (unsigned i = 0; i < MAX_ITERATIONS; ++i) {
@@ -971,6 +973,8 @@ optimize_line_search(const Graph& g,
 		if (best.n == previous_n)
 			break;
 	}
+
+	std::cerr << "\nLine search converged in " << memo.size() << " iterations.\n";
 
 	best.metrics = metrics_table;
 	return best;
