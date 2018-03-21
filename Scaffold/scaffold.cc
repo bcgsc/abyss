@@ -662,12 +662,28 @@ static void addCntgStatsToDb(
 	}
 }
 
-/** Result of scaffolding. */
-struct ScaffoldResult {
-	ScaffoldResult(unsigned n, unsigned s, unsigned n50, std::string metrics)
-		: n(n), s(s), n50(n50), metrics(metrics) { }
+/** Parameters of scaffolding. */
+struct ScaffoldParam {
+	ScaffoldParam(unsigned n, unsigned s) : n(n), s(s) { }
+	bool operator==(const ScaffoldParam& o) const { return n == o.n && s == o.s; }
 	unsigned n;
 	unsigned s;
+};
+
+namespace std {
+	template <> struct hash<ScaffoldParam> {
+		size_t operator()(const ScaffoldParam& param) const
+		{
+			return std::hash<unsigned>()(param.n) ^ std::hash<unsigned>()(param.s);
+		}
+	};
+}
+
+/** Result of scaffolding. */
+struct ScaffoldResult : ScaffoldParam{
+	ScaffoldResult() : ScaffoldParam(0, 0), n50(0) { }
+	ScaffoldResult(unsigned n, unsigned s, unsigned n50, std::string metrics)
+		: ScaffoldParam(n, s), n50(n50), metrics(metrics) { }
 	unsigned n50;
 	std::string metrics;
 };
@@ -803,31 +819,52 @@ scaffold(const Graph& g0,
 			metrics);
 }
 
+/** Memoize the optimization results so far. */
+typedef std::unordered_map<ScaffoldParam, ScaffoldResult> ScaffoldMemo;
+
+/** Build scaffold paths, memoized. */
+ScaffoldResult
+scaffold_memoized(const Graph& g, unsigned n, unsigned s, ScaffoldMemo& memo)
+{
+	ScaffoldParam param(n, s);
+	ScaffoldMemo::const_iterator it = memo.find(param);
+	if (it != memo.end()) {
+		// Clear the metrics string, so that this result is not listed
+		// multiple times in the final table of metrics.
+		ScaffoldResult result(it->second);
+		result.metrics.clear();
+		return result;
+	}
+
+	if (opt::verbose > 0)
+		std::cerr << "\nScaffolding with n=" << n << " s=" << s << "\n\n";
+	ScaffoldResult result = scaffold(g, n, s, false);
+	memo[param] = result;
+
+	// Print assembly metrics.
+	if (opt::verbose > 0) {
+		std::cerr << '\n';
+		const unsigned STATS_MIN_LENGTH = opt::minContigLength;
+		printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
+	}
+	std::cerr << result.metrics;
+	if (opt::verbose > 0)
+		cerr << '\n';
+	return result;
+}
+
 /** Find the value of n that maximizes the scaffold N50. */
 static ScaffoldResult
 optimize_n(const Graph& g,
 		std::pair<unsigned, unsigned> minEdgeWeight,
-		unsigned minContigLength)
+		unsigned minContigLength,
+		ScaffoldMemo& memo)
 {
-	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	std::string metrics_table;
-
 	unsigned bestn = 0, bestN50 = 0;
 	for (unsigned n = minEdgeWeight.first; n <= minEdgeWeight.second; n += opt::minEdgeWeightStep) {
-		if (opt::verbose > 0)
-			std::cerr << "\nScaffolding with n=" << n << " s=" << minContigLength << "\n\n";
-		ScaffoldResult result = scaffold(g, n, minContigLength, false);
+		ScaffoldResult result = scaffold_memoized(g, n, minContigLength, memo);
 		metrics_table += result.metrics;
-
-		// Print assembly metrics.
-		if (opt::verbose > 0) {
-			std::cerr << '\n';
-			printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
-		}
-		std::cerr << result.metrics;
-		if (opt::verbose > 0)
-			cerr << '\n';
-
 		if (result.n50 > bestN50) {
 			bestN50 = result.n50;
 			bestn = n;
@@ -841,11 +878,10 @@ optimize_n(const Graph& g,
 static ScaffoldResult
 optimize_s(const Graph& g,
 		unsigned minEdgeWeight,
-		std::pair<unsigned, unsigned> minContigLength)
+		std::pair<unsigned, unsigned> minContigLength,
+		ScaffoldMemo& memo)
 {
-	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	std::string metrics_table;
-
 	unsigned bests = 0, bestN50 = 0;
 	const double STEP = cbrt(10); // Three steps per decade.
 	unsigned ilast = (unsigned)round(
@@ -859,20 +895,8 @@ optimize_s(const Graph& g,
 		double nearestDecade = pow(10, floor(log10(s)));
 		s = unsigned(round(s / nearestDecade) * nearestDecade);
 
-		if (opt::verbose > 0)
-			std::cerr << "\nScaffolding with n=" << minEdgeWeight << " s=" << s << "\n\n";
-		ScaffoldResult result = scaffold(g, minEdgeWeight, s, false);
+		ScaffoldResult result = scaffold_memoized(g, minEdgeWeight, s, memo);
 		metrics_table += result.metrics;
-
-		// Print assembly metrics.
-		if (opt::verbose > 0) {
-			std::cerr << '\n';
-			printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
-		}
-		std::cerr << result.metrics;
-		if (opt::verbose > 0)
-			cerr << '\n';
-
 		if (result.n50 > bestN50) {
 			bestN50 = result.n50;
 			bests = s;
@@ -892,10 +916,11 @@ optimize_grid_search(const Graph& g,
 	if (opt::verbose == 0)
 		printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
 
+	ScaffoldMemo memo;
 	std::string metrics_table;
 	ScaffoldResult best(0, 0, 0, "");
 	for (unsigned n = minEdgeWeight.first; n <= minEdgeWeight.second; n += opt::minEdgeWeightStep) {
-		ScaffoldResult result = optimize_s(g, n, minContigLength);
+		ScaffoldResult result = optimize_s(g, n, minContigLength, memo);
 		metrics_table += result.metrics;
 		if (result.n50 > best.n50)
 			best = result;
@@ -915,6 +940,7 @@ optimize_line_search(const Graph& g,
 	if (opt::verbose == 0)
 		printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
 
+	ScaffoldMemo memo;
 	std::string metrics_table;
 	ScaffoldResult best(minEdgeWeight.first, minContigLength.second, 0, "");
 	// An upper limit on the number of iterations.
@@ -926,7 +952,7 @@ optimize_line_search(const Graph& g,
 			printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
 		}
 		unsigned previous_s = best.s;
-		best = optimize_s(g, best.n, minContigLength);
+		best = optimize_s(g, best.n, minContigLength, memo);
 		metrics_table += best.metrics;
 		if (best.s == previous_s)
 			break;
@@ -937,7 +963,7 @@ optimize_line_search(const Graph& g,
 			printContiguityStatsHeader(std::cerr, STATS_MIN_LENGTH, "\t", opt::genomeSize);
 		}
 		unsigned previous_n = best.n;
-		best = optimize_n(g, minEdgeWeight, best.s);
+		best = optimize_n(g, minEdgeWeight, best.s, memo);
 		metrics_table += best.metrics;
 		if (best.n == previous_n)
 			break;
