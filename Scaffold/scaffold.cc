@@ -543,6 +543,8 @@ static ContigPath addDistEst(const Graph& g0, const Graph& g1,
 		assert(!v.ambiguous());
 		pair<E, bool> e0 = edge(u, v, g0);
 		pair<E, bool> e1 = edge(u, v, g1);
+		if (!e0.second && !e1.second)
+			std::cerr << "error: missing edge: " << get(vertex_name, g0, u) << " -> " << get(vertex_name, g0, v) << '\n';
 		assert(e0.second || e1.second);
 		const EP& ep = e0.second ? g0[e0.first] : g1[e1.first];
 		if (!isOverlap(ep)) {
