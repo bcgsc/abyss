@@ -6,6 +6,7 @@
 #include "IOUtil.h"
 #include "Iterator.h"
 #include "Uncompress.h"
+#include "Common/UnorderedMap.h"
 #include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
@@ -670,14 +671,14 @@ struct ScaffoldParam {
 	unsigned s;
 };
 
-namespace std {
+NAMESPACE_STD_HASH_BEGIN
 	template <> struct hash<ScaffoldParam> {
 		size_t operator()(const ScaffoldParam& param) const
 		{
-			return std::hash<unsigned>()(param.n) ^ std::hash<unsigned>()(param.s);
+			return hash<unsigned>()(param.n) ^ hash<unsigned>()(param.s);
 		}
 	};
-}
+NAMESPACE_STD_HASH_END
 
 /** Result of scaffolding. */
 struct ScaffoldResult : ScaffoldParam{
@@ -820,7 +821,7 @@ scaffold(const Graph& g0,
 }
 
 /** Memoize the optimization results so far. */
-typedef std::unordered_map<ScaffoldParam, ScaffoldResult> ScaffoldMemo;
+typedef unordered_map<ScaffoldParam, ScaffoldResult> ScaffoldMemo;
 
 /** Build scaffold paths, memoized. */
 ScaffoldResult
