@@ -3,14 +3,13 @@
 # Written by Shaun Jackman <sjackman@bcgsc.ca> and
 # Anthony Raymond <traymond@bcgsc.ca>.
 
+SHELL=bash -e -o pipefail
 ifneq ($(shell command -v zsh),)
 # Set pipefail to ensure that all commands of a pipe succeed.
 SHELL=zsh -e -o pipefail
 # Report run time and memory usage with zsh.
 export REPORTTIME=1
 export TIMEFMT=time user=%U system=%S elapsed=%E cpu=%P memory=%M job=%J
-else
-SHELL=bash -e -o pipefail
 endif
 
 # Define this environment variable on Mac OS X to read
