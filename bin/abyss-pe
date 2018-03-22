@@ -854,4 +854,4 @@ env:
 	@echo '[override], if variable was defined with an override directive in (this) makefile.'
 
 	@$(foreach var,$(varList),\
-		echo -e $(var)" = "$($(var))"\t["$(origin $(var))"]" | grep -v "undefined";)
+		echo -e $(var)" = "$($(var))"\t["$(origin $(var))"]";)
