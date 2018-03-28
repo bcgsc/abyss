@@ -609,7 +609,10 @@ unsigned addLength(const Graph& g, It first, It last)
 /** A container of contig paths. */
 typedef vector<ContigPath> ContigPaths;
 
-/** Build the scaffold length histogram. */
+/**
+  * Build the scaffold length histogram.
+  * @param g The graph g is destroyed.
+  */
 static Histogram buildScaffoldLengthHistogram(
 		Graph& g, const ContigPaths& paths)
 {
@@ -783,6 +786,27 @@ scaffold(const Graph& g0,
 		addToDb(db, "scaffolds_assembled", paths.size());
 	}
 
+	if (output) {
+		// Output the paths.
+		ofstream fout(opt::out.c_str());
+		ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
+		assert_good(out, opt::out);
+		g_contigNames.unlock();
+		for (vector<ContigPath>::const_iterator it = paths.begin();
+				it != paths.end(); ++it)
+			out << createContigName() << '\t'
+				<< addDistEst(g0, g, *it) << '\n';
+		assert_good(out, opt::out);
+
+		// Output the graph.
+		if (!opt::graphPath.empty()) {
+			ofstream out(opt::graphPath.c_str());
+			assert_good(out, opt::graphPath);
+			write_dot(out, g);
+			assert_good(out, opt::graphPath);
+		}
+	}
+
 	// Compute contiguity metrics.
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	std::ostringstream ss;
@@ -792,30 +816,6 @@ scaffold(const Graph& g0,
 		<< "\tn=" << minEdgeWeight << " s=" << minContigLength << '\n';
 	std::string metrics = ss.str();
 	addCntgStatsToDb(scaffold_histogram, STATS_MIN_LENGTH);
-
-	if (!output)
-		return ScaffoldResult(minEdgeWeight, minContigLength,
-				scaffold_histogram.trimLow(STATS_MIN_LENGTH).n50(),
-				metrics);
-
-	// Output the paths.
-	ofstream fout(opt::out.c_str());
-	ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
-	assert_good(out, opt::out);
-	g_contigNames.unlock();
-	for (vector<ContigPath>::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		out << createContigName() << '\t'
-			<< addDistEst(g0, g, *it) << '\n';
-	assert_good(out, opt::out);
-
-	// Output the graph.
-	if (!opt::graphPath.empty()) {
-		ofstream out(opt::graphPath.c_str());
-		assert_good(out, opt::graphPath);
-		write_dot(out, g);
-		assert_good(out, opt::graphPath);
-	}
 
 	return ScaffoldResult(minEdgeWeight, minContigLength,
 			scaffold_histogram.trimLow(STATS_MIN_LENGTH).n50(),
