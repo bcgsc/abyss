@@ -770,7 +770,7 @@ arcs_z=500
 # Align reads and create a graph of linked contigs using ARCS.
 %.arcs.dist.gv: %.fa
 	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
-	| abyss-fixmate --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
+	| abyss-fixmate-ssq --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
 	| arcs $v -c$(arcs_c) -d$(arcs_d) -e$(arcs_e) -l$(arcs_l) -m$(arcs_m) -r$(arcs_r) -s$(arcs_s) -z$(arcs_z) \
 		-g $*.arcs.dist.gv --tsv=$*.arcs.tsv --barcode-counts=$*.arcs.barcode-counts.tsv /dev/stdin
 
