@@ -312,7 +312,10 @@ sgopt += -d$d
 endif
 
 # MergePaths parameters
-mpopt += $v $(dbopt) -j$j -k$k
+mpopt += $v $(dbopt) -j$j -k$k -s$s
+ifdef G
+mpopt += -G$G
+endif
 
 # PathOverlap parameters
 poopt += $v $(dbopt) -k$k
