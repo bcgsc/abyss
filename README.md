@@ -18,6 +18,7 @@ Contents
 * [Assembling a paired-end library](#assembling-a-paired-end-library)
 * [Assembling multiple libraries](#assembling-multiple-libraries)
 * [Scaffolding](#scaffolding)
+* [Scaffolding with linked reads](#scaffolding-with-linked-reads)
 * [Rescaffolding with long sequences](#rescaffolding-with-long-sequences)
 * [Assembling using a Bloom filter de Bruijn graph](#assembling-using-a-bloom-filter-de-bruijn-graph)
 * [Assembling using a paired de Bruijn graph](#assembling-using-a-paired-de-bruijn-graph)
@@ -229,22 +230,6 @@ plotted to check that the empirical distribution agrees with the
 expected distribution. The assembled contigs will be stored in
 `${name}-contigs.fa`.
 
-Assembling linked reads
-================================================================================
-
-ABySS can assembl linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequenced and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome).
-
-The reads will be used for the de Bruijn Graph sequence assembly. The paired-end information will be used to assemble contigs. The barcodes will be used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The barcodes will be used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs).
-
-	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
-
-ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for linked-reads scaffolding using ARCS.
-
-	abyss-pe k=64 name=hsapiens \
-		pe='pea' pea='lra.fastq.gz' \
-		mp='mpa' mpa='lra.fastq.gz' \
-		lr='lra' lra='lra.fastq.gz'
-
 Scaffolding
 ===========
 
@@ -261,6 +246,22 @@ libraries and two mate-pair libraries. Note that the names of the libraries
 
 The mate-pair libraries are used only for scaffolding and do not
 contribute towards the consensus sequence.
+
+Scaffolding with linked reads
+================================================================================
+
+ABySS can assemble linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequenced and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome).
+
+The reads will be used for the de Bruijn Graph sequence assembly. The paired-end information will be used to assemble contigs. The barcodes will be used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The barcodes will be used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs).
+
+	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
+
+ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for linked-reads scaffolding using ARCS.
+
+	abyss-pe k=64 name=hsapiens \
+		pe='pea' pea='lra.fastq.gz' \
+		mp='mpa' mpa='lra.fastq.gz' \
+		lr='lra' lra='lra.fastq.gz'
 
 Rescaffolding with long sequences
 =================================
