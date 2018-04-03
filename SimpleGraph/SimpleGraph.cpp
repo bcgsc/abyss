@@ -44,6 +44,7 @@ static const char USAGE_MESSAGE[] =
 " Options:\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -s, --seed-length=N   minimum seed contig length [0]\n"
 "  -d, --dist-error=N    acceptable error of a distance estimate\n"
 "                        default is 6 bp\n"
 "      --max-cost=COST   maximum computational cost\n"
@@ -73,6 +74,9 @@ namespace opt {
 	static int verbose;
 	static string out;
 
+	/** Minimum seed length. */
+	static unsigned minSeedLength;
+
 	/** The acceptable error of a distance estimate. */
 	unsigned distanceError = 6;
 
@@ -80,7 +84,7 @@ namespace opt {
  	int format = DIST; // used by Estimate
 }
 
-static const char shortopts[] = "d:j:k:o:v";
+static const char shortopts[] = "d:j:k:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
@@ -88,6 +92,7 @@ enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST,
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "seed-length", required_argument, NULL, 's' },
 	{ "dist-error",  required_argument, NULL, 'd' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
@@ -126,6 +131,7 @@ int main(int argc, char** argv)
 			case 'k': arg >> opt::k; break;
 			case OPT_MAX_COST: arg >> opt::maxCost; break;
 			case 'o': arg >> opt::out; break;
+			case 's': arg >> opt::minSeedLength; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -248,6 +254,7 @@ static unsigned g_minNumPairs = UINT_MAX;
 static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static struct {
+	unsigned seedTooShort;
 	unsigned totalAttempted;
 	unsigned uniqueEnd;
 	unsigned noPossiblePaths;
@@ -642,6 +649,7 @@ struct WorkerArg {
 static void* worker(void* pArg)
 {
 	WorkerArg& arg = *static_cast<WorkerArg*>(pArg);
+	unsigned countSeedTooShort = 0;
 	for (;;) {
 		/** Lock the input stream. */
 		static pthread_mutex_t inMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -651,6 +659,10 @@ static void* worker(void* pArg)
 		pthread_mutex_unlock(&inMutex);
 		if (!good)
 			break;
+		if ((*arg.graph)[ContigNode(er.refID, false)].length < opt::minSeedLength) {
+			++countSeedTooShort;
+			continue;
+		}
 
 		// Flip the anterior distance estimates.
 		for (Estimates::iterator it = er.estimates[1].begin();
@@ -673,6 +685,12 @@ static void* worker(void* pArg)
 			pthread_mutex_unlock(&outMutex);
 		}
 	}
+
+	static pthread_mutex_t statsMutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&statsMutex);
+	stats.seedTooShort += countSeedTooShort;
+	pthread_mutex_unlock(&statsMutex);
+
 	return NULL;
 }
 
@@ -707,6 +725,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 		cout << '\n';
 
 	cout <<
+		"Seed too short: " << stats.seedTooShort << "\n"
 		"Total paths attempted: " << stats.totalAttempted << "\n"
 		"Unique path: " << stats.uniqueEnd << "\n"
 		"No possible paths: " << stats.noPossiblePaths << "\n"
