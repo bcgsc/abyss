@@ -58,6 +58,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
 "  -s, --seed-length=L   minimum length of a seed contig [0]\n"
+"  -G, --genome-size=N   expected genome size. Used to calculate NG50\n"
+"                        and associated stats [disabled]\n"
 "  -o, --out=FILE        write result to FILE\n"
 "      --no-greedy       use the non-greedy algorithm [default]\n"
 "      --greedy          use the greedy algorithm\n"
@@ -86,16 +88,20 @@ namespace opt {
 	/** Use a greedy algorithm. */
 	static int greedy;
 
+	/** Genome size. Used to calculate NG50. */
+	static long long unsigned genomeSize;
+
 	/** Write the path overlap graph to this file. */
 	static string graphPath;
 }
 
-static const char shortopts[] = "g:j:k:o:s:v";
+static const char shortopts[] = "G:g:j:k:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
 //enum { OPT_HELP = 1, OPT_VERSION };
 
 static const struct option longopts[] = {
+	{ "genome-size", required_argument, NULL, 'G' },
 	{ "graph",       no_argument,       NULL, 'g' },
 	{ "greedy",      no_argument,       &opt::greedy, true },
 	{ "no-greedy",   no_argument,       &opt::greedy, false },
@@ -134,6 +140,52 @@ static ContigPath align(const Lengths& lengths,
 		ContigNode pivot, dir_type& orientation);
 
 static bool gDebugPrint;
+
+/**
+  * Build a histogram of the lengths of the assembled paths and unused contigs.
+  * Note: This function does not account for the ammount of overlap between contigs.
+  */
+static Histogram
+buildAssembledLengthHistogram(const Lengths& lengths, const ContigPaths& paths)
+{
+	Histogram h;
+
+	// Compute the lengths of the paths
+	// Mark the vertices that are used in paths
+	vector<bool> used(lengths.size());
+	for (ContigPaths::const_iterator pathIt = paths.begin();
+			pathIt != paths.end(); ++pathIt) {
+		const ContigPath& path = *pathIt;
+		size_t totalLength = 0;
+		for (ContigPath::const_iterator it = path.begin(); it != path.end(); ++it) {
+			if (it->ambiguous())
+				continue;
+			unsigned id = it->id();
+			assert(id < lengths.size());
+			totalLength += lengths[id];
+			used[id] = true;
+		}
+		h.insert(totalLength);
+	}
+
+	// Add the contigs that were not used in paths.
+	for (unsigned i = 0; i < lengths.size(); ++i) {
+		if (!used[i])
+			h.insert(lengths[i]);
+	}
+
+	return h;
+}
+
+/** Report assembly metrics. */
+static void
+reportAssemblyMetrics(const Lengths& lengths, const ContigPaths& paths)
+{
+	Histogram h = buildAssembledLengthHistogram(lengths, paths);
+	const unsigned STATS_MIN_LENGTH = opt::seedLen;
+	printContiguityStats(cerr, h, STATS_MIN_LENGTH, true, "\t", opt::genomeSize)
+		<< '\t' << opt::out << '\n';
+}
 
 /** Return all contigs that are tandem repeats, identified as those
  * contigs that appear more than once in a single path.
@@ -699,7 +751,7 @@ static void outputPathGraph(PathGraph& pathGraph)
 }
 
 /** Sort and output the specified paths. */
-static void outputSortedPaths(const ContigPathMap& paths)
+static void outputSortedPaths(const Lengths& lengths, const ContigPathMap& paths)
 {
 	// Sort the paths.
 	vector<ContigPath> sortedPaths(paths.size());
@@ -715,6 +767,9 @@ static void outputSortedPaths(const ContigPathMap& paths)
 			it != sortedPaths.end(); ++it)
 		out << createContigName() << '\t' << *it << '\n';
 	assert_good(out, opt::out);
+
+	// Report assembly metrics.
+	reportAssemblyMetrics(lengths, sortedPaths);
 }
 
 /** Assemble the path overlap graph. */
@@ -753,7 +808,7 @@ static void assemblePathGraph(const Lengths& lengths,
 		cout << "Removing redundant contigs\n";
 	removeSubsumedPaths(lengths, paths);
 
-	outputSortedPaths(paths);
+	outputSortedPaths(lengths, paths);
 }
 
 /** Read a set of paths from the specified file. */
@@ -891,6 +946,12 @@ int main(int argc, char** argv)
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
 			case '?': die = true; break;
+			case 'G': {
+				double x;
+				arg >> x;
+				opt::genomeSize = x;
+				break;
+			}
 			case 'g': arg >> opt::graphPath; break;
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
@@ -1051,7 +1112,7 @@ int main(int argc, char** argv)
 	}
 	originalPathMap.clear();
 
-	outputSortedPaths(resultsPathMap);
+	outputSortedPaths(lengths, resultsPathMap);
 	return 0;
 }
 
