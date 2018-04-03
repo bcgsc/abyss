@@ -306,7 +306,7 @@ $(foreach i,$(pe),$(eval $i_n?=$n))
 override deopt=$v $(dbopt) -j$j -k$k $(DISTANCEEST_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 
 # SimpleGraph parameters
-sgopt += $(dbopt)
+sgopt += $(dbopt) -s$s -n$n
 ifdef d
 sgopt += -d$d
 endif
