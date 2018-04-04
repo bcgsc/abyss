@@ -742,6 +742,13 @@ tigmint_n=10
 # Size of the window that must be spanned by moecules
 tigmint_w=1000
 
+# Align paired-end reads to the draft genome, sort by BX tag,
+# and create molecule extents TSV.
+%.lr.tsv: %.fa
+	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
+	| samtools sort -@$j -tBX -l0 -T$$(mktemp -u -t $@.XXXXXX) \
+	| tigmint-molecule -b /dev/stdin -o $@ -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d)
+
 # Align paired-end reads to the draft genome and sort by BX tag.
 %.lr.sortbx.bam: %.fa
 	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
