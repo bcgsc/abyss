@@ -120,8 +120,7 @@ static void readAlignments(istream& in, Graph& g)
 	SAMRecord rec, prev;
 	vector<Alignment> recs;
 	int i = 0;
-	while (prev.isUnmapped() || prev.mapq == 0)
-		in >> prev;
+	while (in >> prev && (prev.isUnmapped() || prev.mapq == 0));
 	recs.push_back(prev);
 	while (in >> rec) {
 		if (rec.isUnmapped() || rec.mapq == 0)
