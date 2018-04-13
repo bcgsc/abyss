@@ -743,25 +743,22 @@ tigmint_n=10
 tigmint_w=1000
 
 # Align paired-end reads to the draft genome, sort by BX tag,
-# and create molecule extents TSV.
-%.lr.tsv: %.fa
+# and create molecule extents BED.
+%.lr.bed: %.fa
 	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
 	| samtools sort -@$j -tBX -l0 -T$$(mktemp -u -t $@.XXXXXX) \
-	| tigmint-molecule -b /dev/stdin -o $@ -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d)
+	| tigmint-molecule -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d) - \
+	| sort -k1,1 -k2,2n -k3,3n >$@
 
 # Align paired-end reads to the draft genome and sort by BX tag.
 %.lr.sortbx.bam: %.fa
 	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
 	| samtools sort -@$j -tBX -T$$(mktemp -u -t $@.XXXXXX) -o $@
 
-# Filter the BAM file, create molecule extents TSV
-%.lr.tsv: %.lr.sortbx.bam
-	$(gtime) tigmint-molecule -b $< -o $@ -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d)
-
-# Create a BED file of molecule extents.
-%.lr.bed: %.lr.tsv
-	awk 'NR>1 { print $$1"\t"$$2-1"\t"$$3-1"\tReads="$$7",Size="$$4",Mapq="$$8",AS="$$9",NM="$$10",BX="$$5",MI="$$6"\t"$$7 }' $< \
-		| sort -k1,1 -k2,2n -k3,3n >$@
+# Filter the BAM file, create molecule extents BED.
+%.lr.bed: %.lr.sortbx.bam
+	$(gtime) tigmint-molecule -a $(tigmint_as) -n $(tigmint_nm) -q $(tigmint_mapq) -d $(tigmint_d) $< \
+	| sort -k1,1 -k2,2n -k3,3n >$@
 
 # Cut sequences at assembly errors.
 %.tigmint.fa: %.lr.bed %.fa %.fa.fai
