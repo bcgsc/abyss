@@ -24,13 +24,32 @@ static inline void setNextContigName(cstring s)
 		g_nextContigName = 0;
 }
 
+/**
+ * Set the next contig name returned by createContigName
+ * to one plus the current largest numeric contig name.
+ */
+static inline void setNextContigName()
+{
+	if (g_contigNames.empty()) {
+		g_nextContigName = 0;
+		return;
+	}
+	unsigned maxContigName = 0;
+	for (unsigned i = 0; i < g_contigNames.size(); ++i) {
+		cstring s = g_contigNames.getName(i);
+		std::istringstream iss((std::string)s);
+		unsigned contigName;
+		if (iss >> contigName && iss.eof() && contigName > maxContigName)
+			maxContigName = contigName;
+	}
+	g_nextContigName = 1 + maxContigName;
+}
+
 /** Return the next unique contig name. */
 static inline std::string createContigName()
 {
-	if (g_nextContigName == 0) {
-		assert(!g_contigNames.empty());
-		setNextContigName(g_contigNames.back());
-	}
+	if (g_nextContigName == 0)
+		setNextContigName();
 	std::ostringstream ss;
 	ss << g_nextContigName++;
 	return ss.str();

@@ -275,6 +275,8 @@ struct SAMRecord : SAMAlignment {
 	{
 		flag &= ~(FPROPER_PAIR | FMUNMAP | FMREVERSE);
 		flag |= FPAIRED;
+		if (rname == o.rname && isReverse() != o.isReverse())
+			flag |= FPROPER_PAIR;
 		if (o.isUnmapped())
 			flag |= FMUNMAP;
 		if (o.isReverse())
@@ -308,7 +310,7 @@ struct SAMRecord : SAMAlignment {
 	friend std::ostream& operator <<(std::ostream& out,
 			const SAMRecord& o)
 	{
-		return out << o.qname
+		out << o.qname
 			<< '\t' << o.flag
 			<< '\t' << o.rname
 			<< '\t' << (1 + o.pos)
@@ -316,13 +318,16 @@ struct SAMRecord : SAMAlignment {
 			<< '\t' << o.cigar
 			<< '\t' << (o.mrnm == o.rname ? "=" : o.mrnm)
 			<< '\t' << (1 + o.mpos)
-			<< '\t' << o.isize
+			<< '\t' << o.isize;
 #if SAM_SEQ_QUAL
-			<< '\t' << o.seq
+		out << '\t' << o.seq
 			<< '\t' << o.qual;
+		if (!o.tags.empty())
+			out << '\t' << o.tags;
 #else
-			<< "\t*\t*";
+		out << "\t*\t*";
 #endif
+		return out;
 	}
 
 	friend std::istream& operator >>(std::istream& in, SAMRecord& o)

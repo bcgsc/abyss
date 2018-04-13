@@ -30,7 +30,7 @@ static const char VERSION_MESSAGE[] =
 PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
 "Written by Jared Simpson and Shaun Jackman.\n"
 "\n"
-"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
+"Copyright 2018 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
 "Usage: " PROGRAM " -k<kmer> -o<out.path> [OPTION]... ADJ DIST\n"
@@ -44,6 +44,8 @@ static const char USAGE_MESSAGE[] =
 " Options:\n"
 "\n"
 "  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -n, --npairs=N        minimum number of pairs [0]\n"
+"  -s, --seed-length=N   minimum seed contig length [0]\n"
 "  -d, --dist-error=N    acceptable error of a distance estimate\n"
 "                        default is 6 bp\n"
 "      --max-cost=COST   maximum computational cost\n"
@@ -73,6 +75,12 @@ namespace opt {
 	static int verbose;
 	static string out;
 
+	/** Minimum number of pairs. */
+	static unsigned minEdgeWeight;
+
+	/** Minimum seed length. */
+	static unsigned minSeedLength;
+
 	/** The acceptable error of a distance estimate. */
 	unsigned distanceError = 6;
 
@@ -80,7 +88,7 @@ namespace opt {
  	int format = DIST; // used by Estimate
 }
 
-static const char shortopts[] = "d:j:k:o:v";
+static const char shortopts[] = "d:j:k:n:o:s:v";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST,
 	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
@@ -88,6 +96,8 @@ enum { OPT_HELP = 1, OPT_VERSION, OPT_MAX_COST,
 
 static const struct option longopts[] = {
 	{ "kmer",        required_argument, NULL, 'k' },
+	{ "npairs",      required_argument, NULL, 'n' },
+	{ "seed-length", required_argument, NULL, 's' },
 	{ "dist-error",  required_argument, NULL, 'd' },
 	{ "max-cost",    required_argument, NULL, OPT_MAX_COST },
 	{ "out",         required_argument, NULL, 'o' },
@@ -125,7 +135,9 @@ int main(int argc, char** argv)
 			case 'j': arg >> opt::threads; break;
 			case 'k': arg >> opt::k; break;
 			case OPT_MAX_COST: arg >> opt::maxCost; break;
+			case 'n': arg >> opt::minEdgeWeight; break;
 			case 'o': arg >> opt::out; break;
+			case 's': arg >> opt::minSeedLength; break;
 			case 'v': opt::verbose++; break;
 			case OPT_HELP:
 				cout << USAGE_MESSAGE;
@@ -248,6 +260,9 @@ static unsigned g_minNumPairs = UINT_MAX;
 static unsigned g_minNumPairsUsed = UINT_MAX;
 
 static struct {
+	unsigned seedTooShort;
+	unsigned noEdges;
+	unsigned edgesRemoved;
 	unsigned totalAttempted;
 	unsigned uniqueEnd;
 	unsigned noPossiblePaths;
@@ -631,6 +646,16 @@ static void handleEstimate(const Graph& g,
 	pthread_mutex_unlock(&coutMutex);
 }
 
+/** Return whether the specified edge has sufficient support. */
+struct PoorSupport {
+	PoorSupport(unsigned minEdgeWeight) : m_minEdgeWeight(minEdgeWeight) { }
+	bool operator()(const Estimates::value_type& estimate) const
+	{
+		return estimate.second.numPairs < m_minEdgeWeight;
+	}
+	const unsigned m_minEdgeWeight;
+};
+
 struct WorkerArg {
 	istream* in;
 	ostream* out;
@@ -642,6 +667,9 @@ struct WorkerArg {
 static void* worker(void* pArg)
 {
 	WorkerArg& arg = *static_cast<WorkerArg*>(pArg);
+	unsigned countSeedTooShort = 0;
+	unsigned countNoEdges = 0;
+	unsigned countEdgesRemoved = 0;
 	for (;;) {
 		/** Lock the input stream. */
 		static pthread_mutex_t inMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -651,6 +679,26 @@ static void* worker(void* pArg)
 		pthread_mutex_unlock(&inMutex);
 		if (!good)
 			break;
+		if ((*arg.graph)[ContigNode(er.refID, false)].length < opt::minSeedLength) {
+			++countSeedTooShort;
+			continue;
+		}
+
+		// Remove edges with insufficient support.
+		for (unsigned i = 0; i < 2; ++i) {
+			Estimates& estimates = er.estimates[i];
+			if (estimates.empty())
+				continue;
+			unsigned sizeBefore = estimates.size();
+			estimates.erase(
+				remove_if(estimates.begin(), estimates.end(), PoorSupport(opt::minEdgeWeight)),
+				estimates.end());
+			unsigned sizeAfter = estimates.size();
+			unsigned edgesRemoved = sizeBefore - sizeAfter;
+			countEdgesRemoved += edgesRemoved;
+			if (sizeAfter == 0)
+				++countNoEdges;
+		}
 
 		// Flip the anterior distance estimates.
 		for (Estimates::iterator it = er.estimates[1].begin();
@@ -673,6 +721,14 @@ static void* worker(void* pArg)
 			pthread_mutex_unlock(&outMutex);
 		}
 	}
+
+	static pthread_mutex_t statsMutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_lock(&statsMutex);
+	stats.seedTooShort += countSeedTooShort;
+	stats.noEdges += countNoEdges;
+	stats.edgesRemoved += countEdgesRemoved;
+	pthread_mutex_unlock(&statsMutex);
+
 	return NULL;
 }
 
@@ -707,6 +763,9 @@ static void generatePathsThroughEstimates(const Graph& g,
 		cout << '\n';
 
 	cout <<
+		"Seed too short: " << stats.seedTooShort << "\n"
+		"Seeds with no edges: " << stats.noEdges << "\n"
+		"Edges removed: " << stats.edgesRemoved << "\n"
 		"Total paths attempted: " << stats.totalAttempted << "\n"
 		"Unique path: " << stats.uniqueEnd << "\n"
 		"No possible paths: " << stats.noPossiblePaths << "\n"

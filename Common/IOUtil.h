@@ -51,9 +51,12 @@ static inline std::istream& operator>>(std::istream& in, expect o)
 			if (!in || c != *p) {
 				std::cerr << "error: Expected `" << p
 					<< "' and saw ";
-				if (in)
+				if (in) {
 					std::cerr << '`' << c << "'\n";
-				else if (in.eof())
+					std::string s;
+					if (getline(in, s) && !s.empty())
+						std::cerr << "near: " << c << s << '\n';
+				} else if (in.eof())
 					std::cerr << "end-of-file\n";
 				else
 					std::cerr << "I/O error\n";

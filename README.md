@@ -18,6 +18,7 @@ Contents
 * [Assembling a paired-end library](#assembling-a-paired-end-library)
 * [Assembling multiple libraries](#assembling-multiple-libraries)
 * [Scaffolding](#scaffolding)
+* [Scaffolding with linked reads](#scaffolding-with-linked-reads)
 * [Rescaffolding with long sequences](#rescaffolding-with-long-sequences)
 * [Assembling using a Bloom filter de Bruijn graph](#assembling-using-a-bloom-filter-de-bruijn-graph)
 * [Assembling using a paired de Bruijn graph](#assembling-using-a-paired-de-bruijn-graph)
@@ -37,20 +38,29 @@ Contents
 Quick Start
 ===========
 
+## Install ABySS on Linux
+
+Install [Linuxbrew](http://linuxbrew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
+## Install ABySS on macOS
+
+Install [Homebrew](https://brew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
+## Install ABySS on Windows
+
+Install [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/) and [Linuxbrew](http://linuxbrew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
 ## Install ABySS on Debian or Ubuntu
 
 Run the command
 
 	sudo apt-get install abyss
-
-or download and install the
-[Debian package](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
-
-## Install ABySS on Mac OS X
-
-Install [Homebrew](http://brew.sh/), and run the commands
-
-	brew install homebrew/science/abyss
 
 ## Assemble a small synthetic data set
 
@@ -66,24 +76,36 @@ Install [Homebrew](http://brew.sh/), and run the commands
 Dependencies
 ============
 
+Dependencies may be installed using the package manager [Homebrew](https://homebrew.sh) on macOS and [Linxubrew](http://linuxbrew.sh) on Linux and Windows, using Windows Subsystem for Linux.
+
+ABySS requires a C++ compiler that supports
+[OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
+
 ABySS requires the following libraries:
 
 * [Boost](http://www.boost.org/)
 * [Open MPI](http://www.open-mpi.org)
 * [sparsehash](https://code.google.com/p/sparsehash/)
-* [SQLite](http://www.sqlite.org/)
 
-ABySS requires a C++ compiler that supports
-[OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
+	brew install boost open-mpi google-sparsehash
 
 ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
 since they contain a bug. Later versions of Boost compile without error.
+
+## Dependencies for linked reads
+
+- [ARCS](https://github.com/bcgsc/arcs) to scaffold
+- [Tigmint](https://github.com/bcgsc/tigmint) to correct assembly errors
+
+	brew install brewsci/bio/arcs brewsci/bio/links
 
 ## Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [samtools](https://samtools.github.io) for reading BAM files
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
+
+	brew install pigz samtools zsh
 
 Compiling ABySS from GitHub
 ===========================
@@ -148,8 +170,7 @@ usage, although it will build without. sparsehash should be found in
 
 	./configure CPPFLAGS=-I/usr/local/include
 
-If SQLite is installed in non-default directories, its location can be
-specified to `configure`:
+If the optional dependency SQLite is installed in non-default directories, its location can be specified to `configure`:
 
 	./configure --with-sqlite=/opt/sqlite3
 
@@ -175,7 +196,7 @@ To assemble paired reads in two files named `reads1.fa` and
 `reads2.fa` into contigs in a file named `ecoli-contigs.fa`, run the
 command:
 
-	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa'
+	abyss-pe name=ecoli k=96 in='reads1.fa reads2.fa'
 
 The parameter `in` specifies the input files to read, which may be in
 FASTA, FASTQ, qseq, export, SRA, SAM or BAM format and compressed with
@@ -214,7 +235,7 @@ fragment libraries and single-end reads. Note that the names of the libraries
 
 The command line to assemble this example data set is:
 
-	abyss-pe k=64 name=ecoli lib='pea peb' \
+	abyss-pe k=96 name=ecoli lib='pea peb' \
 		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
 		se='se1.fa se2.fa'
 
@@ -234,12 +255,28 @@ Here's an example of assembling a data set with two paired-end
 libraries and two mate-pair libraries. Note that the names of the libraries
 (`pea`, `peb`, `mpa`, `mpb`) are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pea peb' mp='mpc mpd' \
+	abyss-pe k=96 name=ecoli lib='pea peb' mp='mpc mpd' \
 		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
 		mpc='mpc_1.fa mpc_2.fa' mpd='mpd_1.fa mpd_2.fa'
 
 The mate-pair libraries are used only for scaffolding and do not
 contribute towards the consensus sequence.
+
+Scaffolding with linked reads
+================================================================================
+
+ABySS can scaffold using linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequences and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome) or [EMA preproc](https://github.com/arshajii/ema#readme). The linked reads are used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The linked reads are also used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs). See [Dependencies](#dependencies) for installation instructions.
+
+ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for misassembly correction using Tigmint and scaffolding using ARCS.
+
+	abyss-pe k=96 name=hsapiens \
+		pe='pea' pea='lra.fastq.gz' \
+		mp='mpa' mpa='lra.fastq.gz' \
+		lr='lra' lra='lra.fastq.gz'
+
+ABySS performs better with a mixture of paired-end, mate-pair, and linked reads, but it is possible to assemble only linked reads using ABySS, though this mode of operation is experimental.
+
+	abyss-pe k=96 name=hsapiens lr='lra' lra='lra.fastq.gz'
 
 Rescaffolding with long sequences
 =================================
@@ -253,7 +290,7 @@ Similar to scaffolding, the names of the datasets can be specified with
 the `long` parameter. These scaffolds will be stored in the file
 `${name}-long-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly. Note that the names of the libraries are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
+	abyss-pe k=96 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
 		longa='longa.fa'
@@ -272,7 +309,7 @@ example, the following will run a E. coli assembly with an overall memory budget
 of 100 megabytes, 3 hash functions, a minimum k-mer count threshold of 3, with
 verbose logging enabled:
 
-	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa' B=100M H=3 kc=3 v=-v
+	abyss-pe name=ecoli k=96 in='reads1.fa reads2.fa' B=100M H=3 kc=3 v=-v
 
 At the current time, the user must calculate suitable values for `B` and `H` on
 their own, and finding the best value for `kc` may require experimentation
@@ -297,7 +334,7 @@ To assemble using paired de Bruijn graph mode, specify both individual
 k-mer size (`K`) and k-mer pair span (`k`). For example, to assemble E.
 coli with a individual k-mer size of 16 and a k-mer pair span of 64:
 
-	abyss-pe name=ecoli K=16 k=64 in='reads1.fa reads2.fa'
+	abyss-pe name=ecoli K=16 k=96 in='reads1.fa reads2.fa'
 
 In this example, the size of the intervening gap between k-mer pairs is
 32 bp (64 - 2\*16). Note that the `k` parameter takes on a new meaning
@@ -314,7 +351,7 @@ respect to the original transcripts that were sequenced. In order to
 run ABySS in strand-specific mode, the `SS` parameter must be used as
 in the following example:
 
-	abyss-pe name=SS-RNA k=64 in='reads1.fa reads2.fa' SS=--SS
+	abyss-pe name=SS-RNA k=96 in='reads1.fa reads2.fa' SS=--SS
 
 The expected orientation for the read sequences with respect to the
 original RNA is RF. i.e. the first read in a read pair is always in
@@ -412,6 +449,8 @@ Parameters of the driver script, `abyss-pe`
  * `t`: maximum length of blunt contigs to trim [`k`]
  * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose
  * `x`: spaced seed (Bloom filter assembly only)
+ * `lr_s`: minimum contig size required for building scaffolds with linked reads (bp) [`S`]
+ * `lr_n`: minimum number of barcodes required for building scaffolds with linked reads [`10`]
 
 Please see the
 [abyss-pe](http://manpages.ubuntu.com/abyss-pe.1.html)
@@ -420,7 +459,7 @@ manual page for more information on assembly parameters.
 Environment variables
 =====================
 
-`abyss-pe` configuration variables may be set on the command line or from the environment, for example with `export k=20`. It can happen that `abyss-pe` picks up such variables from your environment that you had not intended, and that can cause trouble. To troubleshoot that situation, use the `abyss-pe env` command to print the values of all the `abyss-pe` configuration variables:
+`abyss-pe` configuration variables may be set on the command line or from the environment, for example with `export k=96`. It can happen that `abyss-pe` picks up such variables from your environment that you had not intended, and that can cause trouble. To troubleshoot that situation, use the `abyss-pe env` command to print the values of all the `abyss-pe` configuration variables:
 
 	abyss-pe env [options]
 
