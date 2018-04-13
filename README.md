@@ -265,20 +265,18 @@ contribute towards the consensus sequence.
 Scaffolding with linked reads
 ================================================================================
 
-ABySS can assemble linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequences and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome).
+ABySS can scaffold using linked reads from 10x Genomics Chromium. The barcodes must first be extracted from the read sequences and added to the `BX:Z` tag of the FASTQ header, typically using the `longranger basic` command of [Long Ranger](https://support.10xgenomics.com/genome-exome/software/overview/welcome) or [EMA preproc](https://github.com/arshajii/ema#readme). The linked reads are used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The linked reads are also used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs). See [Dependencies](#dependencies) for installation instructions.
 
-The reads will be used for the de Bruijn Graph sequence assembly. The paired-end information will be used to assemble contigs. The barcodes will be used to correct assembly errors, which requires that [Tigmint](https://github.com/bcgsc/tigmint). The barcodes will be used for scaffolding, which requires [ARCS](https://github.com/bcgsc/arcs).
-
-	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
-
-ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for linked-reads scaffolding using ARCS.
+ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for misassembly correction using Tigmint and scaffolding using ARCS.
 
 	abyss-pe k=64 name=hsapiens \
 		pe='pea' pea='lra.fastq.gz' \
 		mp='mpa' mpa='lra.fastq.gz' \
 		lr='lra' lra='lra.fastq.gz'
 
-Assemblies using only linked reads are also possible, but this use case is currently not well tested.
+ABySS performs better with a mixture of paired-end, mate-pair, and linked reads, but it is possible to assemble only linked reads using ABySS, though this mode of operation is experimental.
+
+	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
 
 Rescaffolding with long sequences
 =================================
