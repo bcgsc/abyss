@@ -38,20 +38,29 @@ Contents
 Quick Start
 ===========
 
+## Install ABySS on Linux
+
+Install [Linuxbrew](http://linuxbrew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
+## Install ABySS on macOS
+
+Install [Homebrew](https://brew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
+## Install ABySS on Windows
+
+Install [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/) and [Linuxbrew](http://linuxbrew.sh/), and run the command
+
+	brew install brewsci/bio/abyss
+
 ## Install ABySS on Debian or Ubuntu
 
 Run the command
 
 	sudo apt-get install abyss
-
-or download and install the
-[Debian package](http://www.bcgsc.ca/platform/bioinfo/software/abyss).
-
-## Install ABySS on Mac OS X
-
-Install [Homebrew](http://brew.sh/), and run the commands
-
-	brew install homebrew/science/abyss
 
 ## Assemble a small synthetic data set
 
@@ -67,15 +76,18 @@ Install [Homebrew](http://brew.sh/), and run the commands
 Dependencies
 ============
 
+Dependencies may be installed using the package manager [Homebrew](https://homebrew.sh) on macOS and [Linxubrew](http://linuxbrew.sh) on Linux and Windows, using Windows Subsystem for Linux.
+
+ABySS requires a C++ compiler that supports
+[OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
+
 ABySS requires the following libraries:
 
 * [Boost](http://www.boost.org/)
 * [Open MPI](http://www.open-mpi.org)
 * [sparsehash](https://code.google.com/p/sparsehash/)
-* [SQLite](http://www.sqlite.org/)
 
-ABySS requires a C++ compiler that supports
-[OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
+	brew install boost open-mpi google-sparsehash
 
 ABySS will receive an error when compiling with Boost 1.51.0 or 1.52.0
 since they contain a bug. Later versions of Boost compile without error.
@@ -85,11 +97,15 @@ since they contain a bug. Later versions of Boost compile without error.
 - [ARCS](https://github.com/bcgsc/arcs) to scaffold
 - [Tigmint](https://github.com/bcgsc/tigmint) to correct assembly errors
 
+	brew install brewsci/bio/arcs brewsci/bio/links
+
 ## Optional dependencies
 
 - [pigz](https://zlib.net/pigz/) for parallel gzip
 - [samtools](https://samtools.github.io) for reading BAM files
 - [zsh](https://sourceforge.net/projects/zsh/) for reporting time and memory usage
+
+	brew install pigz samtools zsh
 
 Compiling ABySS from GitHub
 ===========================
@@ -154,8 +170,7 @@ usage, although it will build without. sparsehash should be found in
 
 	./configure CPPFLAGS=-I/usr/local/include
 
-If SQLite is installed in non-default directories, its location can be
-specified to `configure`:
+If the optional dependency SQLite is installed in non-default directories, its location can be specified to `configure`:
 
 	./configure --with-sqlite=/opt/sqlite3
 
