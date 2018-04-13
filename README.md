@@ -196,7 +196,7 @@ To assemble paired reads in two files named `reads1.fa` and
 `reads2.fa` into contigs in a file named `ecoli-contigs.fa`, run the
 command:
 
-	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa'
+	abyss-pe name=ecoli k=96 in='reads1.fa reads2.fa'
 
 The parameter `in` specifies the input files to read, which may be in
 FASTA, FASTQ, qseq, export, SRA, SAM or BAM format and compressed with
@@ -235,7 +235,7 @@ fragment libraries and single-end reads. Note that the names of the libraries
 
 The command line to assemble this example data set is:
 
-	abyss-pe k=64 name=ecoli lib='pea peb' \
+	abyss-pe k=96 name=ecoli lib='pea peb' \
 		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
 		se='se1.fa se2.fa'
 
@@ -255,7 +255,7 @@ Here's an example of assembling a data set with two paired-end
 libraries and two mate-pair libraries. Note that the names of the libraries
 (`pea`, `peb`, `mpa`, `mpb`) are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pea peb' mp='mpc mpd' \
+	abyss-pe k=96 name=ecoli lib='pea peb' mp='mpc mpd' \
 		pea='pea_1.fa pea_2.fa' peb='peb_1.fa peb_2.fa' \
 		mpc='mpc_1.fa mpc_2.fa' mpd='mpd_1.fa mpd_2.fa'
 
@@ -269,14 +269,14 @@ ABySS can scaffold using linked reads from 10x Genomics Chromium. The barcodes m
 
 ABySS can combine paired-end, mate-pair, and linked-read libraries. The `pe` and `lr` libraries will be used to build the de Bruijn graph. The `mp` libraries will be used for paired-end/mate-pair scaffolding. The `lr` libraries will be used for misassembly correction using Tigmint and scaffolding using ARCS.
 
-	abyss-pe k=64 name=hsapiens \
+	abyss-pe k=96 name=hsapiens \
 		pe='pea' pea='lra.fastq.gz' \
 		mp='mpa' mpa='lra.fastq.gz' \
 		lr='lra' lra='lra.fastq.gz'
 
 ABySS performs better with a mixture of paired-end, mate-pair, and linked reads, but it is possible to assemble only linked reads using ABySS, though this mode of operation is experimental.
 
-	abyss-pe k=64 name=hsapiens lr='lra' lra='lra.fastq.gz'
+	abyss-pe k=96 name=hsapiens lr='lra' lra='lra.fastq.gz'
 
 Rescaffolding with long sequences
 =================================
@@ -290,7 +290,7 @@ Similar to scaffolding, the names of the datasets can be specified with
 the `long` parameter. These scaffolds will be stored in the file
 `${name}-long-scaffs.fa`. The following is an example of an assembly with PET, MPET and an RNA-Seq assembly. Note that the names of the libraries are arbitrary.
 
-	abyss-pe k=64 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
+	abyss-pe k=96 name=ecoli lib='pe1 pe2' mp='mp1 mp2' long='longa' \
 		pe1='pe1_1.fa pe1_2.fa' pe2='pe2_1.fa pe2_2.fa' \
 		mp1='mp1_1.fa mp1_2.fa' mp2='mp2_1.fa mp2_2.fa' \
 		longa='longa.fa'
@@ -309,7 +309,7 @@ example, the following will run a E. coli assembly with an overall memory budget
 of 100 megabytes, 3 hash functions, a minimum k-mer count threshold of 3, with
 verbose logging enabled:
 
-	abyss-pe name=ecoli k=64 in='reads1.fa reads2.fa' B=100M H=3 kc=3 v=-v
+	abyss-pe name=ecoli k=96 in='reads1.fa reads2.fa' B=100M H=3 kc=3 v=-v
 
 At the current time, the user must calculate suitable values for `B` and `H` on
 their own, and finding the best value for `kc` may require experimentation
@@ -334,7 +334,7 @@ To assemble using paired de Bruijn graph mode, specify both individual
 k-mer size (`K`) and k-mer pair span (`k`). For example, to assemble E.
 coli with a individual k-mer size of 16 and a k-mer pair span of 64:
 
-	abyss-pe name=ecoli K=16 k=64 in='reads1.fa reads2.fa'
+	abyss-pe name=ecoli K=16 k=96 in='reads1.fa reads2.fa'
 
 In this example, the size of the intervening gap between k-mer pairs is
 32 bp (64 - 2\*16). Note that the `k` parameter takes on a new meaning
@@ -351,7 +351,7 @@ respect to the original transcripts that were sequenced. In order to
 run ABySS in strand-specific mode, the `SS` parameter must be used as
 in the following example:
 
-	abyss-pe name=SS-RNA k=64 in='reads1.fa reads2.fa' SS=--SS
+	abyss-pe name=SS-RNA k=96 in='reads1.fa reads2.fa' SS=--SS
 
 The expected orientation for the read sequences with respect to the
 original RNA is RF. i.e. the first read in a read pair is always in
@@ -459,7 +459,7 @@ manual page for more information on assembly parameters.
 Environment variables
 =====================
 
-`abyss-pe` configuration variables may be set on the command line or from the environment, for example with `export k=20`. It can happen that `abyss-pe` picks up such variables from your environment that you had not intended, and that can cause trouble. To troubleshoot that situation, use the `abyss-pe env` command to print the values of all the `abyss-pe` configuration variables:
+`abyss-pe` configuration variables may be set on the command line or from the environment, for example with `export k=96`. It can happen that `abyss-pe` picks up such variables from your environment that you had not intended, and that can cause trouble. To troubleshoot that situation, use the `abyss-pe env` command to print the values of all the `abyss-pe` configuration variables:
 
 	abyss-pe env [options]
 
