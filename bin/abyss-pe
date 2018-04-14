@@ -393,9 +393,9 @@ help:
 	@echo 'Report bugs to https://github.com/bcgsc/abyss/issues or abyss-users@bcgsc.ca.'
 
 version:
-	@echo "abyss-pe (ABySS) 2.0.3"
+	@echo "abyss-pe (ABySS) 2.1.0"
 	@echo "Written by Shaun Jackman and Anthony Raymond."
-	@echo
+@echo
 	@echo "Copyright 2012 Canada's Michael Smith Genome Science Centre"
 
 versions: version

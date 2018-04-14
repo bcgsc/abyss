@@ -1,3 +1,35 @@
+2018-04-13  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.1.0
+	* Adds support for misassembly correction and scaffolding
+	using linked reads, using Tigmint and ARCS. (Tigmint and
+	ARCS must be installed separately.)
+	* Support simultaneous optimization of `s` (min sequence length)
+	and `n` (min supporting read pairs / Chromium barcodes)
+	during scaffolding
+
+	abyss-longseqdist:
+	* Fix hang on input SAM containing no alignments with MAPQ > 0
+
+	abyss-pe:
+	* New `lr` parameter. Provide linked reads (i.e. 10x Genomics
+	Chromium reads) via this parameter to perform misassembly
+	correction and scaffolding using Chromium barcode information.
+	Requires Tigmint and ARCS tools to be installed in addition
+	to ABySS.
+	* Fix bug where `j` (threads) was not being correctly passed to
+	to `bgzip`/`pigz`
+	* Fix bug where `zsh` time/memory profiling was not being used,
+	even when `zsh` was available
+
+	abyss-scaffold:
+	* Simultaneous optimization of `n` and `s` using line search
+	or grid search [default]
+
+	SimpleGraph:
+	* add options `-s` and `-n` to filter paired-end paths by
+	seed length and edge weight, respectively
+
 2018-03-14  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.0.3
