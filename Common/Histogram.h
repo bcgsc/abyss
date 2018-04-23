@@ -329,9 +329,9 @@ static inline std::ostream& printContiguityStatsHeader(
 		out << "LG50" << sep
 			<< "NG50" << sep;
 	return out << "min" << sep
-		<< "N80" << sep
+		<< "N75" << sep
 		<< "N50" << sep
-		<< "N20" << sep
+		<< "N25" << sep
 		<< "E-size" << sep
 		<< "max" << sep
 		<< "sum" << sep
@@ -364,9 +364,9 @@ static inline std::ostream& printContiguityStats(
 	}
 	return out
 		<< toEng(h.minimum()) << sep
-		<< toEng(h.weightedPercentile(1 - 0.8)) << sep
+		<< toEng(h.weightedPercentile(1 - 0.75)) << sep
 		<< toEng(n50) << sep
-		<< toEng(h.weightedPercentile(1 - 0.2)) << sep
+		<< toEng(h.weightedPercentile(1 - 0.25)) << sep
 		<< toEng((unsigned)h.expectedValue()) << sep
 		<< toEng(h.maximum()) << sep
 		<< toEng(sum);
@@ -386,9 +386,9 @@ static inline std::vector<int> passContiguityStatsVal(
 		<< h.size()
 		<< h.count(n50, INT_MAX)
 		<< h.minimum()
-		<< h.weightedPercentile(1 - 0.8)
+		<< h.weightedPercentile(1 - 0.75)
 		<< n50
-		<< h.weightedPercentile(1 - 0.2)
+		<< h.weightedPercentile(1 - 0.25)
 		<< (unsigned)h.expectedValue()
 		<< h.maximum()
 		<< sum;
