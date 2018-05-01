@@ -192,7 +192,7 @@ installed ABySS in `/opt/abyss`, add `/opt/abyss/bin` to your `PATH`:
 Before starting an assembly
 ===========================
 
-ABySS stores temporary files in TMPDIR, which is /tmp by default on most systems. If your default temporary disk volume is too small, set TMPDIR to a larger volume, such as /var/tmp or your home directory.
+ABySS stores temporary files in `TMPDIR`, which is `/tmp` by default on most systems. If your default temporary disk volume is too small, set `TMPDIR` to a larger volume, such as `/var/tmp` or your home directory.
 
 	export TMPDIR=/var/tmp
 
