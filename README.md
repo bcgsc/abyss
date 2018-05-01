@@ -192,9 +192,9 @@ installed ABySS in `/opt/abyss`, add `/opt/abyss/bin` to your `PATH`:
 Before starting an assembly
 ===========================
 
-ABySS, in later stages of assembly uses GNU sort and stores intermidiate file in TMPDIR directory. If your root directory is less than size of genome then first set TMP before you execute ABySS,
+ABySS stores temporary files in TMPDIR, which is /tmp by default on most systems. If your default temporary disk volume is too small, set TMPDIR to a larger volume, such as /var/tmp or your home directory.
 
-	export TMPDIR=/path/to/your/tmp
+	export TMPDIR=/var/tmp
 
 Assembling a paired-end library
 ===============================
