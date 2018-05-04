@@ -61,8 +61,11 @@ static const char USAGE_MESSAGE[] =
 "                        (maximum likelihood estimator)\n"
 "      --mean            use the difference of the population mean\n"
 "                        and the sample mean\n"
-"      --dist            output graph in dist format [default]\n"
-"      --dot             output graph in dot format\n"
+"      --dist            output the graph in dist format [default]\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gv              output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA2 format\n"
+"      --gfa2            output the graph in GFA2 format\n"
 "  -j, --threads=N       use N parallel threads [1]\n"
 "  -v, --verbose         display verbose output\n"
 "      --help            display this help and exit\n"
@@ -119,6 +122,9 @@ enum { OPT_HELP = 1, OPT_VERSION,
 static const struct option longopts[] = {
 	{ "dist",        no_argument,       &opt::format, DIST, },
 	{ "dot",         no_argument,       &opt::format, DOT, },
+	{ "gv",          no_argument,       &opt::format, DOT, },
+	{ "gfa",         no_argument,       &opt::format, GFA2, },
+	{ "gfa2",        no_argument,       &opt::format, GFA2, },
 	{ "fr",          no_argument,       &opt::rf, false },
 	{ "rf",          no_argument,       &opt::rf, true },
 	{ "min-align",   required_argument, NULL, 'l' },
@@ -275,6 +281,17 @@ static void writeEstimate(ostream& out,
 		if (opt::format == DOT) {
 #pragma omp critical(out)
 			out << get(g_contigNames, e) << " [" << est << "]\n";
+		} else if (opt::format == GFA2) {
+			// Output only one of the two complementary edges.
+			if (len1 < opt::seedLen || e.first < e.second || e.first == e.second)
+#pragma omp critical(out)
+				out << "G\t*"
+					<< '\t' << get(g_contigNames, e.first)
+					<< '\t' << get(g_contigNames, e.second)
+					<< '\t' << est.distance
+					<< '\t' << (int)ceilf(est.stdDev)
+					<< "\tFC:i:" << est.numPairs
+					<< '\n';
 		} else
 			out << ' ' << get(g_contigNames, id1) << ',' << est;
 	} else if (opt::verbose > 1) {
@@ -317,7 +334,7 @@ static void writeEstimates(ostream& out,
 		const PairsMap& x = dataMap[sense0 ^ opt::rf];
 		for (PairsMap::const_iterator it = x.begin();
 				it != x.end(); ++it)
-			writeEstimate(opt::format == DOT ? out : ss,
+			writeEstimate(opt::format == DIST ? ss : out,
 					ContigNode(id0, sense0), it->first,
 					len0, lengthVec[it->first.id()],
 					it->second, pmf);
@@ -502,6 +519,8 @@ int main(int argc, char** argv)
 			"k=" << opt::k << " "
 			"s=" << opt::seedLen << " "
 			"n=" << opt::npairs << "]\n";
+	else if (opt::format == GFA2)
+		out << "H\tVN:Z:2.0\n";
 
 	vector<int> vals = make_vector<int>()
 		<< opt::k

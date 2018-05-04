@@ -217,13 +217,14 @@ std::ostream& write_gfa2(std::ostream& out, Graph& g)
 }
 
 /** Read a graph in GFA format. */
-template <typename Graph>
-std::istream& read_gfa(std::istream& in, Graph& g)
+template <typename Graph, typename BetterEP>
+std::istream& read_gfa(std::istream& in, Graph& g, BetterEP betterEP)
 {
 	assert(in);
 
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	typedef typename vertex_property<Graph>::type VP;
+	typedef typename graph_traits<Graph>::edge_descriptor E;
 	typedef typename edge_property<Graph>::type EP;
 
 	// Add vertices if this graph is empty.
@@ -351,7 +352,15 @@ std::istream& read_gfa(std::istream& in, Graph& g)
 			assert(in);
 			V u = find_vertex(uname, g);
 			V v = find_vertex(vname, g);
-			add_edge(u, v, ep, g);
+			E e;
+			bool found;
+			boost::tie(e, found) = edge(u, v, g);
+			if (found) {
+				// Parallel edge
+				EP& ref = g[e];
+				ref = betterEP(ref, ep);
+			} else
+				add_edge(u, v, ep, g);
 			break;
 		  }
 

@@ -67,7 +67,7 @@ std::istream& read_graph(std::istream& in, ContigGraph<Graph>& g,
 		  case 'T': // HT: ASQG format
 			return read_asqg(in, g);
 		  case '\t': // H: GAF format
-			return read_gfa(in, g);
+			return read_gfa(in, g, betterEP);
 		  default:
 			std::cerr << "Unknown file format: `H" << c << "'\n";
 			exit(EXIT_FAILURE);
