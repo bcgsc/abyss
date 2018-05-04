@@ -1,6 +1,8 @@
 #ifndef ASSEMBLY_BRANCHRECORDBASE_H
 #define ASSEMBLY_BRANCHRECORDBASE_H 1
 
+#include "Common/Exception.h"
+
 #include <algorithm>
 #include <cassert>
 #include <utility>
@@ -172,7 +174,7 @@ operator Sequence() const
 
 namespace std {
 	template <>
-	inline void swap(BranchRecord& a, BranchRecord& b)
+	inline void swap(BranchRecord& a, BranchRecord& b) NOEXCEPT
 	{
 		a.swap(b);
 	}

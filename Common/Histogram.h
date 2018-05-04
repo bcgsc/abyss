@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H 1
 
+#include "Common/Exception.h"
 #include "StringUtil.h" // for toEng
 #include "VectorUtil.h" // for make_vector
 #include <cassert>
@@ -312,7 +313,7 @@ class Histogram
 
 namespace std {
 	template<>
-	inline void swap(Histogram&, Histogram&) { assert(false); }
+	inline void swap(Histogram&, Histogram&) NOEXCEPT { assert(false); }
 }
 
 /** Print assembly contiguity statistics header. */
