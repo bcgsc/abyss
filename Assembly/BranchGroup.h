@@ -2,6 +2,7 @@
 #define BRANCHGROUP_H 1
 
 #include "Common/Algorithms.h"
+#include "Common/Exception.h"
 #include <algorithm> // for swap
 #include <map>
 #include <utility>
@@ -211,7 +212,7 @@ isAmbiguous(const SequenceCollectionHash& g) const
 
 namespace std {
 	template <>
-	inline void swap(BranchGroup&, BranchGroup&) { assert(false); }
+	inline void swap(BranchGroup&, BranchGroup&) NOEXCEPT { assert(false); }
 }
 
 #endif

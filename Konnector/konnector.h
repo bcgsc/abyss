@@ -815,6 +815,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 			result = ES_EXTENDED_TO_CYCLE;
 		else
 			result = ES_INTERNAL_CYCLE;
+		break;
 	case DEAD_END:
 		result = ES_DEAD_END;
 		break;

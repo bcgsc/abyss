@@ -172,6 +172,7 @@ struct SAMAlignment {
 			  case 'I': case 'X': case '=':
 				qlen += len;
 				clip1 += len;
+				// fallthrough
 			  case 'D': case 'N': case 'P':
 				if (a.align_length == 0) {
 					// Ignore a malformatted CIGAR string whose first
@@ -188,6 +189,7 @@ struct SAMAlignment {
 					clip1 = 0;
 					break;
 				}
+				// fallthrough
 			  case 'H': case 'S':
 				qlen += len;
 				clip1 += len;

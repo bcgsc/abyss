@@ -1,6 +1,7 @@
 #ifndef PMF_H
 #define PMF_H 1
 
+#include "Common/Exception.h"
 #include "Histogram.h"
 #include <cassert>
 #include <cmath>
@@ -63,7 +64,7 @@ class PMF
 
 namespace std {
 	template<>
-	inline void swap(PMF&, PMF&) { assert(false); }
+	inline void swap(PMF&, PMF&) NOEXCEPT { assert(false); }
 }
 
 #endif

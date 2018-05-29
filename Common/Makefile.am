@@ -13,6 +13,7 @@ libcommon_a_SOURCES = \
 	ContigProperties.h \
 	Dictionary.h \
 	Estimate.h \
+	Exception.h \
 	Fcontrol.cpp Fcontrol.h \
 	Functional.h \
 	Hash.h \

@@ -2,6 +2,7 @@
 #define ESTIMATE_H 1
 
 #include "Common/ContigProperties.h" // for Distance
+#include "Common/Exception.h"
 #include "ContigID.h"
 #include "ContigNode.h"
 #include "Graph/Options.h" // for opt::k
@@ -198,7 +199,7 @@ struct EstimateRecord
 
 namespace std {
 	template<>
-	inline void swap(EstimateRecord&, EstimateRecord&)
+	inline void swap(EstimateRecord&, EstimateRecord&) NOEXCEPT
 	{
 		assert(false);
 	}
