@@ -42,19 +42,19 @@ Quick Start
 
 Install [Linuxbrew](http://linuxbrew.sh/), and run the command
 
-	brew install brewsci/bio/abyss
+	brew install abyss
 
 ## Install ABySS on macOS
 
 Install [Homebrew](https://brew.sh/), and run the command
 
-	brew install brewsci/bio/abyss
+	brew install abyss
 
 ## Install ABySS on Windows
 
 Install [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/) and [Linuxbrew](http://linuxbrew.sh/), and run the command
 
-	brew install brewsci/bio/abyss
+	brew install abyss
 
 ## Install ABySS on Debian or Ubuntu
 
@@ -97,7 +97,7 @@ since they contain a bug. Later versions of Boost compile without error.
 - [ARCS](https://github.com/bcgsc/arcs) to scaffold
 - [Tigmint](https://github.com/bcgsc/tigmint) to correct assembly errors
 
-	brew install brewsci/bio/arcs brewsci/bio/links
+	brew install brewsci/bio/arcs brewsci/bio/links-scaffolder
 
 ## Optional dependencies
 
