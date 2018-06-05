@@ -20,7 +20,6 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <cstring>
-#include "lib/rolling-hash/rolling.h"
 
 using namespace std;
 
