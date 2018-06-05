@@ -228,7 +228,7 @@ void resumeAssemblyFromCheckpoint(int argc, char** argv,
 	HashAgnosticCascadingBloom solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
-	BTL::BloomFilter visitedKmerSet;
+	BloomFilter visitedKmerSet;
 
 	/* counters for progress messages */
 	BloomDBG::AssemblyCounters counters;

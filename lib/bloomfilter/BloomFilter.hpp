@@ -33,10 +33,6 @@ inline unsigned popCnt(unsigned char x) {
 			>> ((0x4332322132212110 >> (((x & 0xF0) >> 2)) & 0xF) << 2)) & 0xf;
 }
 
-/* To avoid name collision with konnector `BloomFilter` class */
-
-namespace BTL {
-
 class BloomFilter {
 public:
 
@@ -462,7 +458,5 @@ private:
 	uint64_t m_nEntry;
 	uint64_t m_tEntry;
 };
-
-} // end namespace 'BTL'
 
 #endif /* BLOOMFILTER_H_ */

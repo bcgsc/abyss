@@ -9,6 +9,7 @@
 #include <string>
 
 using namespace std;
+using Konnector::BloomFilter;
 
 TEST(BloomFilter, base)
 {

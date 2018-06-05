@@ -9,7 +9,7 @@
 #include <iostream>
 
 using namespace std;
-typedef RollingBloomDBG<BTL::BloomFilter> Graph;
+typedef RollingBloomDBG<BloomFilter> Graph;
 typedef graph_traits<Graph> GraphTraits;
 
 /* each vertex is represented by
@@ -60,7 +60,7 @@ TEST(BloomDBG, splitSeq)
 	 *   GACTCGG
 	 */
 
-	BTL::BloomFilter bloom1(bloomSize, numHashes, k);
+	BloomFilter bloom1(bloomSize, numHashes, k);
 
 	RollingHash("GACTC", numHashes, k).getHashes(hashes);
 	bloom1.insert(hashes);
@@ -95,7 +95,7 @@ TEST(BloomDBG, splitSeq)
 	 *   GACTCGG
 	 */
 
-	BTL::BloomFilter bloom2(bloomSize, numHashes, k);
+	BloomFilter bloom2(bloomSize, numHashes, k);
 
 	RollingHash("GACTC", numHashes, k).getHashes(hashes);
 	bloom2.insert(hashes);
@@ -131,7 +131,7 @@ TEST(BloomDBG, splitSeq)
 	 *   ACTCG
 	 */
 
-	BTL::BloomFilter bloom3(bloomSize, numHashes, k);
+	BloomFilter bloom3(bloomSize, numHashes, k);
 
 	RollingHash("TACTC", numHashes, k).getHashes(hashes);
 	bloom2.insert(hashes);

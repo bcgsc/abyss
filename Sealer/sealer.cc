@@ -46,6 +46,7 @@
 #endif
 
 using namespace std;
+using Konnector::BloomFilter;
 #if USESEQAN
 using namespace seqan;
 #endif

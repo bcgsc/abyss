@@ -33,6 +33,7 @@
 #endif
 
 using namespace std;
+using Konnector::BloomFilter;
 
 #define PROGRAM "konnector"
 

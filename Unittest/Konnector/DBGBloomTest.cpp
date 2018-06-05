@@ -5,6 +5,8 @@
 #include <gtest/gtest.h>
 #include <string>
 
+using Konnector::BloomFilter;
+
 TEST(DBGBloom, BloomFilterPolymorphism)
 {
 	unsigned bits = 100000;

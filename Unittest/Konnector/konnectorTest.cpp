@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 using namespace std;
+using Konnector::BloomFilter;
 
 // workaround: opt::k must be defined because
 // it is used by write_dot(..)

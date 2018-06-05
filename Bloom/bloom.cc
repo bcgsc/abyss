@@ -419,9 +419,9 @@ static inline void buildKonnectorBloom(size_t bits, string outputPath,
 	if (opt::windows == 0) {
 
 		if (opt::levels == 1) {
-			BloomFilter bloom(bits, opt::hashSeed);
+			Konnector::BloomFilter bloom(bits, opt::hashSeed);
 #ifdef _OPENMP
-			ConcurrentBloomFilter<BloomFilter>
+			ConcurrentBloomFilter<Konnector::BloomFilter>
 				cbf(bloom, opt::numLocks, opt::hashSeed);
 			loadFilters(cbf, argc, argv);
 #else
@@ -641,7 +641,7 @@ int combine(int argc, char** argv, BitwiseOp readOp)
 	string outputPath(argv[optind]);
 	optind++;
 
-	BloomFilter bloom;
+	Konnector::BloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
 		string path(argv[i]);
@@ -696,7 +696,7 @@ int info(int argc, char** argv)
 		dieWithUsageError();
 	}
 
-	BloomFilter bloom;
+	Konnector::BloomFilter bloom;
 	string path = argv[optind];
 
 	if (opt::verbose)
@@ -745,9 +745,9 @@ int compare(int argc, char ** argv){
 	std::cerr << "Computing distance for 2"
 			  << " samples...\n";
 	// Get both paths and open istreams
-	BloomFilter bloomA;
+	Konnector::BloomFilter bloomA;
 	string pathA(argv[optind]);
-	BloomFilter bloomB;
+	Konnector::BloomFilter bloomB;
 	string pathB(argv[optind+1]);
 	if (opt::verbose)
 	  std::cerr << "Loading bloom filters from "
@@ -846,7 +846,7 @@ int compare(int argc, char ** argv){
 
 int memberOf(int argc, char ** argv){
 	// Initalise bloom and get globals
-	BloomFilter bloom;
+	Konnector::BloomFilter bloom;
 	parseGlobalOpts(argc, argv);
 	// Arg parser to get `m' option in case set
 	for (int c; (c = getopt_long(argc, argv,
@@ -930,11 +930,11 @@ int memberOf(int argc, char ** argv){
 /**
  * Calculate number of bases to trim from left end of sequence.
  */
-int calcLeftTrim(const Sequence& seq, unsigned k, const BloomFilter& bloom,
+int calcLeftTrim(const Sequence& seq, unsigned k, const Konnector::BloomFilter& bloom,
 	size_t minBranchLen)
 {
 	// Boost graph interface for Bloom filter
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<Konnector::BloomFilter> g(bloom);
 
 	// if this is the first k-mer we have found in
 	// Bloom filter, starting from the left end
@@ -1001,7 +1001,7 @@ int trim(int argc, char** argv)
 		cerr << "Loading bloom filter from `"
 			<< bloomPath << "'...\n";
 
-	BloomFilter bloom;
+	Konnector::BloomFilter bloom;
 	istream *in = openInputStream(bloomPath);
 	assert_good(*in, bloomPath);
 	bloom.read(*in);

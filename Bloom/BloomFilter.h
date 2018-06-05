@@ -14,6 +14,12 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
 
+/*
+ * Put `BloomFilter` class in `Konnector` namespace to avoid collision with BTL
+ * `BloomFilter` class of the same name.
+ */
+namespace Konnector {
+
 /** A Bloom filter. */
 class BloomFilter
 {
@@ -164,5 +170,7 @@ class BloomFilter
 	size_t m_hashSeed;
 	char* m_array;
 };
+
+} // end Konnector namespace
 
 #endif

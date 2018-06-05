@@ -42,12 +42,12 @@ class HashAgnosticCascadingBloom
 	{
 		m_data.reserve(levels);
 		for (unsigned i = 0; i < levels; i++)
-			m_data.push_back(new BTL::BloomFilter(size, hashes, k));
+			m_data.push_back(new BloomFilter(size, hashes, k));
 	}
 
 	/**
-	 * Constructor to load a single-level BTL::BloomFilter from
-	 * files.  This is used to make BTL::BloomFilter support the
+	 * Constructor to load a single-level BloomFilter from
+	 * files.  This is used to make BloomFilter support the
 	 * same interface as HashAgnosticCascadingBloom.
 	 */
 	HashAgnosticCascadingBloom(const string& bloomPath)
@@ -138,7 +138,7 @@ class HashAgnosticCascadingBloom
 	}
 
 	/** Get the Bloom filter for a given level */
-	BTL::BloomFilter& getBloomFilter(unsigned level)
+	BloomFilter& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);
@@ -159,7 +159,7 @@ class HashAgnosticCascadingBloom
 	void loadFilter(const string& bloomPath)
 	{
 		clear();
-		BTL::BloomFilter* bloom = new BTL::BloomFilter(bloomPath);
+		BloomFilter* bloom = new BloomFilter(bloomPath);
 		m_k = bloom->getKmerSize();
 		m_hashes = bloom->getHashNum();
 		m_data.push_back(bloom);
@@ -172,7 +172,7 @@ class HashAgnosticCascadingBloom
 	{
 		m_k = 0;
 		m_hashes = 0;
-		typedef std::vector<BTL::BloomFilter*>::iterator Iterator;
+		typedef std::vector<BloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
 			assert(*i != NULL);
 			delete *i;
@@ -185,7 +185,7 @@ class HashAgnosticCascadingBloom
 	/** number of hash functions */
 	unsigned m_hashes;
 	/** the array of Bloom filters */
-	std::vector<BTL::BloomFilter*> m_data;
+	std::vector<BloomFilter*> m_data;
 };
 
 #endif

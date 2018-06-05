@@ -6,6 +6,7 @@
 #include <string>
 
 using namespace std;
+using Konnector::BloomFilter;
 
 /*
  * Tests for getStartKmerPos() function, which does

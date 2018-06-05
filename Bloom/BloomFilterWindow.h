@@ -14,12 +14,12 @@
  * A bloom filter that represents a window
  * within a larger bloom filter.
  */
-class BloomFilterWindow : public BloomFilter
+class BloomFilterWindow : public Konnector::BloomFilter
 {
 public:
 
 	/** Constructor. */
-	BloomFilterWindow() : BloomFilter() { };
+	BloomFilterWindow() : Konnector::BloomFilter() { };
 
 	/** Constructor.
 	 *
@@ -29,7 +29,7 @@ public:
 	 */
 	BloomFilterWindow(size_t fullBloomSize, size_t startBitPos,
 			size_t endBitPos, size_t hashSeed=0) :
-		BloomFilter(endBitPos - startBitPos + 1, hashSeed),
+		Konnector::BloomFilter(endBitPos - startBitPos + 1, hashSeed),
 		m_fullBloomSize(fullBloomSize),
 		m_startBitPos(startBitPos),
 		m_endBitPos(endBitPos)
@@ -63,26 +63,26 @@ public:
 	/** Return the size of the bit array. */
 	size_t size() const
 	{
-		return BloomFilter::size();
+		return Konnector::BloomFilter::size();
 	}
 
 	/** Return the number of elements with count >= max_count. */
 	size_t popcount() const
 	{
-		return BloomFilter::popcount();
+		return Konnector::BloomFilter::popcount();
 	}
 
 	/** Return the estimated false positive rate */
 	double FPR() const
 	{
-		return BloomFilter::FPR();
+		return Konnector::BloomFilter::FPR();
 	}
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
 	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
-			return BloomFilter::operator[](i - m_startBitPos);
+			return Konnector::BloomFilter::operator[](i - m_startBitPos);
 		return false;
 	}
 
@@ -96,7 +96,7 @@ public:
 	void insert(size_t i)
 	{
 		if (i >= m_startBitPos && i <= m_endBitPos)
-			BloomFilter::insert(i - m_startBitPos);
+			Konnector::BloomFilter::insert(i - m_startBitPos);
 	}
 
 	/** Add the object to this set. */
@@ -143,7 +143,7 @@ public:
 
 		if (m_size != bits) {
 			if (readOp == BITWISE_OVERWRITE) {
-				BloomFilter::resize(bits);
+				Konnector::BloomFilter::resize(bits);
 			} else {
 				std::cerr << "error: can't union/intersect bloom filters with "
 					<< "different sizes\n";

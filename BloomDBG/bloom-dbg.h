@@ -834,7 +834,7 @@ namespace BloomDBG {
 			std::ostream& out)
 	{
 		/* k-mers in previously assembled contigs */
-		BTL::BloomFilter visitedKmerSet(solidKmerSet.size(),
+		BloomFilter visitedKmerSet(solidKmerSet.size(),
 			solidKmerSet.getHashNum(), solidKmerSet.getKmerSize());
 
 		/* counters for progress messages */

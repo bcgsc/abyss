@@ -8,7 +8,7 @@
 using namespace std;
 using namespace boost;
 
-typedef RollingBloomDBG<BTL::BloomFilter> Graph;
+typedef RollingBloomDBG<BloomFilter> Graph;
 typedef graph_traits<Graph> GraphTraits;
 typedef graph_traits<Graph>::vertex_descriptor V;
 
@@ -20,7 +20,7 @@ protected:
 	const unsigned m_k;
 	const unsigned m_bloomSize;
 	const unsigned m_numHashes;
-	BTL::BloomFilter m_bloom;
+	BloomFilter m_bloom;
 	Graph m_graph;
 
 	RollingBloomDBGTest() : m_k(5), m_bloomSize(100000), m_numHashes(2),
@@ -149,7 +149,7 @@ TEST_F(RollingBloomDBGTest, pathTraversal)
 	 * CGACT-GACTC-ACTCG
 	 */
 
-	BTL::BloomFilter bloom(m_bloomSize, m_numHashes, m_k);
+	BloomFilter bloom(m_bloomSize, m_numHashes, m_k);
 	Graph graph(bloom);
 
 	const V CGACT("CGACT", RollingHash("CGACT", m_numHashes, m_k));
@@ -197,7 +197,7 @@ protected:
 	const unsigned m_k;
 	const unsigned m_bloomSize;
 	const unsigned m_numHashes;
-	BTL::BloomFilter m_bloom;
+	BloomFilter m_bloom;
 	Graph m_graph;
 	const std::string m_spacedSeed;
 

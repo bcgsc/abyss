@@ -22,13 +22,13 @@ class CascadingBloomFilter
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
-			m_data.push_back(new BloomFilter(n, hashSeed));
+			m_data.push_back(new Konnector::BloomFilter(n, hashSeed));
 	}
 
 	/** Destructor */
 	~CascadingBloomFilter()
 	{
-		typedef std::vector<BloomFilter*>::iterator Iterator;
+		typedef std::vector<Konnector::BloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
 			assert(*i != NULL);
 			delete *i;
@@ -91,7 +91,7 @@ class CascadingBloomFilter
 	}
 
 	/** Get the Bloom filter for a given level */
-	BloomFilter& getBloomFilter(unsigned level)
+	Konnector::BloomFilter& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);
@@ -112,7 +112,7 @@ class CascadingBloomFilter
 
   private:
 	size_t m_hashSeed;
-	std::vector<BloomFilter*> m_data;
+	std::vector<Konnector::BloomFilter*> m_data;
 
 };
 
