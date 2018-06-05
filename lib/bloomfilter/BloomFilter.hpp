@@ -94,40 +94,12 @@ public:
 		loadFilter(filterFilePath);
 	}
 
-	void loadHeader(FILE *file) {
-
-		FileHeader header;
-		if (fread(&header, sizeof(struct FileHeader), 1, file) != 1) {
-			cerr << "Failed to read Bloom filter file header" << endl;
-		}
-		char magic[9];
-		strncpy(magic, header.magic, 8);
-		magic[8] = '\0';
-
-//        cerr << "Loading header... magic: " <<
-//            magic << " hlen: " <<
-//            header.hlen << " size: " <<
-//            header.size << " nhash: " <<
-//            header.nhash << " kmer: " <<
-//            header.kmer << " dFPR: " <<
-//            header.dFPR << " aFPR: " <<
-//            header.aFPR << " rFPR: " <<
-//            header.rFPR << " nEntry: " <<
-//            header.nEntry << " tEntry: " <<
-//            header.tEntry << endl;
-
-		m_size = header.size;
-		initSize(m_size);
-		m_hashNum = header.nhash;
-		m_kmerSize = header.kmer;
-	}
-
 	void loadFilter(const string &filterFilePath)
 	{
 		FILE *file = fopen(filterFilePath.c_str(), "rb");
 		if (file == NULL) {
 			cerr << "file \"" << filterFilePath << "\" could not be read."
-				<< endl;
+					<< endl;
 			exit(1);
 		}
 
@@ -139,17 +111,33 @@ public:
 		fseek(file, lCurPos, 0);
 		if (fileSize != m_sizeInBytes) {
 			cerr << "Error: " << filterFilePath
-				<< " does not match size given by its information file. Size: "
-				<< fileSize << " vs " << m_sizeInBytes << " bytes." << endl;
+					<< " does not match size given by its header. Size: "
+					<< fileSize << " vs " << m_sizeInBytes << " bytes." << endl;
 			exit(1);
 		}
 
 		size_t countRead = fread(m_filter, fileSize, 1, file);
 		if (countRead != 1 && fclose(file) != 0) {
 			cerr << "file \"" << filterFilePath << "\" could not be read."
-				<< endl;
+					<< endl;
 			exit(1);
 		}
+	}
+
+	void loadHeader(FILE *file) {
+
+		FileHeader header;
+		if (fread(&header, sizeof(struct FileHeader), 1, file) != 1) {
+			cerr << "Failed to header" << endl;
+		}
+		char magic[9];
+		strncpy(magic, header.magic, 8);
+		magic[8] = '\0';
+
+		m_size = header.size;
+		initSize(m_size);
+		m_hashNum = header.nhash;
+		m_kmerSize = header.kmer;
 	}
 
 	/*
@@ -178,26 +166,19 @@ public:
 		}
 	}
 
-	void insert(const char* kmer) {
-		uint64_t hVal = getChval(kmer, m_kmerSize);
-		for (unsigned i = 0; i < m_hashNum; i++) {
-			size_t normalizedValue = (rol(varSeed, i) ^ hVal) % m_size;
-			__sync_or_and_fetch(&m_filter[normalizedValue / bitsPerChar],
-					bitMask[normalizedValue % bitsPerChar]);
-		}
-	}
-
 	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 * Returns if already inserted
 	 */
-	bool insertAndCheck(const char* kmer) {
-		uint64_t hVal = getChval(kmer, m_kmerSize);
+	bool insertAndCheck(const size_t precomputed[]) {
+		//iterates through hashed values adding it to the filter
 		bool found = true;
-		for (unsigned i = 0; i < m_hashNum; i++) {
-			size_t normalizedValue = (rol(varSeed, i) ^ hVal) % m_size;
-			found &= __sync_or_and_fetch(
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
+			found &= __sync_fetch_and_or(
 					&m_filter[normalizedValue / bitsPerChar],
-					bitMask[normalizedValue % bitsPerChar]);
+					bitMask[normalizedValue % bitsPerChar])
+					>> (normalizedValue % bitsPerChar) & 1;
 		}
 		return found;
 	}
@@ -211,9 +192,10 @@ public:
 		bool found = true;
 		for (size_t i = 0; i < m_hashNum; ++i) {
 			size_t normalizedValue = precomputed.at(i) % m_size;
-			found &= __sync_or_and_fetch(
+			found &= __sync_fetch_and_or(
 					&m_filter[normalizedValue / bitsPerChar],
-					bitMask[normalizedValue % bitsPerChar]);
+					bitMask[normalizedValue % bitsPerChar])
+					>> (normalizedValue % bitsPerChar) & 1;
 		}
 		return found;
 	}
@@ -246,21 +228,7 @@ public:
 		return true;
 	}
 
-	/*
-	 * Single pass filtering, computes hash values on the fly
-	 */
-	bool contains(const char* kmer) const {
-		uint64_t hVal = getChval(kmer, m_kmerSize);
-		for (unsigned i = 0; i < m_hashNum; i++) {
-			size_t normalizedValue = (rol(varSeed, i) ^ hVal) % m_size;
-			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
-			if ((m_filter[normalizedValue / bitsPerChar] & bit) == 0)
-				return false;
-		}
-		return true;
-	}
-
-	void writeHeader(ostream &out) const {
+	void writeHeader(std::ostream& out) const {
 		FileHeader header;
 		strncpy(header.magic, "BlOOMFXX", 8);
 		char magic[9];
@@ -275,24 +243,11 @@ public:
 		header.nEntry = m_nEntry;
 		header.tEntry = m_tEntry;
 
-//        cerr << "Writing header... magic: "
-//            << magic << " hlen: "
-//            << header.hlen << " size: "
-//            << header.size << " nhash: "
-//            << header.nhash << " kmer: "
-//            << header.kmer << " dFPR: "
-//            << header.dFPR << " aFPR: "
-//            << header.aFPR << " rFPR: "
-//            << header.rFPR << " nEntry: "
-//            << header.nEntry << " tEntry: "
-//            << header.tEntry << endl;
-
 		out.write(reinterpret_cast<char*>(&header), sizeof(struct FileHeader));
 		assert(out);
 	}
 
 	/** Serialize the Bloom filter to a stream */
-	// void storeFilter(std::ostream& out) const
 	friend std::ostream& operator<<(std::ostream& out, const BloomFilter& o)
 	{
 		assert(out);
@@ -314,16 +269,17 @@ public:
 	void storeFilter(string const &filterFilePath) const {
 		ofstream myFile(filterFilePath.c_str(), ios::out | ios::binary);
 
-		cerr << "Storing filter. Filter is " << m_sizeInBytes << "bytes."
+		cerr << "Storing filter. Filter is " << m_sizeInBytes << " bytes."
 				<< endl;
 
 		myFile << *this;
 		myFile.close();
+		assert(myFile);
 	}
 
 	size_t getPop() const {
 		size_t i, popBF = 0;
-#pragma omp parallel for reduction(+:popBF)
+//#pragma omp parallel for reduction(+:popBF)
 		for (i = 0; i < (m_size + 7) / 8; i++)
 			popBF = popBF + popCnt(m_filter[i]);
 		return popBF;
@@ -336,10 +292,6 @@ public:
 	unsigned getKmerSize() const {
 		return m_kmerSize;
 	}
-
-//    void setdFPR(double value) {
-//        m_dFPR = value;
-//    }
 
 	/*
 	 * Calculates that False positive rate that a redundant entry is actually
@@ -358,7 +310,7 @@ public:
 	 * Return FPR based on popcount
 	 */
 	double getFPR() const {
-		return pow(double(getPop())/double(m_size), m_hashNum);
+		return pow(double(getPop())/double(m_size), double(m_hashNum));
 	}
 
 	/*
@@ -392,7 +344,7 @@ public:
 	~BloomFilter() {
 		delete[] m_filter;
 	}
-private:
+protected:
 	BloomFilter(const BloomFilter& that); //to prevent copy construction
 
 	/*
@@ -446,7 +398,7 @@ private:
 	 * Calculates the optimal FPR to use based on hash functions
 	 */
 	double calcFPR_hashNum(unsigned hashFunctNum) const {
-		return pow(2, -hashFunctNum);
+		return pow(2, -double(hashFunctNum));
 	}
 
 	uint8_t* m_filter;
