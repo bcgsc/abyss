@@ -324,8 +324,9 @@ struct SAMRecord : SAMAlignment {
 #if SAM_SEQ_QUAL
 		out << '\t' << o.seq
 			<< '\t' << o.qual;
+		// note: leading tab ('\t') is already embedded in o.tags
 		if (!o.tags.empty())
-			out << '\t' << o.tags;
+			out << o.tags;
 #else
 		out << "\t*\t*";
 #endif
