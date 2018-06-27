@@ -717,30 +717,30 @@ ifdef lr
 # Tigmint
 
 # Options for mapping the reads to the draft assembly.
-lr_l=$l
+lr_l?=$l
 override lrmapopt=$v -j$j -l$(lr_l) $(LR_MAP_OPTIONS)
 
 # Options for abyss-scaffold
-lr_s=1000-100000
-lr_n=5-20
+lr_s?=1000-100000
+lr_n?=5-20
 
 # Minimum AS/Read length ratio
-tigmint_as=0.65
+tigmint_as?=0.65
 
 # Maximum number of mismatches
-tigmint_nm=5
+tigmint_nm?=5
 
 # Minimum mapping quality threshold
-tigmint_mapq=0
+tigmint_mapq?=0
 
 # Maximum distance between reads to be considered the same molecule
-tigmint_d=50000
+tigmint_d?=50000
 
 # Minimum number of spanning molecules
-tigmint_n=10
+tigmint_n?=10
 
 # Size of the window that must be spanned by moecules
-tigmint_w=1000
+tigmint_w?=1000
 
 # Align paired-end reads to the draft genome, sort by BX tag,
 # and create molecule extents BED.
@@ -765,14 +765,14 @@ tigmint_w=1000
 	$(gtime) tigmint-cut -p$j -n$(tigmint_n) -w$(tigmint_w) -o $@ $*.fa $<
 
 # ARCS
-arcs_c=2
-arcs_d=0
-arcs_e=30000
-arcs_l=0
-arcs_m=4-20000
-arcs_r=0.05
-arcs_s=98
-arcs_z=500
+arcs_c?=2
+arcs_d?=0
+arcs_e?=30000
+arcs_l?=0
+arcs_m?=4-20000
+arcs_r?=0.05
+arcs_s?=98
+arcs_z?=500
 
 # Align reads and create a graph of linked contigs using ARCS.
 %.arcs.dist.gv: %.fa
