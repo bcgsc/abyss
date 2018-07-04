@@ -574,7 +574,7 @@ namespace BloomDBG {
 			if (!assembledKmerSet.contains(*fwd))
 				break;
 		}
-		if (fwd.pos() > 0)
+		if (fwd != RollingHashIterator::end() && fwd.pos() > 0)
 			seq.erase(0, fwd.pos());
 
 		/* trim previously assembled k-mers from end of sequence */
@@ -584,7 +584,7 @@ namespace BloomDBG {
 			if (!assembledKmerSet.contains(*rev))
 				break;
 		}
-		if (rev.pos() > 0)
+		if (rev != RollingHashIterator::end() && rev.pos() > 0)
 			rcSeq.erase(0, rev.pos());
 
 		/* flip seq back to original orientation */
