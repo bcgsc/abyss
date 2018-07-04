@@ -1,6 +1,8 @@
 #ifndef BLOOM_DBG_H
 #define BLOOM_DBG_H 1
 
+#include "config.h"
+
 #include "BloomDBG/AssemblyParams.h"
 #include "BloomDBG/AssemblyCounters.h"
 #include "BloomDBG/RollingHashIterator.h"
@@ -20,6 +22,7 @@
 #include "DataLayer/FastaConcat.h"
 #include "lib/bloomfilter/BloomFilter.hpp"
 
+#include <cmath>
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -29,6 +32,18 @@
 
 #if _OPENMP
 # include <omp.h>
+#endif
+
+#if HAVE_GOOGLE_SPARSE_HASH_MAP
+
+#include <google/sparse_hash_set>
+typedef google::sparse_hash_set<Kmer> KmerSet;
+
+#else
+
+#include <unordered_set>
+typedef std::unordered_set<Kmer> KmerSet;
+
 #endif
 
 namespace BloomDBG {
@@ -602,6 +617,7 @@ namespace BloomDBG {
 	 * @param dbg Boost graph interface to de Bruijn graph
 	 * @param assembledKmerSet Bloom filter containing k-mers of
 	 * previously assembled contigs
+	 * @param contigEndKmers start/end k-mers of short contigs
 	 * @param params command line options for the assembly
 	 * (e.g. k-mer coverage threshold)
 	 * @param counters counter variables used for generating assembly
@@ -610,13 +626,14 @@ namespace BloomDBG {
 	 */
 	template <typename GraphT, typename BloomT, typename AssemblyStreamsT>
 	inline static void extendRead(const FastaRecord& read,
-		const GraphT& dbg, BloomT& assembledKmerSet,
+		const GraphT& dbg, BloomT& assembledKmerSet, KmerSet& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
 		const unsigned k = params.k;
 		const unsigned numHashes = params.numHashes;
 		const unsigned minBranchLen = params.trim + 1;
+		const unsigned fpLookAhead = 5;
 
 		std::ostream& out = streams.out;
 		std::ostream& checkpointOut = streams.checkpointOut;
@@ -680,27 +697,59 @@ namespace BloomDBG {
 			 * generated multiple times.)
 			 */
 #pragma omp critical(assembledKmerSet)
-			if (!allKmersInBloom(seq, assembledKmerSet)) {
+			{
+				bool redundant = false;
 
-				/* trim previously assembled k-mers from both ends */
-				trimContigOverlaps(seq, assembledKmerSet);
+				/*
+				 * If we check `assembledKmerSet` for very short contigs,
+				 * we may get full-length matches purely due Bloom filter
+				 * positives.  For such contigs, we additionally track
+				 * the start and end in a separate hash table called
+				 * `contigEndKmers`.
+				 */
+				if (seq.length() < params.k + fpLookAhead - 1) {
 
-				/* mark remaining k-mers as assembled */
-				addKmersToBloom(seq, assembledKmerSet);
+					Kmer kmer1(seq.substr(0, k));
+					kmer1.canonicalize();
+					Kmer kmer2(seq.substr(seq.length() - k));
+					kmer2.canonicalize();
 
-				/* add contig to output FASTA */
-				printContig(seq, counters.contigID, read.id, k, out);
+					if (contigEndKmers.find(kmer1) != contigEndKmers.end()
+						&& contigEndKmers.find(kmer2) != contigEndKmers.end()) {
+						redundant = true;
+					} else {
+						contigEndKmers.insert(kmer1);
+						contigEndKmers.insert(kmer2);
+					}
 
-				/* add contig to checkpoint FASTA file */
-				if (params.checkpointsEnabled())
-					printContig(seq, counters.contigID, read.id, k,
-						checkpointOut);
+				} else if (allKmersInBloom(seq, assembledKmerSet)) {
+					redundant = true;
+				}
 
-				/* update counters / trace results */
-				traceResult.redundantContig = false;
-				traceResult.contigID = counters.contigID;
-				counters.basesAssembled += seq.length();
-				counters.contigID++;
+				if (!redundant) {
+
+					/* trim previously assembled k-mers from both ends */
+					trimContigOverlaps(seq, assembledKmerSet);
+
+					/* mark remaining k-mers as assembled */
+					addKmersToBloom(seq, assembledKmerSet);
+
+					/* add contig to output FASTA */
+					printContig(seq, counters.contigID, read.id, k, out);
+
+					/* add contig to checkpoint FASTA file */
+					if (params.checkpointsEnabled())
+						printContig(seq, counters.contigID, read.id, k,
+							checkpointOut);
+
+					/* update counters / trace results */
+					traceResult.redundantContig = false;
+					traceResult.contigID = counters.contigID;
+					counters.basesAssembled += seq.length();
+					counters.contigID++;
+
+				}
+
 			}
 
 			/* trace file output ('-T' option) */
@@ -772,8 +821,8 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	static inline void processRead(const FastaRecord& rec,
 		const SolidKmerSetT& solidKmerSet, AssembledKmerSetT& assembledKmerSet,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
+		KmerSet& contigEndKmers, const AssemblyParams& params,
+		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
 		/* Boost graph API for Bloom filter */
 		RollingBloomDBG<SolidKmerSetT> graph(solidKmerSet);
@@ -805,7 +854,7 @@ namespace BloomDBG {
 			return;
 
 		/* extend the read into a contig */
-		extendRead(rec, graph, assembledKmerSet, params,
+		extendRead(rec, graph, assembledKmerSet, contigEndKmers, params,
 			counters, streams);
 
 #pragma omp atomic
@@ -834,7 +883,7 @@ namespace BloomDBG {
 			std::ostream& out)
 	{
 		/* k-mers in previously assembled contigs */
-		BloomFilter visitedKmerSet(solidKmerSet.size(),
+		BloomFilter assembledKmerSet(solidKmerSet.size(),
 			solidKmerSet.getHashNum(), solidKmerSet.getKmerSize());
 
 		/* counters for progress messages */
@@ -866,7 +915,7 @@ namespace BloomDBG {
 		AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut);
 
 		/* run the assembly */
-		assemble(solidKmerSet, visitedKmerSet, counters, params, streams);
+		assemble(solidKmerSet, assembledKmerSet, counters, params, streams);
 	}
 
 	/**
@@ -881,17 +930,17 @@ namespace BloomDBG {
 	 * @param genomeSize approx genome size
 	 * @param goodKmerSet Bloom filter containing k-mers that
 	 * occur more than once in the input data
-	 * @param visitedKmerSet Bloom filter containing k-mers that have
+	 * @param assembledKmerSet Bloom filter containing k-mers that have
 	 * already been included in contigs
 	 * @param in input stream for sequencing reads (FASTA)
 	 * @param out output stream for contigs (FASTA)
 	 * @param verbose set to true to print progress messages to
 	 * STDERR
 	 */
-	template <typename SolidKmerSetT, typename VisitedKmerSetT,
+	template <typename SolidKmerSetT, typename AssembledKmerSetT,
 		typename InputReadStreamT>
 	inline static void assemble(const SolidKmerSetT& goodKmerSet,
-		VisitedKmerSetT& assembledKmerSet, AssemblyCounters& counters,
+		AssembledKmerSetT& assembledKmerSet, AssemblyCounters& counters,
 		const AssemblyParams& params,
 		AssemblyStreams<InputReadStreamT>& streams)
 	{
@@ -908,6 +957,9 @@ namespace BloomDBG {
 
 		InputReadStreamT& in = streams.in;
 		std::ostream& checkpointOut = streams.checkpointOut;
+
+		KmerSet contigEndKmers;
+		contigEndKmers.rehash((size_t)pow(2,28));
 
 		while (true)
 		{
@@ -940,7 +992,7 @@ namespace BloomDBG {
 					 it != buffer.end(); ++it)
 				{
 					processRead(*it, goodKmerSet, assembledKmerSet,
-						params, counters, streams);
+						contigEndKmers, params, counters, streams);
 
 #pragma omp atomic
 					counters.readsProcessed++;
