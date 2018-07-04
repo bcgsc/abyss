@@ -110,10 +110,12 @@ gzip=gzip
 endif
 endif
 
+ifndef preserve_path
 # Determine the path to the ABySS executables
 path?=$(shell dirname `command -v $(MAKEFILE_LIST)`)
 ifdef path
 PATH:=$(path):$(PATH)
+endif
 endif
 
 ifdef db
