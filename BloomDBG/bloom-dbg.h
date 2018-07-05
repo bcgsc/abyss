@@ -37,12 +37,12 @@
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 
 #include <google/sparse_hash_set>
-typedef google::sparse_hash_set<Kmer> KmerSet;
+typedef google::sparse_hash_set<RollingBloomDBGVertex> KmerSet;
 
 #else
 
-#include <unordered_set>
-typedef std::unordered_set<Kmer> KmerSet;
+#include "Common/UnorderedSet.h"
+typedef unordered_set<RollingBloomDBGVertex> KmerSet;
 
 #endif
 
@@ -749,11 +749,24 @@ namespace BloomDBG {
 			/* ensure branching k-mers are included only once in output */
 			trimBranchKmers(seq, k, numHashes, minBranchLen, dbg);
 
-			/* check assembledKmerSet to ensure the contig is not redundant */
-#pragma omp critical(assembledKmerSet)
-			{
-				bool redundant = false;
+			/* vertices representing start/end k-mers of contig */
 
+			Sequence kmer1 = seq.substr(0, k);
+			RollingHash hash1(kmer1.c_str(), numHashes, k);
+			Vertex v1(kmer1.c_str(), hash1);
+
+			Sequence kmer2 = seq.substr(seq.length() - k);
+			RollingHash hash2(kmer2.c_str(), numHashes, k);
+			Vertex v2(kmer2.c_str(), hash2);
+
+			/*
+			 * check if contig is redundant (i.e. has already been generated
+			 * from a different thread/read)
+			 */
+
+			bool redundant = false;
+#pragma omp critical(redundancyCheck)
+			{
 				/*
 				 * If we use `assembledKmerSet` to check very short contigs,
 				 * we may get full-length matches purely due to Bloom filter
@@ -763,17 +776,12 @@ namespace BloomDBG {
 				 */
 				if (seq.length() < params.k + fpLookAhead - 1) {
 
-					Kmer kmer1(seq.substr(0, k));
-					kmer1.canonicalize();
-					Kmer kmer2(seq.substr(seq.length() - k));
-					kmer2.canonicalize();
-
-					if (contigEndKmers.find(kmer1) != contigEndKmers.end()
-						&& contigEndKmers.find(kmer2) != contigEndKmers.end()) {
+					if (contigEndKmers.find(v1) != contigEndKmers.end()
+						&& contigEndKmers.find(v2) != contigEndKmers.end()) {
 						redundant = true;
 					} else {
-						contigEndKmers.insert(kmer1);
-						contigEndKmers.insert(kmer2);
+						contigEndKmers.insert(v1);
+						contigEndKmers.insert(v2);
 					}
 
 				} else if (allKmersInBloom(seq, assembledKmerSet)) {
@@ -788,6 +796,13 @@ namespace BloomDBG {
 					/* mark remaining k-mers as assembled */
 					addKmersToBloom(seq, assembledKmerSet);
 
+				}
+			}
+
+			if (!redundant)
+			{
+#pragma omp critical(fasta)
+				{
 					/* add contig to output FASTA */
 					printContig(seq, counters.contigID, read.id, k, out);
 
@@ -796,14 +811,11 @@ namespace BloomDBG {
 						printContig(seq, counters.contigID, read.id, k,
 							checkpointOut);
 
-					/* update counters / trace results */
-					traceResult.redundantContig = false;
 					traceResult.contigID = counters.contigID;
-					counters.basesAssembled += seq.length();
 					counters.contigID++;
-
+					traceResult.redundantContig = false;
+					counters.basesAssembled += seq.length();
 				}
-
 			}
 
 		}  /* for each contig (extended read segment) */
