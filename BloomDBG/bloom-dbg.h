@@ -168,10 +168,25 @@ namespace BloomDBG {
 		unsigned origLength;
 		/** length of left extension (bp) */
 		unsigned leftExtensionLength;
+		/**
+		 * Set to true when a leftward seq extension is long enough to
+		 * imply that the starting read was error-free. This field is
+		 * only relevant if the sequence extension stopped due to a dead
+		 * end (as opposed to a branching point).
+		 */
+		bool leftExtensionGood;
 		/** length of right extension (bp) */
 		unsigned rightExtensionLength;
+		/**
+		 * Set to true when a rightward seq extension is long enough to
+		 * imply that the starting read was error-free. This field is
+		 * only relevant if the sequence extension stopped due to a dead
+		 * end (as opposed to a branching point).
+		 */
+		bool rightExtensionGood;
 		/** total length of extended sequence (bp) */
 		unsigned extendedLength;
+
 		/**
 		 * True if the extended sequence was excluded from the output contigs
 		 * because it was redundant. (An identical sequence was generated
@@ -191,7 +206,9 @@ namespace BloomDBG {
 			rightExtensionResult(DEAD_END),
 			origLength(std::numeric_limits<unsigned>::max()),
 			leftExtensionLength(std::numeric_limits<unsigned>::max()),
+			leftExtensionGood(true),
 			rightExtensionLength(std::numeric_limits<unsigned>::max()),
+			rightExtensionGood(true),
 			extendedLength(std::numeric_limits<unsigned>::max()),
 			redundantContig(false),
 			contigID(std::numeric_limits<size_t>::max()) {}
@@ -209,17 +226,19 @@ namespace BloomDBG {
 
 		static std::ostream& printHeaders(std::ostream& out)
 		{
-			out << "read_id\t"
-				<< "read_segment_id\t"
-				<< "num_read_segments\t"
-				<< "left_extension_result\t"
-				<< "right_extension_result\t"
+			out << "read\t"
+				<< "segment\t"
+				<< "num_segments\t"
+				<< "left_result\t"
+				<< "right_result\t"
 				<< "orig_length\t"
-				<< "left_extension_len\t"
-				<< "right_extension_len\t"
+				<< "left_extension\t"
+				<< "left_extension_good\t"
+				<< "right_extension\t"
+				<< "right_extension_good\t"
 				<< "extended_length\t"
-				<< "redundant_contig\t"
-				<< "contig_id\n";
+				<< "redundant\t"
+				<< "contig\n";
 			return out;
 		}
 
@@ -255,10 +274,12 @@ namespace BloomDBG {
 					out << o.leftExtensionLength << '\t';
 				else
 					out << "-\t";
+				out << (o.leftExtensionGood ? "true" : "false") << '\t';
 				if (o.extendedRight)
 					out << o.rightExtensionLength << '\t';
 				else
 					out << "-\t";
+				out << (o.rightExtensionGood ? "true" : "false") << '\t';
 				out << o.extendedLength << '\t'
 					<< "false" << '\t'
 					<< o.contigID << '\n';
@@ -634,6 +655,7 @@ namespace BloomDBG {
 		const unsigned numHashes = params.numHashes;
 		const unsigned minBranchLen = params.trim + 1;
 		const unsigned fpLookAhead = 5;
+		const unsigned minExtension = 150;
 
 		std::ostream& out = streams.out;
 		std::ostream& checkpointOut = streams.checkpointOut;
@@ -648,6 +670,17 @@ namespace BloomDBG {
 		std::vector<Sequence> segments = splitSeq(read.seq, k,
 			numHashes, dbg, minBranchLen);
 
+		std::vector<Sequence> contigs;
+
+		typedef typename std::vector<SeqExtensionResult>::iterator TraceResultIt;
+		std::vector<SeqExtensionResult> traceResults;
+
+		/*
+		 * if we fail to extend the first/last segments of the read to
+		 * a sufficient length (minExtension), assume the read is erroneous
+		 * and set goodRead = false
+		 */
+		bool goodRead = true;
 		for (std::vector<Sequence>::iterator it = segments.begin();
 			 it != segments.end(); ++it) {
 
@@ -663,7 +696,9 @@ namespace BloomDBG {
 			traceResult.numReadSegments = segments.size();
 			traceResult.origLength = seq.length();
 			traceResult.leftExtensionLength = 0;
+			traceResult.leftExtensionGood = true;
 			traceResult.rightExtensionLength = 0;
+			traceResult.rightExtensionGood = true;
 			traceResult.redundantContig = true;
 
 			/*
@@ -677,6 +712,12 @@ namespace BloomDBG {
 					REVERSE, k, numHashes, minBranchLen, dbg);
 				traceResult.leftExtensionLength =
 					seq.length() - traceResult.origLength;
+				if ((traceResult.leftExtensionResult == DEAD_END
+					|| traceResult.leftExtensionResult == EXTENDED_TO_DEAD_END)
+					&& traceResult.leftExtensionLength < minExtension) {
+					traceResult.leftExtensionGood = false;
+					goodRead = false;
+				}
 			}
 			if (it == segments.end() - 1) {
 				unsigned origLength = seq.length();
@@ -685,24 +726,37 @@ namespace BloomDBG {
 					FORWARD, k, numHashes, minBranchLen, dbg);
 				traceResult.rightExtensionLength =
 					seq.length() - origLength;
+				if ((traceResult.rightExtensionResult == DEAD_END
+					|| traceResult.rightExtensionResult == EXTENDED_TO_DEAD_END)
+					&& traceResult.rightExtensionLength < minExtension) {
+					traceResult.rightExtensionGood = false;
+					goodRead = false;
+				}
 			}
+
 			traceResult.extendedLength = seq.length();
+
+			contigs.push_back(seq);
+			traceResults.push_back(traceResult);
+		}
+
+		assert(contigs.size() == traceResults.size());
+		for (unsigned i = 0; goodRead && i < contigs.size(); ++i) {
+
+			Sequence& seq = contigs.at(i);
+			SeqExtensionResult& traceResult = traceResults.at(i);
 
 			/* ensure branching k-mers are included only once in output */
 			trimBranchKmers(seq, k, numHashes, minBranchLen, dbg);
 
-			/*
-			 * check assembledKmerSet again to prevent race
-			 * condition. (Otherwise, the same contig may be
-			 * generated multiple times.)
-			 */
+			/* check assembledKmerSet to ensure the contig is not redundant */
 #pragma omp critical(assembledKmerSet)
 			{
 				bool redundant = false;
 
 				/*
-				 * If we check `assembledKmerSet` for very short contigs,
-				 * we may get full-length matches purely due Bloom filter
+				 * If we use `assembledKmerSet` to check very short contigs,
+				 * we may get full-length matches purely due to Bloom filter
 				 * positives.  For such contigs, we additionally track
 				 * the start and end in a separate hash table called
 				 * `contigEndKmers`.
@@ -752,15 +806,18 @@ namespace BloomDBG {
 
 			}
 
-			/* trace file output ('-T' option) */
+		}  /* for each contig (extended read segment) */
+
+		/* dump info about contig extensions to TSV */
+		if (!params.tracePath.empty()) {
 #pragma omp critical(traceOut)
-			if (!params.tracePath.empty()) {
-				assert(traceResult.initialized());
-				traceOut << traceResult;
+			for (TraceResultIt it = traceResults.begin();
+				it != traceResults.end(); ++it) {
+				assert(it->initialized());
+				traceOut << *it;
 				assert_good(traceOut, params.tracePath);
 			}
-
-		}  /* for each read segment */
+		}
 
 		if (params.verbose >= 2) {
 #pragma omp critical(cerr)
