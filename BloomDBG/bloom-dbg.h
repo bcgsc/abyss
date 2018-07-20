@@ -288,51 +288,6 @@ namespace BloomDBG {
 		}
 	};
 
-	/**
-	 * Extend a sequence left (REVERSE) or right (FORWARD) within the de Bruijn
-	 * graph until either a branching point or a dead-end is encountered.
-	 */
-	template <typename GraphT>
-	inline static PathExtensionResult extendSeq(Sequence& seq, Direction dir,
-		unsigned k, unsigned numHashes, unsigned minBranchLen, const GraphT& graph)
-	{
-		assert(seq.length() >= k);
-
-		/* Convert sequence to path in DBG */
-		Path<Vertex> path = seqToPath(seq, k, numHashes);
-
-		/* Extend path */
-		ExtendPathParams params;
-		params.trimLen = minBranchLen - 1;
-		params.maxLen = NO_LIMIT;
-		PathExtensionResult result =
-			extendPath(path, dir, graph, params);
-
-		/* Convert extended path back to sequence */
-		Sequence extendedSeq = pathToSeq(path, k);
-
-		/*
-		 * If a spaced seed is in effect, short paths may result in
-		 * sequences containing 'N's.  However, since we only extend
-		 * "perfect reads", we can replace the 'N's with the correct
-		 * bases by overlaying the seed sequence.
-		 */
-		if (dir == FORWARD) {
-			overlaySeq(seq, extendedSeq, 0);
-		} else {
-			assert(dir == REVERSE);
-			overlaySeq(seq, extendedSeq, extendedSeq.length() - seq.length());
-		}
-
-		/*
-		 * Replace orig seq with extended version.
-		 */
-		seq = extendedSeq;
-
-		/* Return true if sequence was successfully extended */
-		return result;
-	}
-
 	/** Print an intermediate progress message during assembly */
 	void printProgressMessage(AssemblyCounters counters)
 	{
@@ -431,17 +386,27 @@ namespace BloomDBG {
 				outDegree++;
 			}
 			if (inDegree > 1 || outDegree > 1) {
-				/* we've hit a branching point -- end the current
-				 * segment and start a new one */
-				Sequence segment = seq.substr(start - path.begin(),
-					end - start + k);
+
+				/*
+				 * We've hit a branching point, so end the current
+				 * segment and start a new one.
+				 */
+
+				unsigned startPos = start - path.begin();
+				unsigned length = end - start + k;
+				Sequence segment = seq.substr(startPos, length);
 				segments.push_back(segment);
 				start = end;
+
 			}
 		}
-		if (segments.empty() || segments.back().length() > k) {
-			Sequence segment = seq.substr(start - path.begin(),
-				end - start + k);
+
+		/* push final segment if it is longer than k */
+
+		unsigned startPos = start - path.begin();
+		unsigned length = end - start + k - 1;
+		if (segments.empty() || length > k) {
+			Sequence segment = seq.substr(startPos, length);
 			segments.push_back(segment);
 		}
 
@@ -630,215 +595,6 @@ namespace BloomDBG {
 	}
 
 	/**
-	 * Split a read at branching points in the de Bruijn graph and
-	 * then extend each segment left and right, up to the next
-	 * branching point or dead end.
-	 *
-	 * @param read read to be assembled
-	 * @param dbg Boost graph interface to de Bruijn graph
-	 * @param assembledKmerSet Bloom filter containing k-mers of
-	 * previously assembled contigs
-	 * @param contigEndKmers start/end k-mers of short contigs
-	 * @param params command line options for the assembly
-	 * (e.g. k-mer coverage threshold)
-	 * @param counters counter variables used for generating assembly
-	 * progress messages.
-	 * @param streams input/output streams used during assembly
-	 */
-	template <typename GraphT, typename BloomT, typename AssemblyStreamsT>
-	inline static void extendRead(const FastaRecord& read,
-		const GraphT& dbg, BloomT& assembledKmerSet, KmerSet& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
-	{
-		const unsigned k = params.k;
-		const unsigned numHashes = params.numHashes;
-		const unsigned minBranchLen = params.trim + 1;
-		const unsigned fpLookAhead = 5;
-		const unsigned minExtension = 150;
-
-		std::ostream& out = streams.out;
-		std::ostream& checkpointOut = streams.checkpointOut;
-		std::ostream& traceOut = streams.traceOut;
-
-		if (params.verbose >= 2) {
-#pragma omp critical(cerr)
-			std::cerr << "Extending read: " << read.id << std::endl;
-		}
-
-		/* split read at branching points (prevents over-assembly) */
-		std::vector<Sequence> segments = splitSeq(read.seq, k,
-			numHashes, dbg, minBranchLen);
-
-		std::vector<Sequence> contigs;
-
-		typedef typename std::vector<SeqExtensionResult>::iterator TraceResultIt;
-		std::vector<SeqExtensionResult> traceResults;
-
-		/*
-		 * if we fail to extend the first/last segments of the read to
-		 * a sufficient length (minExtension), assume the read is erroneous
-		 * and set goodRead = false
-		 */
-		bool goodRead = true;
-		for (std::vector<Sequence>::iterator it = segments.begin();
-			 it != segments.end(); ++it) {
-
-			Sequence& seq = *it;
-
-			/*
-			 * track results of sequence extension attempt for
-			 * trace file ('-T' option).
-			 */
-			SeqExtensionResult traceResult;
-			traceResult.readId = read.id;
-			traceResult.readSegmentId = it - segments.begin() + 1;
-			traceResult.numReadSegments = segments.size();
-			traceResult.origLength = seq.length();
-			traceResult.leftExtensionLength = 0;
-			traceResult.leftExtensionGood = true;
-			traceResult.rightExtensionLength = 0;
-			traceResult.rightExtensionGood = true;
-			traceResult.redundantContig = true;
-
-			/*
-			 * extend first and last segments only, since
-			 * internal segments are bounded by branching
-			 * points.
-			 */
-			if (it == segments.begin()) {
-				traceResult.extendedLeft = true;
-				traceResult.leftExtensionResult = extendSeq(seq,
-					REVERSE, k, numHashes, minBranchLen, dbg);
-				traceResult.leftExtensionLength =
-					seq.length() - traceResult.origLength;
-				if ((traceResult.leftExtensionResult == DEAD_END
-					|| traceResult.leftExtensionResult == EXTENDED_TO_DEAD_END)
-					&& traceResult.leftExtensionLength < minExtension) {
-					traceResult.leftExtensionGood = false;
-					goodRead = false;
-				}
-			}
-			if (it == segments.end() - 1) {
-				unsigned origLength = seq.length();
-				traceResult.extendedRight = true;
-				traceResult.rightExtensionResult = extendSeq(seq,
-					FORWARD, k, numHashes, minBranchLen, dbg);
-				traceResult.rightExtensionLength =
-					seq.length() - origLength;
-				if ((traceResult.rightExtensionResult == DEAD_END
-					|| traceResult.rightExtensionResult == EXTENDED_TO_DEAD_END)
-					&& traceResult.rightExtensionLength < minExtension) {
-					traceResult.rightExtensionGood = false;
-					goodRead = false;
-				}
-			}
-
-			traceResult.extendedLength = seq.length();
-
-			contigs.push_back(seq);
-			traceResults.push_back(traceResult);
-		}
-
-		assert(contigs.size() == traceResults.size());
-		for (unsigned i = 0; goodRead && i < contigs.size(); ++i) {
-
-			Sequence& seq = contigs.at(i);
-			SeqExtensionResult& traceResult = traceResults.at(i);
-
-			/* ensure branching k-mers are included only once in output */
-			trimBranchKmers(seq, k, numHashes, minBranchLen, dbg);
-
-			/* vertices representing start/end k-mers of contig */
-
-			Sequence kmer1 = seq.substr(0, k);
-			RollingHash hash1(kmer1.c_str(), numHashes, k);
-			Vertex v1(kmer1.c_str(), hash1);
-
-			Sequence kmer2 = seq.substr(seq.length() - k);
-			RollingHash hash2(kmer2.c_str(), numHashes, k);
-			Vertex v2(kmer2.c_str(), hash2);
-
-			/*
-			 * check if contig is redundant (i.e. has already been generated
-			 * from a different thread/read)
-			 */
-
-			bool redundant = false;
-#pragma omp critical(redundancyCheck)
-			{
-				/*
-				 * If we use `assembledKmerSet` to check very short contigs,
-				 * we may get full-length matches purely due to Bloom filter
-				 * positives.  For such contigs, we additionally track
-				 * the start and end in a separate hash table called
-				 * `contigEndKmers`.
-				 */
-				if (seq.length() < params.k + fpLookAhead - 1) {
-
-					if (contigEndKmers.find(v1) != contigEndKmers.end()
-						&& contigEndKmers.find(v2) != contigEndKmers.end()) {
-						redundant = true;
-					} else {
-						contigEndKmers.insert(v1);
-						contigEndKmers.insert(v2);
-					}
-
-				} else if (allKmersInBloom(seq, assembledKmerSet)) {
-					redundant = true;
-				}
-
-				if (!redundant) {
-
-					/* trim previously assembled k-mers from both ends */
-					trimContigOverlaps(seq, assembledKmerSet);
-
-					/* mark remaining k-mers as assembled */
-					addKmersToBloom(seq, assembledKmerSet);
-
-				}
-			}
-
-			if (!redundant)
-			{
-#pragma omp critical(fasta)
-				{
-					/* add contig to output FASTA */
-					printContig(seq, counters.contigID, read.id, k, out);
-
-					/* add contig to checkpoint FASTA file */
-					if (params.checkpointsEnabled())
-						printContig(seq, counters.contigID, read.id, k,
-							checkpointOut);
-
-					traceResult.contigID = counters.contigID;
-					counters.contigID++;
-					traceResult.redundantContig = false;
-					counters.basesAssembled += seq.length();
-				}
-			}
-
-		}  /* for each contig (extended read segment) */
-
-		/* dump info about contig extensions to TSV */
-		if (!params.tracePath.empty()) {
-#pragma omp critical(traceOut)
-			for (TraceResultIt it = traceResults.begin();
-				it != traceResults.end(); ++it) {
-				assert(it->initialized());
-				traceOut << *it;
-				assert_good(traceOut, params.tracePath);
-			}
-		}
-
-		if (params.verbose >= 2) {
-#pragma omp critical(cerr)
-			std::cerr << "Finished extending read: " << read.id << std::endl;
-		}
-
-	}
-
-	/**
 	 * Return true if the left end of the given sequence is a blunt end
 	 * in the Bloom filterde Bruijn graph. PRECONDITION: `seq` does not contain
 	 * any non-ACGT chars.
@@ -884,6 +640,180 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Output a contig sequence if it is not redundant, i.e. it has not already
+	 * been generated from a different read / thread of execution.
+	 */
+	template <typename GraphT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	inline static void processContig(const Path<Vertex>& contigPath,
+		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
+		KmerSet& contigEndKmers, const AssemblyParams& params,
+		AssemblyCounters& counters, AssemblyStreamsT& streams)
+	{
+		const unsigned fpLookAhead = 5;
+
+		Sequence seq = pathToSeq(contigPath, params.k);
+
+		/*
+		 * selectively trim branch k-mers from contig ends, so
+		 * that each branch k-mer occurs only once in the output
+		 * contigs
+		 */
+		trimBranchKmers(seq, params.k, params.numHashes, params.trim, dbg);
+
+		/* vertices representing start/end k-mers of contig */
+
+		Sequence kmer1 = seq.substr(0, params.k);
+		RollingHash hash1(kmer1.c_str(), params.numHashes, params.k);
+		Vertex v1(kmer1.c_str(), hash1);
+
+		Sequence kmer2 = seq.substr(seq.length() - params.k);
+		RollingHash hash2(kmer2.c_str(), params.numHashes, params.k);
+		Vertex v2(kmer2.c_str(), hash2);
+
+		bool redundant = false;
+#pragma omp critical(redundancyCheck)
+		{
+			/*
+			 * If we use `assembledKmerSet` to check very short contigs,
+			 * we may get full-length matches purely due to Bloom filter
+			 * positives.  For such contigs, we additionally track
+			 * the start and end in a separate hash table called
+			 * `contigEndKmers`.
+			 */
+			if (seq.length() < params.k + fpLookAhead - 1) {
+
+				if (contigEndKmers.find(v1) != contigEndKmers.end()
+					&& contigEndKmers.find(v2) != contigEndKmers.end()) {
+					redundant = true;
+				} else {
+					contigEndKmers.insert(v1);
+					contigEndKmers.insert(v2);
+				}
+
+			} else if (allKmersInBloom(seq, assembledKmerSet)) {
+				redundant = true;
+			}
+
+			if (!redundant) {
+
+				/* trim previously assembled k-mers from both ends */
+				trimContigOverlaps(seq, assembledKmerSet);
+
+				/* mark remaining k-mers as assembled */
+				addKmersToBloom(seq, assembledKmerSet);
+
+			}
+		}
+
+		if (!redundant)
+		{
+#pragma omp critical(fasta)
+			{
+				/* add contig to output FASTA */
+				printContig(seq, counters.contigID, "", params.k,
+					streams.out);
+
+				/* add contig to checkpoint FASTA file */
+				if (params.checkpointsEnabled())
+					printContig(seq, counters.contigID, "", params.k,
+						streams.checkpointOut);
+
+				counters.contigID++;
+				counters.basesAssembled += seq.length();
+			}
+		}
+	}
+
+	/**
+	 * Create all contigs connected to a given branch k-mer, by extending
+	 * the neighbour k-mers up to the next dead-end or branch point.
+	 */
+	template <typename GraphT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	inline static void processBranchKmer(const Vertex& branchKmer,
+		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
+		KmerSet& contigEndKmers, const AssemblyParams& params,
+		AssemblyCounters& counters, AssemblyStreamsT& streams)
+	{
+		typedef typename boost::graph_traits<GraphT>::vertex_descriptor V;
+		typedef typename std::vector<V>::iterator VIt;
+
+		/* get neighbour k-mers that extend past trim length */
+
+		std::vector<V> inBranches
+			= trueBranches(branchKmer, REVERSE, dbg, params.trim);
+		std::vector<V> outBranches
+			= trueBranches(branchKmer, FORWARD, dbg, params.trim);
+
+		assert(inBranches.size() > 1 || outBranches.size() > 1);
+
+		ExtendPathParams extendParams;
+		extendParams.trimLen = params.trim;
+		extendParams.maxLen = NO_LIMIT;
+		extendParams.lookBehind = true;
+		extendParams.lookBehindStartVertex = false;
+
+		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
+			Path<V> path;
+			path.push_back(*it);
+			path.push_back(branchKmer);
+			extendPath(path, REVERSE, dbg, extendParams);
+			processContig(path, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
+		for (VIt it = outBranches.begin(); it != outBranches.end(); ++it) {
+			Path<V> path;
+			path.push_back(branchKmer);
+			path.push_back(*it);
+			extendPath(path, FORWARD, dbg, extendParams);
+			processContig(path, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
+		if (inBranches.size() > 1 && outBranches.size() > 1) {
+			Path<V> path;
+			path.push_back(branchKmer);
+			processContig(path, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+	}
+
+	/** Extend a read left/right from its start/end k-mers */
+	template <typename GraphT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	inline static void processNonBranchingRead(Path<Vertex>& path,
+		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
+		KmerSet& contigEndKmers, const AssemblyParams& params,
+		AssemblyCounters& counters, AssemblyStreamsT& streams)
+	{
+		ExtendPathParams extendParams;
+		extendParams.trimLen = params.trim;
+		extendParams.maxLen = NO_LIMIT;
+		extendParams.lookBehind = true;
+		extendParams.lookBehindStartVertex = false;
+
+		PathExtensionResult leftResult
+			= extendPath(path, REVERSE, dbg, extendParams);
+		PathExtensionResult rightResult
+			= extendPath(path, FORWARD, dbg, extendParams);
+
+		bool leftBlunt = leftResult == DEAD_END
+			|| leftResult == EXTENDED_TO_DEAD_END;
+
+		bool rightBlunt = rightResult == DEAD_END
+			|| rightResult == EXTENDED_TO_DEAD_END;
+
+		if (leftBlunt && rightBlunt
+			&& path.size() < params.minIsland - params.k + 1)
+			return;
+
+		processContig(path, dbg, assembledKmerSet,
+			contigEndKmers, params, counters, streams);
+	}
+
+	/**
 	 * Decide if a read should be extended and if so extend it into a contig.
 	 */
 	template <typename SolidKmerSetT, typename AssembledKmerSetT,
@@ -893,8 +823,10 @@ namespace BloomDBG {
 		KmerSet& contigEndKmers, const AssemblyParams& params,
 		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
+		typedef typename Path<Vertex>::const_iterator PathIt;
+
 		/* Boost graph API for Bloom filter */
-		RollingBloomDBG<SolidKmerSetT> graph(solidKmerSet);
+		RollingBloomDBG<SolidKmerSetT> dbg(solidKmerSet);
 
 		unsigned k = params.k;
 		const Sequence& seq = rec.seq;
@@ -908,7 +840,7 @@ namespace BloomDBG {
 			return;
 
 		/* don't extend reads that are tips */
-		if (hasBluntEnd(seq, graph, params))
+		if (hasBluntEnd(seq, dbg, params))
 			return;
 
 		/* only extend "solid" reads */
@@ -922,12 +854,35 @@ namespace BloomDBG {
 		if (allKmersInBloom(seq, assembledKmerSet))
 			return;
 
-		/* extend the read into a contig */
-		extendRead(rec, graph, assembledKmerSet, contigEndKmers, params,
-			counters, streams);
-
 #pragma omp atomic
 		counters.readsExtended++;
+
+		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
+
+		/*
+		 * identify branch k-mers within the read and extend outwards
+		 * from their neighbour k-mers to generate contigs
+		 */
+		unsigned branchKmers = 0;
+		for (PathIt it = path.begin(); it != path.end(); ++it) {
+			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
+				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
+				++branchKmers;
+				processBranchKmer(*it, dbg, assembledKmerSet,
+					contigEndKmers, params, counters, streams);
+			}
+		}
+
+		/*
+		 * If read contains no branch k-mers, extend from first/last k-mer
+		 * in the read instead. This is useful for recovering contigs that are
+		 * disconnected from neighbouring branch k-mers by coverage gaps.
+		 */
+		if (branchKmers == 0) {
+			processNonBranchingRead(path, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
 	}
 
 	/**
@@ -1067,6 +1022,7 @@ namespace BloomDBG {
 					counters.readsProcessed++;
 					if (params.verbose && counters.readsProcessed % PROGRESS_STEP == 0)
 						printProgressMessage(counters);
+
 				}
 
 			} /* for batch of reads between I/O operations */

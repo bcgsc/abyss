@@ -53,6 +53,7 @@ static const char USAGE_MESSAGE[] =
 "      --help                   display this help and exit\n"
 "  -H  --num-hashes=N           number of Bloom filter hash functions [1]\n"
 "  -i  --input-bloom=FILE       load Bloom filter from FILE\n"
+"  -I, --island=N               remove islands shorter than N bp [0]\n"
 "  -j, --threads=N              use N parallel threads [1]\n"
 "      --trim-masked            trim masked bases from the ends of reads\n"
 "      --no-trim-masked         do not trim masked bases from the ends\n"
@@ -68,7 +69,7 @@ static const char USAGE_MESSAGE[] =
 "                               for FASTQ and SAM files [default]\n"
 "      --illumina-quality       zero quality is `@' (64), typically\n"
 "                               for qseq and export files\n"
-"  -t, --trim-length            max branch length to trim, in k-mers [k]\n"
+"  -t, --trim-length=N          max branch length to trim, in k-mers [k]\n"
 "  -v, --verbose                display verbose output\n"
 "      --version                output version information and exit\n"
 "\n"
@@ -119,7 +120,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:C:g:H:i:I:j:k:K:o:q:Q:R:s:t:T:v";
 
 enum {
 	OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV,
@@ -138,6 +139,7 @@ static const struct option longopts[] = {
 	{ "graph",             required_argument, NULL, 'g' },
 	{ "num-hashes",        required_argument, NULL, 'H' },
 	{ "input-bloom",       required_argument, NULL, 'i' },
+	{ "island",            required_argument, NULL, 'I' },
 	{ "help",              no_argument, NULL, OPT_HELP },
 	{ "threads",           required_argument, NULL, 'j' },
 	{ "trim-masked",       no_argument, &opt::trimMasked, 1 },
@@ -391,6 +393,8 @@ int main(int argc, char** argv)
 			arg >> params.numHashes; break;
 		  case 'i':
 			arg >> params.bloomPath; break;
+		  case 'I':
+			arg >> params.minIsland; break;
 		  case 'j':
 			arg >> params.threads; break;
 		  case 'k':
