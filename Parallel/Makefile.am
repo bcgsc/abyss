@@ -12,7 +12,7 @@ ABYSS_P_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(libdb) \
-	$(MPI_LIBS)
+	$(MPI_LIBS) -lz
 
 ABYSS_P_SOURCES = \
 	parallelAbyss.cpp \

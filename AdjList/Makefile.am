@@ -10,7 +10,7 @@ endif
 
 AdjList_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 if PAIRED_DBG
 AdjList_LDADD += \
@@ -19,7 +19,7 @@ endif
 
 AdjList_LDADD += \
 	$(top_builddir)/DataBase/libdb.a \
-	$(SQLITE_LIBS)
+	$(SQLITE_LIBS) -lz
 
 AdjList_SOURCES = \
 	AdjList.cpp

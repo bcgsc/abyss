@@ -10,7 +10,7 @@ MergePaths_LDADD = \
 	$(top_builddir)/DataBase/libdb.a \
 	$(SQLITE_LIBS) \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 MergePaths_SOURCES = \
 	MergePaths.cpp
@@ -25,7 +25,7 @@ MergeContigs_LDADD = \
 	$(SQLITE_LIBS) \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Align/libalign.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 MergeContigs_SOURCES = MergeContigs.cpp
 
@@ -41,7 +41,7 @@ PathConsensus_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Align/libalign.a \
 	$(top_builddir)/Common/libcommon.a \
-	$(top_builddir)/dialign/libdialign.a
+	$(top_builddir)/dialign/libdialign.a -lz
 
 PathConsensus_SOURCES = \
 	PathConsensus.cpp

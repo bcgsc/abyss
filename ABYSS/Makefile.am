@@ -7,6 +7,6 @@ ABYSS_LDADD = \
 	$(SQLITE_LIBS) \
 	$(top_builddir)/Assembly/libassembly.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 ABYSS_SOURCES = abyss.cc

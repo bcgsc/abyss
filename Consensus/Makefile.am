@@ -6,7 +6,7 @@ Consensus_CPPFLAGS = -I$(top_srcdir) \
 
 Consensus_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 Consensus_SOURCES = \
 	Consensus.cpp
