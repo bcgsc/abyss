@@ -9,6 +9,7 @@
 #include <istream>
 #include <limits> // for numeric_limits
 #include <ostream>
+#include <cstdio>
 
 /** Read a FASTA, FASTQ, export, qseq or SAM file. */
 class FastaReader {
@@ -24,16 +25,7 @@ class FastaReader {
 
 		FastaReader(const char* path, int flags, int len = 0);
 
-		~FastaReader()
-		{
-			if (!m_in.eof()) {
-				std::string line;
-				getline(line);
-				die() << "expected end-of-file near\n"
-					<< line << '\n';
-				exit(EXIT_FAILURE);
-			}
-		}
+		~FastaReader();
 
 		Sequence read(std::string& id, std::string& comment,
 				char& anchor, std::string& qual);
@@ -43,23 +35,50 @@ class FastaReader {
 		void split(unsigned section, unsigned nsections);
 
 		/** Return whether this stream is at end-of-file. */
-		bool eof() const { return m_in.eof(); };
+		bool eof() const {
+			if (is_fasta)
+				return m_file_state == -1;
+			else
+				return m_in->eof();
+		};
 
 		/** Return true if failbit or badbit of stream is set. */
-		bool fail() const { return m_in.fail(); };
+		bool fail() const {
+			if (is_fasta)
+				return m_file_state < -1;
+			else
+				return m_in->fail();
+		};
 
 		/** Return whether this stream is good. */
-		operator const void*() const { return m_in ? this : NULL; }
+		operator const void*() const {
+			if (is_fasta) {
+				return m_file_state >= 0 ? this : NULL;
+			} else {
+				return *m_in ? this : NULL;
+			}
+		}
 
 		/** Return the next character of this stream. */
-		int peek() { return m_in.peek(); }
+		int peek() {
+			if (is_fasta)
+				if (!eof())
+					if (q)
+						return '@';
+					else
+						return '>';
+				else
+					return EOF;
+			else
+				return m_in->peek();
+		 }
 
 		/** Interface for manipulators. */
-		FastaReader& operator>>(std::istream& (*f)(std::istream&))
+		/*FastaReader& operator>>(std::istream& (*f)(std::istream&))
 		{
 			f(m_in);
 			return *this;
-		}
+		}*/
 
 		/** Returns the number of unchaste reads. */
 		unsigned unchaste() const { return m_unchaste; }
@@ -76,23 +95,23 @@ class FastaReader {
 		/** Read a single line. */
 		std::istream& getline(std::string& s)
 		{
-			if (std::getline(m_in, s)) {
+			if (std::getline(*m_in, s)) {
 				chomp(s, '\r');
 				m_line++;
 			}
-			return m_in;
+			return *m_in;
 		}
 
 		/** Ignore the specified number of lines. */
 		std::istream& ignoreLines(unsigned n)
 		{
 			for (unsigned i = 0; i < n; ++i) {
-				if (m_in.ignore(
+				if (m_in->ignore(
 						std::numeric_limits<std::streamsize>::max(),
 						'\n'))
 					m_line++;
 			}
-			return m_in;
+			return *m_in;
 		}
 
 		std::ostream& die();
@@ -100,8 +119,14 @@ class FastaReader {
 		void checkSeqQual(const std::string& s, const std::string& q);
 
 		const char* m_path;
-		std::ifstream m_fin;
-		std::istream& m_in;
+		std::ifstream* m_fin;
+		std::istream* m_in;
+
+		bool is_fasta = false; // Determines what method of reading to use
+		bool q = false;
+		void* m_file;
+		int m_file_state = -2;
+		void* seq_data;
 
 		/** Flags indicating parsing options. */
 		int m_flags;
@@ -114,6 +139,7 @@ class FastaReader {
 
 		/** Position of the end of the current section. */
 		std::streampos m_end;
+		long m_file_end;
 
 		/** Trim sequences to this length. 0 is unlimited. */
 		const int m_maxLength;

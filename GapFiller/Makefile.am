@@ -12,6 +12,6 @@ abyss_gapfill_LDADD = \
 	$(top_builddir)/Align/libalign.a \
     $(top_builddir)/dialign/libdialign.a \
     $(top_builddir)/DataLayer/libdatalayer.a \
-    $(top_builddir)/Common/libcommon.a
+    $(top_builddir)/Common/libcommon.a -lz
 
 abyss_gapfill_SOURCES = gapfill.cpp gapfill.h

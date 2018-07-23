@@ -6,7 +6,7 @@ Overlap_CPPFLAGS = -I$(top_srcdir) \
 
 Overlap_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 Overlap_SOURCES = \
 	Overlap.cpp
