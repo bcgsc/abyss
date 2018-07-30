@@ -27,9 +27,16 @@ struct ExtendPathParams
 	 * will cause a path extension to halt
 	 */
 	bool lookBehind;
+	/*
+	 * If false, ignore incoming branches for the starting vertex.
+	 * This is useful when when we are intentionally starting our
+	 * path extension from a branching point.
+	 */
+    bool lookBehindStartVertex;
 
 	/* constructor */
-	ExtendPathParams() : trimLen(0), maxLen(NO_LIMIT), lookBehind(true) {}
+	ExtendPathParams() : trimLen(0), maxLen(NO_LIMIT), lookBehind(true),
+		lookBehindStartVertex(true) {}
 };
 
 /**
@@ -527,11 +534,21 @@ static inline PathExtensionResult extendPath(
 
 	SingleExtensionResult result = SE_EXTENDED;
 	bool detectedCycle = false;
+	ExtendPathParams paramsCopy = params;
 
+	bool isStartVertex = true;
 	while (result == SE_EXTENDED && !detectedCycle &&
 		path.size() < params.maxLen)
 	{
-		result = extendPathBySingleVertex(path, dir, g, params);
+		/*
+		 * If `lookBehindStartVertex` is false, we ignore incoming branches
+		 * on the start vertex.  This is useful when we are intentionally
+		 * starting our path extension at a branch vertex.
+		 */
+		paramsCopy.lookBehind = (isStartVertex && !params.lookBehindStartVertex)
+			? false : params.lookBehind;
+
+		result = extendPathBySingleVertex(path, dir, g, paramsCopy);
 		if (result == SE_EXTENDED) {
 			std::pair<typename unordered_set<V>::iterator,bool> inserted;
 			if (dir == FORWARD) {
@@ -543,6 +560,7 @@ static inline PathExtensionResult extendPath(
 			if (!inserted.second)
 				detectedCycle = true;
 		}
+		isStartVertex = false;
 	}
 
 	/** the last kmer we added is a repeat, so remove it */
