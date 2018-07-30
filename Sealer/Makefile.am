@@ -15,7 +15,7 @@ abyss_sealer_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 abyss_sealer_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Align/libalign.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 abyss_sealer_SOURCES = sealer.cc \
 	$(top_srcdir)/Bloom/BloomFilter.h \

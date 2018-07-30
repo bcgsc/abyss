@@ -4,14 +4,14 @@ noinst_LIBRARIES = libdatalayer.a
 abyss_fac_CPPFLAGS = -I$(top_srcdir)
 
 abyss_fac_LDADD = libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 abyss_fac_SOURCES = fac.cc
 
 abyss_tofastq_CPPFLAGS = -I$(top_srcdir)
 
 abyss_tofastq_LDADD = libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a
+	$(top_builddir)/Common/libcommon.a -lz
 
 abyss_tofastq_SOURCES = abyss-tofastq.cc
 

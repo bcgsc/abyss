@@ -7,7 +7,7 @@ KAligner_CPPFLAGS = -I$(top_srcdir) \
 KAligner_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
-	-lpthread
+	-lpthread -lz
 
 KAligner_SOURCES = KAligner.cpp Aligner.cpp Aligner.h Options.h \
 	Pipe.h PipeMux.h Semaphore.h

@@ -20,7 +20,7 @@ AM_CONDITIONAL([HAVE_PANDOC], [test x"$PANDOC" = x"yes"])
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
-	stddef.h stdint.h stdlib.h sys/param.h])
+	stddef.h stdint.h stdlib.h sys/param.h zlib.h])
 AC_HEADER_STDBOOL
 AC_HEADER_STDC
 
