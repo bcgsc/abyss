@@ -10,7 +10,7 @@ jobs:
       - checkout
       - run: |
           ./autogen.sh
-          ./configure CC=clang CXX=clang++ --with-mpi=/usr/lib/openmpi
+          ./configure CC=clang CXX=clang++ CXXFLAGS=-std=c++11 --with-mpi=/usr/lib/openmpi
       - run: make -j
       - run: make -j check
       - run: make -j distcheck
