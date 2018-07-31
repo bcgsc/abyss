@@ -61,6 +61,8 @@ static int gzpeek(gzFile f) {
 
 static bool is_file_fasta(const char *path, bool *q) {
 	gzFile file = gzopen(path, "r");
+	if (strcmp(path, "-") == 0 || !file) return false;
+
 	char c = gzpeek(file);
 	gzclose(file);
 	return (*q = (c == '@')) || c == '>';
