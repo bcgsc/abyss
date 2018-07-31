@@ -3,9 +3,9 @@ compiler:
   - gcc
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev
+  - sudo apt-get install -qq libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev zlib1g-dev
 script:
   - ./autogen.sh
-  - ./configure --with-mpi=/usr/lib/openmpi
+  - ./configure CXXFLAGS=-std=c++11 --with-mpi=/usr/lib/openmpi
   - make
   - make check

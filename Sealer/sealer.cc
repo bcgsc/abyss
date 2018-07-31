@@ -438,10 +438,10 @@ string merge(const Graph& g,
 
 		case NO_PATH:
 			assert(paths.empty());
-			if (result.foundStartKmer && result.foundGoalKmer)
+			if (result.foundStartKmer && result.foundGoalKmer) {
 #pragma omp atomic
 				++g_count.noPath;
-			else {
+			} else {
 #pragma omp atomic
 				++g_count.noStartOrGoalKmer;
 			}
@@ -451,12 +451,13 @@ string merge(const Graph& g,
 			assert(!paths.empty());
 			if (result.pathMismatches > params.maxPathMismatches ||
 					result.readMismatches > params.maxReadMismatches) {
-				if (result.pathMismatches > params.maxPathMismatches)
+				if (result.pathMismatches > params.maxPathMismatches) {
 #pragma omp atomic
 					++g_count.tooManyMismatches;
-				else
+				} else {
 #pragma omp atomic
 					++g_count.tooManyReadMismatches;
+				}
 			}
 			else if (paths.size() > 1) {
 #pragma omp atomic

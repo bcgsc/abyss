@@ -10,6 +10,12 @@
 #include <sstream>
 #include <vector>
 
+extern "C" {
+#include "kseq.h"
+}
+#include <zlib.h>
+KSEQ_INIT(gzFile, gzread)
+
 using namespace std;
 
 namespace opt {
@@ -44,18 +50,63 @@ ostream& FastaReader::die()
 	return cerr << m_path << ':' << m_line << ": error: ";
 }
 
+static int gzpeek(gzFile f) {
+    int c;
+
+    c = gzgetc(f);
+    gzungetc(c, f);
+
+    return c;
+}
+
+static bool is_file_fasta(const char *path, bool *q) {
+	gzFile file = gzopen(path, "r");
+	if (strcmp(path, "-") == 0 || !file) return false;
+
+	char c = gzpeek(file);
+	gzclose(file);
+	return (*q = (c == '@')) || c == '>';
+}
+
 FastaReader::FastaReader(const char* path, int flags, int len)
-	: m_path(path), m_fin(path),
-	m_in(strcmp(path, "-") == 0 ? cin : m_fin),
+	: m_path(path),
 	m_flags(flags), m_line(0), m_unchaste(0),
 	m_end(numeric_limits<streamsize>::max()),
 	m_maxLength(len)
 {
-	if (strcmp(path, "-") != 0)
-		assert_good(m_fin, path);
-	if (m_in.peek() == EOF)
-		cerr << m_path << ':' << m_line << ": warning: "
-			"file is empty\n";
+	if (is_file_fasta(path, &q)) {
+		is_fasta = true;
+		m_file = gzopen(path, "r");
+		m_file_state = 0;
+		seq_data = kseq_init((gzFile)m_file);
+	} else {
+		m_fin = new ifstream(path);
+		m_in = (strcmp(path, "-") == 0 ? &cin : m_fin);
+
+		if (strcmp(path, "-") != 0)
+			assert_good(*m_fin, path);
+		if (m_in->peek() == EOF)
+			cerr << m_path << ':' << m_line << ": warning: "
+				"file is empty\n";
+	}
+}
+
+FastaReader::~FastaReader()
+{
+	if (is_fasta) {
+		kseq_destroy((kseq_t*)seq_data);
+		gzclose((gzFile)m_file);
+	} else {
+		if (!m_in->eof()) {
+			std::string line;
+			getline(line);
+			die() << "expected end-of-file near\n"
+				<< line << '\n';
+			exit(EXIT_FAILURE);
+		}
+
+		delete m_fin;
+	}
 }
 
 /** Split the fasta file into nsections and seek to the start
@@ -67,31 +118,64 @@ void FastaReader::split(unsigned section, unsigned nsections)
 	assert(strcmp(m_path, "-") != 0);
 	if (nsections == 1)
 		return;
-	// Move the get pointer to the first entry in this section and
-	// update the m_end if there is more than one section.
-	m_in.seekg(0, ios::end);
-	streampos length = m_in.tellg();
-	assert(length > 0);
-	streampos start = length * (section - 1) / nsections;
-	streampos end = length * section / nsections;
-	assert(end > 0);
-	if (end < length) {
-		m_in.seekg(end);
-		if (m_in.peek() == '>')
-			end += 1;
+
+	if (is_fasta) {
+		// Move the get pointer to the first entry in this section and
+		// update the m_end if there is more than one section.
+		gzseek((gzFile)m_file, 0L, SEEK_END);
+		long length = gztell((gzFile)m_file);
+		assert(length > 0);
+		long start = length * (section - 1) / nsections;
+		long end = length * section / nsections;
+		assert(end > 0);
+		if (end < length) {
+			gzseek((gzFile)m_file, 0, end);
+			if (gzpeek((gzFile)m_file) == '>')
+				end += 1;
+		}
+		m_file_end = end;
+		gzseek((gzFile)m_file, 0, start);
+		if (start > 0) {
+			char c;
+			for (;;) {
+				c = gzgetc((gzFile)m_file);
+				if (c == EOF || c == '>' || c == '\n') {
+					break;
+				}
+			}
+			if (gzeof((gzFile)m_file))
+				cerr << m_path << ':' << section << ": warning: "
+					"there are no contigs in this section\n";
+			gzungetc('>', (gzFile)m_file);
+		}
+		assert(m_file_end > 0);
+	} else {
+		// Move the get pointer to the first entry in this section and
+		// update the m_end if there is more than one section.
+		m_in->seekg(0, ios::end);
+		streampos length = m_in->tellg();
+		assert(length > 0);
+		streampos start = length * (section - 1) / nsections;
+		streampos end = length * section / nsections;
+		assert(end > 0);
+		if (end < length) {
+			m_in->seekg(end);
+			if (m_in->peek() == '>')
+				end += 1;
+		}
+		m_end = end;
+		m_in->seekg(start);
+		if (start > 0) {
+			m_in->ignore(numeric_limits<streamsize>::max(), '\n');
+			m_in->ignore(numeric_limits<streamsize>::max(), '>');
+			if (m_in->peek() == EOF)
+				cerr << m_path << ':' << section << ": warning: "
+					"there are no contigs in this section\n";
+			m_in->putback('>');
+		}
+		assert(m_end > 0);
+		assert(m_in->good());
 	}
-	m_end = end;
-	m_in.seekg(start);
-	if (start > 0) {
-		m_in.ignore(numeric_limits<streamsize>::max(), '\n');
-		m_in.ignore(numeric_limits<streamsize>::max(), '>');
-		if (m_in.peek() == EOF)
-			cerr << m_path << ':' << section << ": warning: "
-				"there are no contigs in this section\n";
-		m_in.putback('>');
-	}
-	assert(m_end > 0);
-	assert(m_in.good());
 }
 
 /** Return whether this read passed the chastity filter. */
@@ -136,90 +220,26 @@ next_record:
 	anchor = 0;
 	q.clear();
 
-	// Discard comments.
-	while (m_in.peek() == '#')
-		ignoreLines(1);
-
-	signed char recordType = m_in.peek();
 	Sequence s;
-
 	unsigned qualityOffset = 0;
-	if (recordType == EOF || m_in.tellg() >= m_end) {
-		m_in.seekg(0, ios::end);
-		m_in.clear(std::ios::eofbit | std::ios::failbit);
-		return s;
-	} else if (recordType == '>' || recordType == '@') {
-		// Read the header.
-		string header;
-		getline(header);
-		istringstream headerStream(header);
 
-		// Ignore SAM headers.
-		if (header[0] == '@' && isalpha(header[1])
-				&& isalpha(header[2]) && header[3] == '\t')
+	if (is_fasta) {
+		if ((m_file_state = kseq_read((kseq_t*)seq_data)) < 0)
+			return s;
+
+		kseq_t *seq = (kseq_t*)seq_data;
+		if (seq->name.s != NULL) id = seq->name.s;
+		if (seq->comment.s != NULL) comment = seq->comment.s;
+		if (seq->seq.s != NULL) s = seq->seq.s;
+		if (seq->qual.s != NULL) q = seq->qual.s;
+
+		if (opt::chastityFilter && comment.length() > 2 && comment[2] == 'Y') {
+			m_unchaste++;
 			goto next_record;
-
-		headerStream >> recordType >> id >> ws;
-		std::getline(headerStream, comment);
-
-		// Casava FASTQ format
-		if (comment.size() > 3
-				&& comment[1] == ':' && comment[3] == ':') {
-			// read, chastity, flags, index: 1:Y:0:AAAAAA
-			if (opt::chastityFilter && comment[2] == 'Y') {
-				m_unchaste++;
-				if (recordType == '@') {
-					ignoreLines(3);
-				} else {
-					while (m_in.peek() != '>' && m_in.peek() != '#'
-							&& ignoreLines(1))
-						;
-				}
-				goto next_record;
-			}
-			if (id.size() > 2 && id.rbegin()[1] != '/') {
-				// Add the read number to the ID.
-				id += '/';
-				id += comment[0];
-			}
-		}
-
-		getline(s);
-		if (recordType == '>') {
-			// Read a multi-line FASTA record.
-			string line;
-			while (m_in.peek() != '>' && m_in.peek() != '#'
-					&& getline(line))
-				s += line;
-			if (m_in.eof())
-				m_in.clear();
-		}
-
-		if (recordType == '@') {
-			char c = m_in.get();
-			if (c != '+') {
-				string line;
-				getline(line);
-				die() << "expected `+' and saw ";
-				if (m_in.eof())
-					cerr << "end-of-file\n";
-				else
-					cerr << "`" << c << "' near\n"
-					<< c << line << "\n";
-				exit(EXIT_FAILURE);
-			}
-			ignoreLines(1);
-			getline(q);
-		} else
-			q.clear();
-
-		if (s.empty()) {
-			die() << "sequence with ID `" << id << "' is empty\n";
-			exit(EXIT_FAILURE);
 		}
 
 		bool colourSpace = isColourSpace(s);
-		if (colourSpace && !isdigit(s[0])) {
+		if (colourSpace && !s.empty() && !isdigit(s[0])) {
 			// The first character is the primer base. The second
 			// character is the dibase read of the primer and the
 			// first base of the sample, which is not part of the
@@ -254,105 +274,222 @@ next_record:
 
 		qualityOffset = 33;
 	} else {
-		string line;
-		vector<string> fields;
-		fields.reserve(22);
-		getline(line);
-		istringstream in(line);
-		string field;
-		while (std::getline(in, field, '\t'))
-			fields.push_back(field);
+		// Discard comments.
+		while (m_in->peek() == '#')
+			ignoreLines(1);
 
-		if (fields.size() >= 11
-				&& (fields[9].length() == fields[10].length()
-					|| fields[10] == "*")) {
-			// SAM
-			unsigned flags = strtoul(fields[1].c_str(), NULL, 0);
-			if (flags & 0x100) // FSECONDARY
+		signed char recordType = m_in->peek();
+
+		if (recordType == EOF || m_in->tellg() >= m_end) {
+			m_in->seekg(0, ios::end);
+			m_in->clear(std::ios::eofbit | std::ios::failbit);
+			return s;
+		} else if (recordType == '>' || recordType == '@') {
+			// Read the header.
+			string header;
+			getline(header);
+			istringstream headerStream(header);
+
+			// Ignore SAM headers.
+			if (header[0] == '@' && isalpha(header[1])
+					&& isalpha(header[2]) && header[3] == '\t')
 				goto next_record;
-			if (opt::chastityFilter && (flags & 0x200)) { // FQCFAIL
-				m_unchaste++;
-				goto next_record;
+
+			headerStream >> recordType >> id >> ws;
+			std::getline(headerStream, comment);
+
+			// Casava FASTQ format
+			if (comment.size() > 3
+					&& comment[1] == ':' && comment[3] == ':') {
+				// read, chastity, flags, index: 1:Y:0:AAAAAA
+				if (opt::chastityFilter && comment[2] == 'Y') {
+					m_unchaste++;
+					if (recordType == '@') {
+						ignoreLines(3);
+					} else {
+						while (m_in->peek() != '>' && m_in->peek() != '#'
+								&& ignoreLines(1))
+							;
+					}
+					goto next_record;
+				}
+				if (id.size() > 2 && id.rbegin()[1] != '/') {
+					// Add the read number to the ID.
+					id += '/';
+					id += comment[0];
+				}
 			}
-			id = fields[0];
-			char which_read = '0';
-			switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
-			  case 0:
-			  case 1: // FPAIRED
-				which_read = '0';
-				break;
-			  case 0x41: // FPAIRED|FREAD1
-				id += "/1";
-				which_read = '1';
-				break;
-			  case 0x81: // FPAIRED|FREAD2
-				id += "/2";
-				which_read = '2';
-				break;
-			  default:
-				die() << "invalid flags: `" << id << "' near"
-					<< line << endl;
+
+			getline(s);
+			if (recordType == '>') {
+				// Read a multi-line FASTA record.
+				string line;
+				while (m_in->peek() != '>' && m_in->peek() != '#'
+						&& getline(line))
+					s += line;
+				if (m_in->eof())
+					m_in->clear();
+			}
+
+			if (recordType == '@') {
+				char c = m_in->get();
+				if (c != '+') {
+					string line;
+					getline(line);
+					die() << "expected `+' and saw ";
+					if (m_in->eof())
+						cerr << "end-of-file\n";
+					else
+						cerr << "`" << c << "' near\n"
+						<< c << line << "\n";
+					exit(EXIT_FAILURE);
+				}
+				ignoreLines(1);
+				getline(q);
+			} else
+				q.clear();
+
+			if (s.empty()) {
+				die() << "sequence with ID `" << id << "' is empty\n";
 				exit(EXIT_FAILURE);
 			}
-			if (opt::bxTag) {
-				// Copy the linked-reads barcode BX tag to the FASTA comment.
-				for (unsigned i = 11; i < fields.size(); ++i) {
-					if (startsWith(fields[i], "BX:Z:")) {
-						comment = fields[i];
-						break;
-					}
-				}
-			} else {
-				comment = flags & 0x200 ? "0:Y:0:" : "0:N:0:"; // FQCFAIL
-				comment[0] = which_read;
+
+			bool colourSpace = isColourSpace(s);
+			if (colourSpace && !isdigit(s[0])) {
+				// The first character is the primer base. The second
+				// character is the dibase read of the primer and the
+				// first base of the sample, which is not part of the
+				// assembly.
+				assert(s.length() > 2);
+				anchor = colourToNucleotideSpace(s[0], s[1]);
+				s.erase(0, 2);
+				q.erase(0, 1);
 			}
 
-			s = fields[9];
-			q = fields[10];
-			if (s == "*")
-				s.clear();
-			if (q == "*")
-				q.clear();
-			if (flags & 0x10) { // FREVERSE
-				s = reverseComplement(s);
-				reverse(q.begin(), q.end());
-			}
-			qualityOffset = 33;
 			if (!q.empty())
 				checkSeqQual(s, q);
 
-		} else if (fields.size() == 11 || fields.size() == 22) {
-			// qseq or export
-			if (opt::chastityFilter
-					&& !isChaste(fields.back(), line)) {
-				m_unchaste++;
-				goto next_record;
+			if (opt::trimMasked && !colourSpace) {
+				// Removed masked (lower case) sequence at the beginning
+				// and end of the read.
+				size_t trimFront = 0;
+				while (trimFront <= s.length() && islower(s[trimFront]))
+					trimFront++;
+				size_t trimBack = s.length();
+				while (trimBack > 0 && islower(s[trimBack - 1]))
+					trimBack--;
+				s.erase(trimBack);
+				s.erase(0, trimFront);
+				if (!q.empty()) {
+					q.erase(trimBack);
+					q.erase(0, trimFront);
+				}
 			}
+			if (flagFoldCase())
+				transform(s.begin(), s.end(), s.begin(), ::toupper);
 
-			ostringstream o;
-			o << fields[0];
-			for (int i = 1; i < 6; i++)
-				if (!fields[i].empty())
-					o << ':' << fields[i];
-			if (!fields[6].empty() && fields[6] != "0")
-				o << '#' << fields[6];
-			// The reverse read is typically the second read, but is
-			// the third read of an indexed run.
-			o << '/' << (fields[7] == "3" ? "2" : fields[7]);
-			id = o.str();
-			comment = fields[7];
-			comment += isChaste(fields.back(), line)
-				? ":N:0:" : ":Y:0:";
-			s = fields[8];
-			q = fields[9];
-			qualityOffset = 64;
-			checkSeqQual(s, q);
+			qualityOffset = 33;
 		} else {
-			die() << "Expected either `>' or `@' or 11 fields\n"
-					"and saw `" << recordType << "' and "
-					<< fields.size() << " fields near\n"
-					<< line << endl;
-			exit(EXIT_FAILURE);
+			string line;
+			vector<string> fields;
+			fields.reserve(22);
+			getline(line);
+			istringstream in(line);
+			string field;
+			while (std::getline(in, field, '\t'))
+				fields.push_back(field);
+
+			if (fields.size() >= 11
+					&& (fields[9].length() == fields[10].length()
+						|| fields[10] == "*")) {
+				// SAM
+				unsigned flags = strtoul(fields[1].c_str(), NULL, 0);
+				if (flags & 0x100) // FSECONDARY
+					goto next_record;
+				if (opt::chastityFilter && (flags & 0x200)) { // FQCFAIL
+					m_unchaste++;
+					goto next_record;
+				}
+				id = fields[0];
+				char which_read = '0';
+				switch (flags & 0xc1) { // FPAIRED|FREAD1|FREAD2
+				  case 0:
+				  case 1: // FPAIRED
+					which_read = '0';
+					break;
+				  case 0x41: // FPAIRED|FREAD1
+					id += "/1";
+					which_read = '1';
+					break;
+				  case 0x81: // FPAIRED|FREAD2
+					id += "/2";
+					which_read = '2';
+					break;
+				  default:
+					die() << "invalid flags: `" << id << "' near"
+						<< line << endl;
+					exit(EXIT_FAILURE);
+				}
+				if (opt::bxTag) {
+					// Copy the linked-reads barcode BX tag to the FASTA comment.
+					for (unsigned i = 11; i < fields.size(); ++i) {
+						if (startsWith(fields[i], "BX:Z:")) {
+							comment = fields[i];
+							break;
+						}
+					}
+				} else {
+					comment = flags & 0x200 ? "0:Y:0:" : "0:N:0:"; // FQCFAIL
+					comment[0] = which_read;
+				}
+
+				s = fields[9];
+				q = fields[10];
+				if (s == "*")
+					s.clear();
+				if (q == "*")
+					q.clear();
+				if (flags & 0x10) { // FREVERSE
+					s = reverseComplement(s);
+					reverse(q.begin(), q.end());
+				}
+				qualityOffset = 33;
+				if (!q.empty())
+					checkSeqQual(s, q);
+
+			} else if (fields.size() == 11 || fields.size() == 22) {
+				// qseq or export
+				if (opt::chastityFilter
+						&& !isChaste(fields.back(), line)) {
+					m_unchaste++;
+					goto next_record;
+				}
+
+				ostringstream o;
+				o << fields[0];
+				for (int i = 1; i < 6; i++)
+					if (!fields[i].empty())
+						o << ':' << fields[i];
+				if (!fields[6].empty() && fields[6] != "0")
+					o << '#' << fields[6];
+				// The reverse read is typically the second read, but is
+				// the third read of an indexed run.
+				o << '/' << (fields[7] == "3" ? "2" : fields[7]);
+				id = o.str();
+				comment = fields[7];
+				comment += isChaste(fields.back(), line)
+					? ":N:0:" : ":Y:0:";
+				s = fields[8];
+				q = fields[9];
+				qualityOffset = 64;
+				checkSeqQual(s, q);
+			} else {
+				die() << "Expected either `>' or `@' or 11 fields\n"
+						"and saw `" << recordType << "' and "
+						<< fields.size() << " fields near\n"
+						<< line << endl;
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
