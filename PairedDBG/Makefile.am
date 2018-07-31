@@ -13,7 +13,7 @@ abyss_paired_dbg_LDADD = \
 	$(top_builddir)/Assembly/libassembly.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
-	$(libdb) -lz
+	$(libdb)
 
 abyss_paired_dbg_SOURCES = \
 	abyss-paired-dbg.cc \

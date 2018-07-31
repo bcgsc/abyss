@@ -9,7 +9,7 @@ logcounter_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 logcounter_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Align/libalign.a \
-	$(top_builddir)/Common/libcommon.a -lz
+	$(top_builddir)/Common/libcommon.a
 
 logcounter_SOURCES = logcounter.cc \
 	CountingBloomFilter.h \

@@ -2,6 +2,7 @@ AC_PREREQ(2.62)
 AC_INIT(ABySS, 2.1.0, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 m4_include(m4/m4_ax_pthread.m4)
+m4_include(m4/ax_check_zlib.m4)
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/abyss.cc])
 AC_CONFIG_HEADER([config.h])
@@ -20,7 +21,7 @@ AM_CONDITIONAL([HAVE_PANDOC], [test x"$PANDOC" = x"yes"])
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
-	stddef.h stdint.h stdlib.h sys/param.h zlib.h])
+	stddef.h stdint.h stdlib.h sys/param.h])
 AC_HEADER_STDBOOL
 AC_HEADER_STDC
 
@@ -160,6 +161,9 @@ AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
 # (optional 'make check' dependency)
 AX_PTHREAD([have_pthread="yes"])
 AM_CONDITIONAL([HAVE_PTHREAD], [test x"$have_pthread" = x"yes"])
+
+# Check for zlib
+AX_CHECK_ZLIB()
 
 # Check for the MPI parallel computing library.
 libs="$LIBS"

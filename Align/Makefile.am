@@ -18,7 +18,7 @@ abyss_align_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 abyss_align_LDADD = $(builddir)/libalign.a \
 	$(top_builddir)/dialign/libdialign.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a -lz
+	$(top_builddir)/Common/libcommon.a
 
 abyss_align_SOURCES = align.cc
 
@@ -31,6 +31,6 @@ abyss_mergepairs_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 abyss_mergepairs_LDADD = $(builddir)/libalign.a \
 	$(top_builddir)/dialign/libdialign.a \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a -lz
+	$(top_builddir)/Common/libcommon.a
 
 abyss_mergepairs_SOURCES = mergepairs.cc
