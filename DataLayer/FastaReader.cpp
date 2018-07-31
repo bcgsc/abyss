@@ -50,18 +50,20 @@ ostream& FastaReader::die()
 	return cerr << m_path << ':' << m_line << ": error: ";
 }
 
-static bool is_file_fasta(string path) {
-	return endsWith(path, ".fasta") ||
-		   endsWith(path, ".fasta.gz") ||
-		   endsWith(path, ".fa") ||
-		   endsWith(path, ".fa.gz");
+static int gzpeek(gzFile f) {
+    int c;
+
+    c = gzgetc(f);
+    gzungetc(c, f);
+
+    return c;
 }
 
-static bool is_file_fastq(string path) {
-	return endsWith(path, ".fastq") ||
-		   endsWith(path, ".fastq.gz") ||
-		   endsWith(path, ".fq") ||
-		   endsWith(path, ".fq.gz");
+static bool is_file_fasta(const char *path, bool *q) {
+	gzFile file = gzopen(path, "r");
+	char c = gzpeek(file);
+	gzclose(file);
+	return (*q = (c == '@')) || c == '>';
 }
 
 FastaReader::FastaReader(const char* path, int flags, int len)
@@ -70,11 +72,8 @@ FastaReader::FastaReader(const char* path, int flags, int len)
 	m_end(numeric_limits<streamsize>::max()),
 	m_maxLength(len)
 {
-	if (is_file_fasta(path) || is_file_fastq(path)) {
-		if (is_file_fastq(path)) {
-			q = true;
-		}
-	    is_fasta = true;
+	if (is_file_fasta(path, &q)) {
+		is_fasta = true;
 		m_file = gzopen(path, "r");
 		m_file_state = 0;
 		seq_data = kseq_init((gzFile)m_file);
@@ -106,16 +105,6 @@ FastaReader::~FastaReader()
 
 		delete m_fin;
 	}
-}
-
-int gzpeek(gzFile f)
-{
-    int c;
-
-    c = gzgetc(f);
-    gzungetc(c, f);
-
-    return c;
 }
 
 /** Split the fasta file into nsections and seek to the start
