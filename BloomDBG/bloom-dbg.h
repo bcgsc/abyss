@@ -788,6 +788,8 @@ namespace BloomDBG {
 		KmerSet& contigEndKmers, const AssemblyParams& params,
 		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
+	    unsigned l = path.size();
+
 		ExtendPathParams extendParams;
 		extendParams.trimLen = params.trim;
 		extendParams.maxLen = NO_LIMIT;
@@ -796,17 +798,20 @@ namespace BloomDBG {
 
 		PathExtensionResult leftResult
 			= extendPath(path, REVERSE, dbg, extendParams);
-		PathExtensionResult rightResult
-			= extendPath(path, FORWARD, dbg, extendParams);
-
 		bool leftBlunt = leftResult == DEAD_END
 			|| leftResult == EXTENDED_TO_DEAD_END;
+		unsigned leftExtension = path.size() - l;
 
+		if (leftBlunt && leftExtension < params.trim)
+			return;
+
+		PathExtensionResult rightResult
+			= extendPath(path, FORWARD, dbg, extendParams);
 		bool rightBlunt = rightResult == DEAD_END
 			|| rightResult == EXTENDED_TO_DEAD_END;
+		unsigned rightExtension = path.size() - l - leftExtension;
 
-		if (leftBlunt && rightBlunt
-			&& path.size() < params.minIsland - params.k + 1)
+		if (rightBlunt && rightExtension < params.trim)
 			return;
 
 		processContig(path, dbg, assembledKmerSet,

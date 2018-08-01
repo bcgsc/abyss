@@ -60,9 +60,6 @@ namespace BloomDBG {
 		/** maximum length of branches to trim */
 		unsigned trim;
 
-		/** minimum length for a contig with two blunt ends */
-		unsigned minIsland;
-
 		/** verbose level for progress messages */
 		int verbose;
 
@@ -79,7 +76,7 @@ namespace BloomDBG {
 			minCov(2), graphPath(), numHashes(1), threads(1),
 			k(0), K(0), qrSeedLen(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
-			minIsland(0), verbose(0), outputPath(), tracePath() {}
+			verbose(0), outputPath(), tracePath() {}
 
 		/** Return true if all required members are initialized */
 		bool initialized() const {
