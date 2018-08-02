@@ -140,6 +140,21 @@ namespace BloomDBG {
 		return seq;
 	}
 
+	enum SeedType { ST_BRANCH_KMER=0, ST_READ };
+
+	static inline std::string seedTypeStr(const SeedType& type)
+	{
+		switch(type) {
+		case ST_BRANCH_KMER:
+			return "BRANCH_KMER";
+		case ST_READ:
+			return "READ";
+		default:
+			break;
+		}
+		assert(false);
+	}
+
 	/**
 	 * Results for the extension of a read segment.
 	 * Each instance represents a row in the trace file generated
@@ -147,16 +162,17 @@ namespace BloomDBG {
 	 */
 	struct SeqExtensionResult
 	{
-		/** FASTA ID for origin read */
-		std::string readId;
-		/**
-		 * Index of this segment within the read. (Prior to extension,
-		 * each read is split into segments at branching k-mers.)
-		 */
-		unsigned readSegmentId;
-		/** Total number of segments after splitting the read */
-		unsigned numReadSegments;
-		/** True if leftwards sequence extension was attempted */
+		/** output FASTA ID for this contig */
+		size_t contigID;
+		/** length of contig (bp) */
+		unsigned length;
+		/** FASTA ID of seeding read */
+		std::string readID;
+		/** Type of sequence used to seed contig (branch k-mer or full read) */
+		SeedType seedType;
+		/** Starting sequence prior to extensions */
+		Sequence seed;
+		/** TRUE if leftwards sequence extension was attempted */
 		bool extendedLeft;
 		/** True if rightwards sequence extension was attempted */
 		bool extendedRight;
@@ -164,126 +180,72 @@ namespace BloomDBG {
 		PathExtensionResult leftExtensionResult;
 		/** Result code for attempted left sequence extension (e.g. DEAD END) */
 		PathExtensionResult rightExtensionResult;
-		/** Original length of the read segment prior to extension */
-		unsigned origLength;
 		/** length of left extension (bp) */
-		unsigned leftExtensionLength;
-		/**
-		 * Set to true when a leftward seq extension is long enough to
-		 * imply that the starting read was error-free. This field is
-		 * only relevant if the sequence extension stopped due to a dead
-		 * end (as opposed to a branching point).
-		 */
-		bool leftExtensionGood;
+		unsigned leftExtension;
 		/** length of right extension (bp) */
-		unsigned rightExtensionLength;
-		/**
-		 * Set to true when a rightward seq extension is long enough to
-		 * imply that the starting read was error-free. This field is
-		 * only relevant if the sequence extension stopped due to a dead
-		 * end (as opposed to a branching point).
-		 */
-		bool rightExtensionGood;
-		/** total length of extended sequence (bp) */
-		unsigned extendedLength;
+		unsigned rightExtension;
 
 		/**
 		 * True if the extended sequence was excluded from the output contigs
 		 * because it was redundant. (An identical sequence was generated
 		 * when extending a previous read.)
 		 */
-		bool redundantContig;
-		/** Contig ID assigned to extended segment */
-		size_t contigID;
+		bool redundant;
 
 		SeqExtensionResult() :
-			readId(),
-			readSegmentId(std::numeric_limits<unsigned>::max()),
-			numReadSegments(std::numeric_limits<unsigned>::max()),
+			contigID(std::numeric_limits<size_t>::max()),
+			readID(),
 			extendedLeft(false),
 			extendedRight(false),
 			leftExtensionResult(DEAD_END),
 			rightExtensionResult(DEAD_END),
-			origLength(std::numeric_limits<unsigned>::max()),
-			leftExtensionLength(std::numeric_limits<unsigned>::max()),
-			leftExtensionGood(true),
-			rightExtensionLength(std::numeric_limits<unsigned>::max()),
-			rightExtensionGood(true),
-			extendedLength(std::numeric_limits<unsigned>::max()),
-			redundantContig(false),
-			contigID(std::numeric_limits<size_t>::max()) {}
-
-		bool initialized() const
-		{
-			return !readId.empty() &&
-				readSegmentId != std::numeric_limits<unsigned>::max() &&
-				numReadSegments != std::numeric_limits<unsigned>::max() &&
-				origLength != std::numeric_limits<unsigned>::max() &&
-				leftExtensionLength != std::numeric_limits<unsigned>::max() &&
-				rightExtensionLength != std::numeric_limits<unsigned>::max() &&
-				extendedLength != std::numeric_limits<unsigned>::max();
-		}
+			redundant(false)
+			{}
 
 		static std::ostream& printHeaders(std::ostream& out)
 		{
-			out << "read\t"
-				<< "segment\t"
-				<< "num_segments\t"
-				<< "left_result\t"
-				<< "right_result\t"
-				<< "orig_length\t"
-				<< "left_extension\t"
-				<< "left_extension_good\t"
-				<< "right_extension\t"
-				<< "right_extension_good\t"
-				<< "extended_length\t"
-				<< "redundant\t"
-				<< "contig\n";
+			out << "contig_id" << '\t'
+				<< "length" << '\t'
+				<< "redundant" << '\t'
+				<< "read_id" << '\t'
+				<< "left_result" << '\t'
+				<< "left_extension" << '\t'
+				<< "right_result" << '\t'
+				<< "right_extension" << '\t'
+				<< "seed_type" << '\t'
+				<< "seed_length" << '\t'
+				<< "seed" << '\n';
 			return out;
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
 			const SeqExtensionResult& o)
 		{
-			if (o.redundantContig) {
-				out << o.readId << '\t'
-					<< o.readSegmentId << '\t'
-					<< o.numReadSegments << '\t'
-					<< "-\t"
-					<< "-\t"
-					<< o.origLength << '\t'
-					<< "-\t"
-					<< "-\t"
-					<< "-\t"
-					<< "true" << '\t'
-					<< "-\n";
-			} else {
-				out << o.readId << '\t'
-					<< o.readSegmentId << '\t'
-					<< o.numReadSegments << '\t';
-				if (o.extendedLeft)
-					out << pathExtensionResultStr(o.leftExtensionResult) << '\t';
-				else
-					out << "-\t";
-				if (o.extendedRight)
-					out << pathExtensionResultStr(o.rightExtensionResult) << '\t';
-				else
-					out << "-\t";
-				out << o.origLength << '\t';
-				if (o.extendedLeft)
-					out << o.leftExtensionLength << '\t';
-				else
-					out << "-\t";
-				out << (o.leftExtensionGood ? "true" : "false") << '\t';
-				if (o.extendedRight)
-					out << o.rightExtensionLength << '\t';
-				else
-					out << "-\t";
-				out << (o.rightExtensionGood ? "true" : "false") << '\t';
-				out << o.extendedLength << '\t'
-					<< "false" << '\t'
-					<< o.contigID << '\n';
-			}
+			if (o.redundant)
+				out << "NA" << '\t';
+			else
+				out << o.contigID << '\t';
+
+			out << o.length << '\t'
+				<< o.redundant << '\t'
+				<< o.readID << '\t';
+
+			if (o.extendedLeft)
+				out << pathExtensionResultStr(o.leftExtensionResult) << '\t'
+					<< o.leftExtension << '\t';
+			else
+				out << "NA" << '\t' << "NA" << '\t';
+
+			if (o.extendedRight)
+				out << pathExtensionResultStr(o.rightExtensionResult) << '\t'
+					<< o.rightExtension << '\t';
+			else
+				out << "NA" << '\t' << "NA" << '\t';
+
+			out << seedTypeStr(o.seedType) << '\t'
+				<< o.seed.length() << '\t'
+				<< o.seed << '\n';
+
 			return out;
 		}
 	};
@@ -646,9 +608,10 @@ namespace BloomDBG {
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
 	inline static void processContig(const Path<Vertex>& contigPath,
-		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
-		KmerSet& contigEndKmers, const AssemblyParams& params,
-		AssemblyCounters& counters, AssemblyStreamsT& streams)
+		SeqExtensionResult& rec, const GraphT& dbg,
+		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
 	{
 		const unsigned fpLookAhead = 5;
 
@@ -671,7 +634,6 @@ namespace BloomDBG {
 		RollingHash hash2(kmer2.c_str(), params.numHashes, params.k);
 		Vertex v2(kmer2.c_str(), hash2);
 
-		bool redundant = false;
 #pragma omp critical(redundancyCheck)
 		{
 			/*
@@ -685,17 +647,17 @@ namespace BloomDBG {
 
 				if (contigEndKmers.find(v1) != contigEndKmers.end()
 					&& contigEndKmers.find(v2) != contigEndKmers.end()) {
-					redundant = true;
+					rec.redundant = true;
 				} else {
 					contigEndKmers.insert(v1);
 					contigEndKmers.insert(v2);
 				}
 
 			} else if (allKmersInBloom(seq, assembledKmerSet)) {
-				redundant = true;
+				rec.redundant = true;
 			}
 
-			if (!redundant) {
+			if (!rec.redundant) {
 
 				/* trim previously assembled k-mers from both ends */
 				trimContigOverlaps(seq, assembledKmerSet);
@@ -706,23 +668,30 @@ namespace BloomDBG {
 			}
 		}
 
-		if (!redundant)
+		if (!rec.redundant)
 		{
 #pragma omp critical(fasta)
 			{
 				/* add contig to output FASTA */
-				printContig(seq, counters.contigID, "", params.k,
+				printContig(seq, counters.contigID, rec.readID, params.k,
 					streams.out);
 
 				/* add contig to checkpoint FASTA file */
 				if (params.checkpointsEnabled())
-					printContig(seq, counters.contigID, "", params.k,
+					printContig(seq, counters.contigID, rec.readID, params.k,
 						streams.checkpointOut);
+
+				rec.contigID = counters.contigID;
+				rec.length = seq.length();
 
 				counters.contigID++;
 				counters.basesAssembled += seq.length();
 			}
 		}
+
+#pragma omp critical(trace)
+		streams.traceOut << rec;
+
 	}
 
 	/**
@@ -732,9 +701,10 @@ namespace BloomDBG {
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
 	inline static void processBranchKmer(const Vertex& branchKmer,
-		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
-		KmerSet& contigEndKmers, const AssemblyParams& params,
-		AssemblyCounters& counters, AssemblyStreamsT& streams)
+		const FastaRecord& rec, const GraphT& dbg,
+		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
 	{
 		typedef typename boost::graph_traits<GraphT>::vertex_descriptor V;
 		typedef typename std::vector<V>::iterator VIt;
@@ -754,29 +724,56 @@ namespace BloomDBG {
 		extendParams.lookBehind = true;
 		extendParams.lookBehindStartVertex = false;
 
+		SeqExtensionResult contigRec;
+		contigRec.readID = rec.id;
+		contigRec.seedType = ST_BRANCH_KMER;
+		contigRec.extendedLeft = false;
+		contigRec.extendedRight = false;
+
 		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
+
 			Path<V> path;
 			path.push_back(*it);
 			path.push_back(branchKmer);
-			extendPath(path, REVERSE, dbg, extendParams);
-			processContig(path, dbg, assembledKmerSet,
+
+			contigRec.seed = pathToSeq(path, params.k);
+			contigRec.extendedLeft = true;
+			contigRec.leftExtensionResult =
+				extendPath(path, REVERSE, dbg, extendParams);
+			contigRec.leftExtension = path.size() - 2;
+
+			processContig(path, contigRec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
+
 		}
 
 		for (VIt it = outBranches.begin(); it != outBranches.end(); ++it) {
+
 			Path<V> path;
 			path.push_back(branchKmer);
 			path.push_back(*it);
-			extendPath(path, FORWARD, dbg, extendParams);
-			processContig(path, dbg, assembledKmerSet,
+
+			contigRec.seed = pathToSeq(path, params.k);
+			contigRec.extendedRight = true;
+			contigRec.rightExtensionResult =
+				extendPath(path, FORWARD, dbg, extendParams);
+			contigRec.rightExtension = path.size() - 2;
+
+			processContig(path, contigRec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
+
 		}
 
 		if (inBranches.size() > 1 && outBranches.size() > 1) {
+
 			Path<V> path;
 			path.push_back(branchKmer);
-			processContig(path, dbg, assembledKmerSet,
+
+			contigRec.seed = pathToSeq(path, params.k);
+
+			processContig(path, contigRec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
+
 		}
 	}
 
@@ -784,9 +781,10 @@ namespace BloomDBG {
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
 	inline static void processNonBranchingRead(Path<Vertex>& path,
-		const GraphT& dbg, AssembledKmerSetT& assembledKmerSet,
-		KmerSet& contigEndKmers, const AssemblyParams& params,
-		AssemblyCounters& counters, AssemblyStreamsT& streams)
+		const FastaRecord& rec, const GraphT& dbg,
+		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
 	{
 	    unsigned l = path.size();
 
@@ -796,25 +794,32 @@ namespace BloomDBG {
 		extendParams.lookBehind = true;
 		extendParams.lookBehindStartVertex = false;
 
-		PathExtensionResult leftResult
+		SeqExtensionResult contigRec;
+		contigRec.readID = rec.id;
+		contigRec.seedType = ST_READ;
+		contigRec.seed = rec.seq;
+		contigRec.extendedLeft = true;
+		contigRec.extendedRight = true;
+
+		contigRec.leftExtensionResult
 			= extendPath(path, REVERSE, dbg, extendParams);
-		bool leftBlunt = leftResult == DEAD_END
-			|| leftResult == EXTENDED_TO_DEAD_END;
-		unsigned leftExtension = path.size() - l;
+		bool leftBlunt = contigRec.leftExtensionResult == DEAD_END
+			|| contigRec.leftExtensionResult == EXTENDED_TO_DEAD_END;
+		contigRec.leftExtension = path.size() - l;
 
-		if (leftBlunt && leftExtension < params.trim)
+		if (leftBlunt && contigRec.leftExtension < params.trim)
 			return;
 
-		PathExtensionResult rightResult
+		contigRec.rightExtensionResult
 			= extendPath(path, FORWARD, dbg, extendParams);
-		bool rightBlunt = rightResult == DEAD_END
-			|| rightResult == EXTENDED_TO_DEAD_END;
-		unsigned rightExtension = path.size() - l - leftExtension;
+		bool rightBlunt = contigRec.rightExtensionResult == DEAD_END
+			|| contigRec.rightExtensionResult == EXTENDED_TO_DEAD_END;
+		contigRec.rightExtension = path.size() - l - contigRec.leftExtension;
 
-		if (rightBlunt && rightExtension < params.trim)
+		if (rightBlunt && contigRec.rightExtension < params.trim)
 			return;
 
-		processContig(path, dbg, assembledKmerSet,
+		processContig(path, contigRec, dbg, assembledKmerSet,
 			contigEndKmers, params, counters, streams);
 	}
 
@@ -873,7 +878,7 @@ namespace BloomDBG {
 			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
 				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
 				++branchKmers;
-				processBranchKmer(*it, dbg, assembledKmerSet,
+				processBranchKmer(*it, rec, dbg, assembledKmerSet,
 					contigEndKmers, params, counters, streams);
 			}
 		}
@@ -884,7 +889,7 @@ namespace BloomDBG {
 		 * disconnected from neighbouring branch k-mers by coverage gaps.
 		 */
 		if (branchKmers == 0) {
-			processNonBranchingRead(path, dbg, assembledKmerSet,
+			processNonBranchingRead(path, rec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
 		}
 
