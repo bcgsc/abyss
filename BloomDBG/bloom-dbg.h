@@ -627,10 +627,12 @@ namespace BloomDBG {
 		/* vertices representing start/end k-mers of contig */
 
 		Sequence kmer1 = seq.substr(0, params.k);
+		canonicalize(kmer1);
 		RollingHash hash1(kmer1.c_str(), params.numHashes, params.k);
 		Vertex v1(kmer1.c_str(), hash1);
 
 		Sequence kmer2 = seq.substr(seq.length() - params.k);
+		canonicalize(kmer2);
 		RollingHash hash2(kmer2.c_str(), params.numHashes, params.k);
 		Vertex v2(kmer2.c_str(), hash2);
 
