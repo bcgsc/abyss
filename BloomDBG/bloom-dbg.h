@@ -729,6 +729,7 @@ namespace BloomDBG {
 		contigRec.extendedLeft = false;
 		contigRec.extendedRight = false;
 
+		/* extend left neighbours to generate contigs */
 		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
 
 			Path<V> path;
@@ -746,6 +747,7 @@ namespace BloomDBG {
 
 		}
 
+		/* extend right neighours to generate contigs */
 		for (VIt it = outBranches.begin(); it != outBranches.end(); ++it) {
 
 			Path<V> path;
@@ -763,6 +765,7 @@ namespace BloomDBG {
 
 		}
 
+		/* output branch k-mer as its own contig */
 		if (inBranches.size() > 1 && outBranches.size() > 1) {
 
 			Path<V> path;
