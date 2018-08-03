@@ -722,7 +722,6 @@ namespace BloomDBG {
 		extendParams.trimLen = params.trim;
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
-		extendParams.lookBehindStartVertex = false;
 
 		SeqExtensionResult contigRec;
 		contigRec.readID = rec.id;
@@ -792,7 +791,6 @@ namespace BloomDBG {
 		extendParams.trimLen = params.trim;
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
-		extendParams.lookBehindStartVertex = false;
 
 		SeqExtensionResult contigRec;
 		contigRec.readID = rec.id;
