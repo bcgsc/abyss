@@ -33,6 +33,16 @@ static inline bool allACGT(const Sequence& seq)
 }
 
 /**
+ * Transform a sequence in its canonical orientation.
+ */
+static inline void canonicalize(Sequence& seq)
+{
+	Sequence rc = reverseComplement(seq);
+	if (rc < seq)
+		seq = rc;
+}
+
+/**
  * Convert each ambiguity code to the lexicographically smallest
  * matching base.
  */
