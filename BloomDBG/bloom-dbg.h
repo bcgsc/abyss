@@ -438,54 +438,6 @@ namespace BloomDBG {
 	}
 
 	/**
-	 * Ensure that branching k-mers are not repeated in the output
-	 * contigs by selectively trimming contig ends.
-	 *
-	 * The idea is to keep a branch k-mer if the edge leading to it
-	 * is unambigous. For example, in the diagram below the contig
-	 * generated from the right side would include the branching k-mer
-	 * k5, whereas the two contigs entering on the left would discard it:
-	 *
-	 * ...-k1-k2
-	 *          \
-	 *           k5-k6-...
-	 *          /
-	 * ...-k3-k4
-	 *
-	 * @param seq the contig to trim
-	 * @param k k-mer size
-	 * @param numHashes number of Bloom filter hash functions
-	 * @param minBranchLen minimum length of a "true" branch (shorter
-	 * branches are assumed to be caused by sequencing errors or
-	 * Bloom filter false positives).
-	 */
-	template <typename GraphT>
-		inline static void trimBranchKmers(Sequence& seq,
-			unsigned k, unsigned numHashes, unsigned minBranchLen,
-			const GraphT& dbg)
-	{
-		assert(seq.length() >= k);
-
-		if (seq.length() == k)
-			return;
-
-		Sequence firstKmer = seq.substr(0, k);
-		Vertex vFirst(firstKmer.c_str(), RollingHash(firstKmer, numHashes, k));
-		unsigned outDegree = trueDegree(vFirst, FORWARD, dbg, minBranchLen - 1);
-		if (outDegree > 1)
-			seq.erase(0, 1);
-
-		if (seq.length() == k)
-			return;
-
-		Sequence lastKmer = seq.substr(seq.length()-k);
-		Vertex vLast(lastKmer.c_str(), RollingHash(lastKmer, numHashes, k));
-		unsigned inDegree = trueDegree(vLast, REVERSE, dbg, minBranchLen - 1);
-		if (inDegree > 1)
-			seq.erase(seq.length()-1, 1);
-	}
-
-	/**
 	 * Append a contig to the output FASTA stream.
 	 */
     inline static void printContig(const Sequence& seq,
@@ -508,8 +460,8 @@ namespace BloomDBG {
 		contig.comment = comment.str();
 
 		/* set seq (in canonical orientation) */
-		Sequence rcSeq = reverseComplement(seq);
-		contig.seq = (seq < rcSeq) ? seq : rcSeq;
+		contig.seq = seq;
+		canonicalize(contig.seq);
 
 		/* output FASTQ record */
 		out << contig;
@@ -605,24 +557,15 @@ namespace BloomDBG {
 	 * Output a contig sequence if it is not redundant, i.e. it has not already
 	 * been generated from a different read / thread of execution.
 	 */
-	template <typename GraphT, typename AssembledKmerSetT,
-		typename AssemblyStreamsT>
-	inline static void processContig(const Path<Vertex>& contigPath,
-		ContigRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
+	template <typename AssembledKmerSetT, typename AssemblyStreamsT>
+	inline static void outputContig(const Path<Vertex>& contigPath,
+		ContigRecord& rec, AssembledKmerSetT& assembledKmerSet,
+		KmerSet& contigEndKmers, const AssemblyParams& params,
+		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
 		const unsigned fpLookAhead = 5;
 
 		Sequence seq = pathToSeq(contigPath, params.k);
-
-		/*
-		 * selectively trim branch k-mers from contig ends, so
-		 * that each branch k-mer occurs only once in the output
-		 * contigs
-		 */
-		trimBranchKmers(seq, params.k, params.numHashes, params.trim, dbg);
 
 		/* vertices representing start/end k-mers of contig */
 
@@ -697,6 +640,88 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Ensure that branching k-mers are not repeated in the output
+	 * contigs by selectively trimming contig ends.
+	 *
+	 * The idea is to keep a branch k-mer at the end of contig only
+	 * if the edge leading up to it is unambigous. For example, in the
+	 * diagram below the contig generated from the right side would
+	 * include the branching k-mer k5, whereas the two contigs entering
+	 * on the left would discard it:
+	 *
+	 * ...-k1-k2
+	 *          \
+	 *           k5-k6-...
+	 *          /
+	 * ...-k3-k4
+	 *
+	 * If a branch k-mer has both indegree > 1 and outdegree > 1, it is
+	 * output separately as its own contig of length k.
+	 *
+	 * @param seq the contig to trim
+	 * @param k k-mer size
+	 * @param numHashes number of Bloom filter hash functions
+	 * @param minBranchLen minimum length of a "true" branch (shorter
+	 * branches are assumed to be caused by sequencing errors or
+	 * Bloom filter false positives).
+	 */
+	template <typename GraphT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	inline static void processContig(Path<Vertex>& contigPath,
+		ContigRecord& rec, const GraphT& dbg,
+		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
+	{
+		assert(!contigPath.empty());
+
+		if (contigPath.size() == 1) {
+			outputContig(contigPath, rec, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
+		assert(contigPath.size() >= 2);
+
+		unsigned inDegree1 = trueDegree(contigPath.front(),
+			REVERSE, dbg, params.trim);
+		unsigned outDegree1 = trueDegree(contigPath.front(),
+			FORWARD, dbg, params.trim);
+
+		unsigned inDegree2 = trueDegree(contigPath.back(),
+			REVERSE, dbg, params.trim);
+		unsigned outDegree2 = trueDegree(contigPath.back(),
+			FORWARD, dbg, params.trim);
+
+		if (inDegree1 > 1 && outDegree1 > 1) {
+			Path<Vertex> path1;
+			path1.push_back(contigPath.front());
+			outputContig(path1, rec, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
+		if (outDegree1 > 1) {
+			contigPath.pop_front();
+		}
+
+		if (inDegree2 > 1 && outDegree2 > 1) {
+			Path<Vertex> path2;
+			path2.push_back(contigPath.back());
+			outputContig(path2, rec, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+		}
+
+		if (inDegree2 > 1) {
+			contigPath.pop_back();
+		}
+
+		if (contigPath.empty())
+			return;
+
+		outputContig(contigPath, rec, assembledKmerSet,
+			contigEndKmers, params, counters, streams);
+	}
+
+	/**
 	 * Create all contigs connected to a given branch k-mer, by extending
 	 * the neighbour k-mers up to the next dead-end or branch point.
 	 */
@@ -732,6 +757,7 @@ namespace BloomDBG {
 		contigRec.extendedRight = false;
 
 		/* extend left neighbours to generate contigs */
+
 		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
 
 			Path<V> path;
@@ -750,6 +776,7 @@ namespace BloomDBG {
 		}
 
 		/* extend right neighours to generate contigs */
+
 		for (VIt it = outBranches.begin(); it != outBranches.end(); ++it) {
 
 			Path<V> path;
@@ -767,18 +794,6 @@ namespace BloomDBG {
 
 		}
 
-		/* output branch k-mer as its own contig */
-		if (inBranches.size() > 1 && outBranches.size() > 1) {
-
-			Path<V> path;
-			path.push_back(branchKmer);
-
-			contigRec.seed = pathToSeq(path, params.k);
-
-			processContig(path, contigRec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-
-		}
 	}
 
 	/** Extend a read left/right from its start/end k-mers */
