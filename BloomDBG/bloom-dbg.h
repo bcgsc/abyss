@@ -160,7 +160,7 @@ namespace BloomDBG {
 	 * Each instance represents a row in the trace file generated
 	 * by the '-T' option for abyss-bloom-dbg.
 	 */
-	struct SeqExtensionResult
+	struct ContigRecord
 	{
 		/** output FASTA ID for this contig */
 		size_t contigID;
@@ -192,7 +192,7 @@ namespace BloomDBG {
 		 */
 		bool redundant;
 
-		SeqExtensionResult() :
+		ContigRecord() :
 			contigID(std::numeric_limits<size_t>::max()),
 			readID(),
 			extendedLeft(false),
@@ -219,7 +219,7 @@ namespace BloomDBG {
 		}
 
 		friend std::ostream& operator <<(std::ostream& out,
-			const SeqExtensionResult& o)
+			const ContigRecord& o)
 		{
 			if (o.redundant)
 				out << "NA" << '\t';
@@ -608,7 +608,7 @@ namespace BloomDBG {
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
 	inline static void processContig(const Path<Vertex>& contigPath,
-		SeqExtensionResult& rec, const GraphT& dbg,
+		ContigRecord& rec, const GraphT& dbg,
 		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
@@ -723,7 +723,7 @@ namespace BloomDBG {
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
 
-		SeqExtensionResult contigRec;
+		ContigRecord contigRec;
 		contigRec.readID = rec.id;
 		contigRec.seedType = ST_BRANCH_KMER;
 		contigRec.extendedLeft = false;
@@ -795,7 +795,7 @@ namespace BloomDBG {
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
 
-		SeqExtensionResult contigRec;
+		ContigRecord contigRec;
 		contigRec.readID = rec.id;
 		contigRec.seedType = ST_READ;
 		contigRec.seed = rec.seq;
@@ -942,7 +942,7 @@ namespace BloomDBG {
 		if (!params.tracePath.empty()) {
 			traceOut.open(params.tracePath.c_str());
 			assert_good(traceOut, params.tracePath);
-			SeqExtensionResult::printHeaders(traceOut);
+			ContigRecord::printHeaders(traceOut);
 			assert_good(traceOut, params.tracePath);
 		}
 

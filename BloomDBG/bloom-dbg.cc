@@ -251,7 +251,7 @@ void resumeAssemblyFromCheckpoint(int argc, char** argv,
 	if (!params.tracePath.empty()) {
 		traceOut.open(params.tracePath.c_str());
 		assert_good(traceOut, params.tracePath);
-		BloomDBG::SeqExtensionResult::printHeaders(traceOut);
+		BloomDBG::ContigRecord::printHeaders(traceOut);
 		assert_good(traceOut, params.tracePath);
 	}
 
