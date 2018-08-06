@@ -174,3 +174,26 @@ TEST_F(RollingHashTest, setLastBase)
 	hash1.setLastBase(kmer1, ANTISENSE, 'G');
 	ASSERT_EQ(hash3, hash1);
 }
+
+TEST_F(RollingHashTest, reverseComplement)
+{
+	MaskedKmer::mask().clear();
+
+	const RollingHash leftKmerHash("GACG", m_numHashes, m_k);
+	const RollingHash middleKmerHash("ACGT", m_numHashes, m_k);
+	const RollingHash rightKmerHash("CGTC", m_numHashes, m_k);
+	RollingHash hash(rightKmerHash);
+
+	/*
+	 * NOTE: after we call `reverseComplement`, the `rollRight`
+	 * and `rollLeft` operations are swapped.
+	 */
+
+	ASSERT_EQ(rightKmerHash, hash);
+	hash.reverseComplement(); /* CGTC => GACG */
+	ASSERT_EQ(rightKmerHash, hash);
+	hash.rollRight("GACG", 'T');
+	ASSERT_EQ(middleKmerHash, hash);
+	hash.rollRight("ACGT", 'C');
+	ASSERT_EQ(leftKmerHash, hash);
+}

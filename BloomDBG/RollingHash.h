@@ -189,6 +189,18 @@ public:
 				kmer, m_k);
 	}
 
+	/**
+	 * Reverse complement the hash state, so that rolling right becomes
+	 * rolling left, and vice versa.  This operation is needed
+	 * whenever we reverse-complement a k-mer that has an associated
+	 * `RollingHash` state, so that subsequent rolling operations will
+	 * produce the correct hash value.
+	 */
+	void reverseComplement()
+	{
+		std::swap(m_hash1, m_rcHash1);
+	}
+
 private:
 
 	/** number of hash functions */
