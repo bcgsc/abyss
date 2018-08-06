@@ -236,4 +236,10 @@ BloomDBG_MaskedKmer_LDADD = \
 check_PROGRAMS += BloomDBG_SpacedSeed
 BloomDBG_SpacedSeed_SOURCES = BloomDBG/SpacedSeedTest.cpp
 
+check_PROGRAMS += BloomDBG_LightweightKmer
+BloomDBG_LightweightKmer_SOURCES = BloomDBG/LightweightKmerTest.cpp
+BloomDBG_LightweightKmer_LDADD = \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 TESTS = $(check_PROGRAMS)

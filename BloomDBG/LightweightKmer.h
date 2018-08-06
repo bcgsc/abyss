@@ -2,8 +2,12 @@
 #define LIGHTWEIGHT_KMER_H 1
 
 #include "BloomDBG/MaskedKmer.h"
+#include "Common/Kmer.h"
+#include "Common/Sequence.h"
+#include "Common/Sense.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstring>
 #include <boost/shared_array.hpp>
 
@@ -78,6 +82,47 @@ public:
 		return *(m_kmer.get() + pos);
 	}
 
+	/**
+	 * Return true if k-mer is in its lexicographically smallest orientation
+	 */
+	bool isCanonical() const
+	{
+		const unsigned k = Kmer::length();
+		for (unsigned i = 0; i < k/2; ++i) {
+			const char c1 = toupper(m_kmer.get()[i]);
+			const char c2 = complementBaseChar(
+				toupper(m_kmer.get()[k-i-1]));
+			if (c1 > c2)
+				return false;
+			else if (c1 < c2)
+				return true;
+		}
+		return true;
+	}
+
+	/**
+	 * Reverse complement the k-mer, if it is not already in its
+	 * canonical (i.e. lexicographically smallest) orientation.
+	 */
+	void canonicalize()
+	{
+		if (isCanonical())
+			return;
+
+		const unsigned k = Kmer::length();
+		for (unsigned i = 0; i < k/2; ++i) {
+			const char tmp = complementBaseChar(m_kmer.get()[i]);
+			m_kmer.get()[i] = complementBaseChar(
+				m_kmer.get()[k-i-1]);
+			m_kmer.get()[k-i-1] = tmp;
+		}
+
+		/* if k is odd, we need to reverse complement the middle char */
+		if (k % 2 == 1 && k > 1)
+			m_kmer.get()[k/2]
+				= complementBaseChar(m_kmer.get()[k/2]);
+	}
+
 	/** Equality operator */
 	bool operator==(const LightweightKmer& o) const
 	{
@@ -94,6 +139,12 @@ public:
 			}
 			return true;
 		}
+	}
+
+	/** Inequality operator */
+	bool operator!=(const LightweightKmer& o) const
+	{
+		return !operator==(o);
 	}
 };
 

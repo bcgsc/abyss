@@ -8,6 +8,7 @@
 
 typedef std::string Sequence;
 
+char complementBaseChar(char c);
 Sequence reverseComplement(const Sequence& s);
 Sequence colourToNucleotideSpace(char anchor, const Sequence& seq);
 char colourToNucleotideSpace(char anchor, char cs);
