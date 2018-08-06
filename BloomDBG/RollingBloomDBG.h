@@ -69,6 +69,23 @@ public:
 		kmer().setLastBase(dir, base);
 	}
 
+	void reverseComplement()
+	{
+		m_kmer.reverseComplement();
+		m_rollingHash.reverseComplement();
+	}
+
+	bool isCanonical() const
+	{
+		return m_kmer.isCanonical();
+	}
+
+	void canonicalize()
+	{
+		if (!m_kmer.isCanonical())
+			reverseComplement();
+	}
+
 	/**
 	 * Comparison operator that takes spaced seed bitmask into account.
 	 */
