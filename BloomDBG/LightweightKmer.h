@@ -106,9 +106,13 @@ public:
 	 */
 	void canonicalize()
 	{
-		if (isCanonical())
-			return;
+		if (!isCanonical())
+			reverseComplement();
 
+	}
+
+	void reverseComplement()
+	{
 		const unsigned k = Kmer::length();
 		for (unsigned i = 0; i < k/2; ++i) {
 			const char tmp = complementBaseChar(m_kmer.get()[i]);
