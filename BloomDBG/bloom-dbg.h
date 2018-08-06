@@ -37,12 +37,12 @@
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 
 #include <google/sparse_hash_set>
-typedef google::sparse_hash_set<RollingBloomDBGVertex> KmerSet;
+typedef google::sparse_hash_set<RollingBloomDBGVertex> KmerHash;
 
 #else
 
 #include "Common/UnorderedSet.h"
-typedef unordered_set<RollingBloomDBGVertex> KmerSet;
+typedef unordered_set<RollingBloomDBGVertex> KmerHash;
 
 #endif
 
@@ -560,7 +560,7 @@ namespace BloomDBG {
 	template <typename AssembledKmerSetT, typename AssemblyStreamsT>
 	inline static void outputContig(const Path<Vertex>& contigPath,
 		ContigRecord& rec, AssembledKmerSetT& assembledKmerSet,
-		KmerSet& contigEndKmers, const AssemblyParams& params,
+		KmerHash& contigEndKmers, const AssemblyParams& params,
 		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
 		const unsigned fpLookAhead = 5;
@@ -669,7 +669,7 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	inline static void processContig(Path<Vertex>& contigPath,
 		ContigRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
@@ -729,7 +729,7 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	inline static void processBranchKmer(const Vertex& branchKmer,
 		const FastaRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
@@ -801,7 +801,7 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	inline static void processNonBranchingRead(Path<Vertex>& path,
 		const FastaRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerSet& contigEndKmers,
+		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
@@ -848,7 +848,7 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	static inline void processRead(const FastaRecord& rec,
 		const SolidKmerSetT& solidKmerSet, AssembledKmerSetT& assembledKmerSet,
-		KmerSet& contigEndKmers, const AssemblyParams& params,
+		KmerHash& contigEndKmers, const AssemblyParams& params,
 		AssemblyCounters& counters, AssemblyStreamsT& streams)
 	{
 		typedef typename Path<Vertex>::const_iterator PathIt;
@@ -1010,7 +1010,7 @@ namespace BloomDBG {
 		InputReadStreamT& in = streams.in;
 		std::ostream& checkpointOut = streams.checkpointOut;
 
-		KmerSet contigEndKmers;
+		KmerHash contigEndKmers;
 		contigEndKmers.rehash((size_t)pow(2,28));
 
 		while (true)
