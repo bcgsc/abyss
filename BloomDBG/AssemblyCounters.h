@@ -16,12 +16,17 @@ namespace BloomDBG {
 	{
 		/** reads consisting entirely of solid k-mers */
 		size_t solidReads;
-		size_t readsExtended;
+		size_t allKmersVisited;
+		size_t allBranchKmersVisited;
+		size_t nonBranchingReads;
+		size_t nonBranchingContigs;
 		size_t readsProcessed;
 		size_t basesAssembled;
 		size_t contigID;
 
-		AssemblyCounters() : solidReads(0), readsExtended(0), readsProcessed(0),
+		AssemblyCounters() : solidReads(0), allKmersVisited(0),
+			allBranchKmersVisited(0), nonBranchingReads(0),
+			nonBranchingContigs(0), readsProcessed(0),
 			basesAssembled(0), contigID(0) {}
 
 		/** serialize counters as a TSV table */
@@ -31,7 +36,6 @@ namespace BloomDBG {
 			/* write headers */
 
 			out << "solid_reads"
-				<< '\t' << "extended_reads"
 				<< '\t' << "processed_reads"
 				<< '\t' << "bases_assembled"
 				<< '\t' << "next_contig_id"
@@ -40,7 +44,6 @@ namespace BloomDBG {
 			/* write data */
 
 			out << o.solidReads
-				<< '\t' << o.readsExtended
 				<< '\t' << o.readsProcessed
 				<< '\t' << o.basesAssembled
 				<< '\t' << o.contigID
@@ -61,7 +64,6 @@ namespace BloomDBG {
 			/* read data */
 
 			in >> o.solidReads
-				>> expect("\t") >> o.readsExtended
 				>> expect("\t") >> o.readsProcessed
 				>> expect("\t") >> o.basesAssembled
 				>> expect("\t") >> o.contigID

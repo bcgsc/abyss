@@ -255,16 +255,25 @@ namespace BloomDBG {
 	{
 #pragma omp critical(cerr)
 		std::cerr
-			<< "Extended " << counters.readsExtended
-			<< " of " << counters.readsProcessed
-			<< " reads (" << std::setprecision(3) << (float)100
-			* counters.readsExtended / counters.readsProcessed
-			<< "%), saw " << counters.solidReads
-			<< " of " << counters.readsProcessed
-			<< " solid reads (" << std::setprecision(3) << (float)100
-		    * counters.solidReads / counters.readsProcessed
-			<< "%), assembled " << counters.basesAssembled
-			<< " bp so far" << std::endl;
+			<< "Processed " << counters.readsProcessed << " reads"
+			<< ", [solid: " << counters.solidReads
+			<< " (" << std::setprecision(3) << (float)100
+		    * counters.solidReads / counters.readsProcessed << "%)"
+			<< ", all k-mers visited: " << counters.allKmersVisited
+			<< " (" << std::setprecision(3) << (float)100
+		    * counters.allKmersVisited / counters.readsProcessed << "%)"
+			<< ", all branch k-mers visited: " << counters.allBranchKmersVisited
+			<< " (" << std::setprecision(3) << (float)100
+		    * counters.allBranchKmersVisited / counters.readsProcessed << "%)"
+			<< ", non-branching: " << counters.nonBranchingReads
+			<< " (" << std::setprecision(3) << (float)100
+		    * counters.nonBranchingReads / counters.readsProcessed << "%)"
+			<< ", non-branching contigs: " << counters.nonBranchingContigs
+			<< " (" << std::setprecision(3) << (float)100
+			* counters.nonBranchingContigs / counters.readsProcessed << "%)"
+			<< "], assembled " << counters.basesAssembled << " bp in "
+			<< counters.contigID + 1 << " contigs"
+			<< std::endl;
 	}
 
 	/**
@@ -765,6 +774,9 @@ namespace BloomDBG {
 		if (rightBlunt && contigRec.rightExtension < params.trim)
 			return;
 
+#pragma omp atomic
+		counters.nonBranchingContigs++;
+
 		processContig(path, contigRec, dbg, assembledKmerSet,
 			contigEndKmers, params, counters, streams);
 	}
@@ -776,10 +788,11 @@ namespace BloomDBG {
 		typename AssemblyStreamsT>
 	static inline void processRead(const FastaRecord& rec,
 		const SolidKmerSetT& solidKmerSet, AssembledKmerSetT& assembledKmerSet,
-		KmerHash& contigEndKmers, const AssemblyParams& params,
-		AssemblyCounters& counters, AssemblyStreamsT& streams)
+		KmerHash& contigEndKmers, KmerHash& visitedBranchKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
 	{
-		typedef typename Path<Vertex>::const_iterator PathIt;
+		typedef typename Path<Vertex>::iterator PathIt;
 
 		/* Boost graph API for Bloom filter */
 		RollingBloomDBG<SolidKmerSetT> dbg(solidKmerSet);
@@ -807,26 +820,46 @@ namespace BloomDBG {
 		counters.solidReads++;
 
 		/* skip reads in previously assembled regions */
-		if (allKmersInBloom(seq, assembledKmerSet))
-			return;
-
+		if (allKmersInBloom(seq, assembledKmerSet)) {
 #pragma omp atomic
-		counters.readsExtended++;
+			counters.allKmersVisited++;
+			return;
+		}
 
 		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
 
 		/*
-		 * identify branch k-mers within the read and extend outwards
+		 * identify unvisited branch k-mers within the read and extend outwards
 		 * from their neighbour k-mers to generate contigs
 		 */
 		unsigned branchKmers = 0;
+		bool numVisited = 0;
 		for (PathIt it = path.begin(); it != path.end(); ++it) {
 			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
 				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
+
 				++branchKmers;
+				it->canonicalize();
+
+				bool visited = true;
+#pragma omp critical(visitedBranchKmers)
+				if (visitedBranchKmers.find(*it) == visitedBranchKmers.end()) {
+					visitedBranchKmers.insert(*it);
+					visited = false;
+				}
+				if (visited) {
+					++numVisited;
+					continue;
+				}
+
 				processBranchKmer(*it, rec, dbg, assembledKmerSet,
 					contigEndKmers, params, counters, streams);
 			}
+		}
+
+		if (branchKmers > 0 && numVisited == branchKmers) {
+#pragma omp atomic
+			counters.allBranchKmersVisited++;
 		}
 
 		/*
@@ -835,6 +868,8 @@ namespace BloomDBG {
 		 * disconnected from neighbouring branch k-mers by coverage gaps.
 		 */
 		if (branchKmers == 0) {
+#pragma omp atomic
+			counters.nonBranchingReads++;
 			processNonBranchingRead(path, rec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
 		}
@@ -941,6 +976,8 @@ namespace BloomDBG {
 		KmerHash contigEndKmers;
 		contigEndKmers.rehash((size_t)pow(2,28));
 
+		KmerHash visitedBranchKmers;
+
 		while (true)
 		{
 			size_t readsUntilCheckpoint = params.readsPerCheckpoint;
@@ -972,7 +1009,8 @@ namespace BloomDBG {
 					 it != buffer.end(); ++it)
 				{
 					processRead(*it, goodKmerSet, assembledKmerSet,
-						contigEndKmers, params, counters, streams);
+						contigEndKmers, visitedBranchKmers,
+						params, counters, streams);
 
 #pragma omp atomic
 					counters.readsProcessed++;
