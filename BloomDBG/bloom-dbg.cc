@@ -154,9 +154,9 @@ static const struct option longopts[] = {
 	{ "qr-seed",           required_argument, NULL, QR_SEED },
 	{ "read-log",	       required_argument, NULL, READ_LOG },
 	{ "ref",               required_argument, NULL, 'R' },
-	{ "spaced-seed",       no_argument, NULL, 's' },
-	{ "trim-length",       no_argument, NULL, 't' },
-	{ "trace-file",        no_argument, NULL, 'T'},
+	{ "spaced-seed",       required_argument, NULL, 's' },
+	{ "trim-length",       required_argument, NULL, 't' },
+	{ "trace-file",        required_argument, NULL, 'T'},
 	{ "verbose",           no_argument, NULL, 'v' },
 	{ "version",           no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
