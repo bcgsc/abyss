@@ -250,6 +250,79 @@ namespace BloomDBG {
 		}
 	};
 
+	enum ReadResult {
+		RR_UNINITIALIZED=0,
+		RR_SHORTER_THAN_K,
+		RR_NON_ACGT,
+		RR_BLUNT_END,
+		RR_NOT_SOLID,
+		RR_ALL_KMERS_VISITED,
+		RR_ALL_BRANCH_KMERS_VISITED,
+		RR_GENERATED_CONTIGS
+	};
+
+	static inline std::string readResultStr(const ReadResult& result)
+	{
+		switch(result) {
+		case RR_UNINITIALIZED:
+			return "NA";
+		case RR_SHORTER_THAN_K:
+			return "SHORTER_THAN_K";
+		case RR_NON_ACGT:
+			return "NON_ACGT";
+		case RR_BLUNT_END:
+			return "BLUNT_END";
+		case RR_NOT_SOLID:
+			return "NOT_SOLID";
+		case RR_ALL_KMERS_VISITED:
+			return "ALL_KMERS_VISITED";
+		case RR_ALL_BRANCH_KMERS_VISITED:
+			return "ALL_BRANCH_KMERS_VISITED";
+		case RR_GENERATED_CONTIGS:
+			return "GENERATED_CONTIGS";
+		default:
+			break;
+		}
+		assert(false);
+	}
+
+	/**
+	 * Records results of processing a sequencing read.
+	 * Each instance represents a row in the read log file generated
+	 * by the `--read-log` option of `abyss-bloom-dbg`.
+	 */
+	struct ReadRecord
+	{
+		/** FASTA ID for this read */
+		std::string readID;
+		/** outcome of processing the read */
+		ReadResult result;
+
+		ReadRecord() : readID(), result(RR_UNINITIALIZED) {}
+
+		ReadRecord(const std::string& readID)
+			: readID(readID), result(RR_UNINITIALIZED) {}
+
+		ReadRecord(const std::string& readID, ReadResult result)
+			: readID(readID), result(result) {}
+
+		static std::ostream& printHeaders(std::ostream& out)
+		{
+			out << "read_id" << '\t'
+				<< "result" << '\n';
+			return out;
+		}
+
+		friend std::ostream& operator <<(std::ostream& out,
+			const ReadRecord& o)
+		{
+			out << o.readID << '\t'
+				<< readResultStr(o.result) << '\n';
+
+			return out;
+		}
+	};
+
 	/** Print an intermediate progress message during assembly */
 	void printProgressMessage(AssemblyCounters counters)
 	{
@@ -786,7 +859,7 @@ namespace BloomDBG {
 	 */
 	template <typename SolidKmerSetT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
-	static inline void processRead(const FastaRecord& rec,
+	static inline ReadRecord processRead(const FastaRecord& rec,
 		const SolidKmerSetT& solidKmerSet, AssembledKmerSetT& assembledKmerSet,
 		KmerHash& contigEndKmers, KmerHash& visitedBranchKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
@@ -802,19 +875,19 @@ namespace BloomDBG {
 
 		/* we can't extend reads shorter than k */
 		if (seq.length() < k)
-			return;
+			return ReadRecord(rec.id, RR_SHORTER_THAN_K);
 
 		/* skip reads with non-ACGT chars */
 		if (!allACGT(seq))
-			return;
+			return ReadRecord(rec.id, RR_NON_ACGT);
 
 		/* don't extend reads that are tips */
 		if (hasBluntEnd(seq, dbg, params))
-			return;
+			return ReadRecord(rec.id, RR_BLUNT_END);
 
 		/* only extend "solid" reads */
 		if (!allKmersInBloom(seq, solidKmerSet))
-			return;
+			return ReadRecord(rec.id, RR_NOT_SOLID);
 
 #pragma omp atomic
 		counters.solidReads++;
@@ -823,7 +896,7 @@ namespace BloomDBG {
 		if (allKmersInBloom(seq, assembledKmerSet)) {
 #pragma omp atomic
 			counters.allKmersVisited++;
-			return;
+			return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
 		}
 
 		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
@@ -860,6 +933,7 @@ namespace BloomDBG {
 		if (branchKmers > 0 && numVisited == branchKmers) {
 #pragma omp atomic
 			counters.allBranchKmersVisited++;
+			return ReadRecord(rec.id, RR_ALL_BRANCH_KMERS_VISITED);
 		}
 
 		/*
@@ -874,6 +948,7 @@ namespace BloomDBG {
 				contigEndKmers, params, counters, streams);
 		}
 
+		return ReadRecord(rec.id, RR_GENERATED_CONTIGS);
 	}
 
 	/**
@@ -926,8 +1001,18 @@ namespace BloomDBG {
 			assert_good(traceOut, params.tracePath);
 		}
 
+		/* logs outcome of processing of each read (`--read-log`) */
+		std::ofstream readLogOut;
+		if (!params.readLogPath.empty()) {
+			readLogOut.open(params.readLogPath.c_str());
+			assert_good(readLogOut, params.readLogPath);
+			ReadRecord::printHeaders(readLogOut);
+			assert_good(readLogOut, params.readLogPath);
+		}
+
 		/* bundle output streams */
-		AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut);
+		AssemblyStreams<FastaConcat> streams(in, out, checkpointOut,
+			traceOut, readLogOut);
 
 		/* run the assembly */
 		assemble(solidKmerSet, assembledKmerSet, counters, params, streams);
@@ -1008,14 +1093,20 @@ namespace BloomDBG {
 				for (std::vector<FastaRecord>::iterator it = buffer.begin();
 					 it != buffer.end(); ++it)
 				{
-					processRead(*it, goodKmerSet, assembledKmerSet,
-						contigEndKmers, visitedBranchKmers,
-						params, counters, streams);
+					ReadRecord result =
+						processRead(*it, goodKmerSet, assembledKmerSet,
+							contigEndKmers, visitedBranchKmers,
+							params, counters, streams);
 
 #pragma omp atomic
 					counters.readsProcessed++;
 					if (params.verbose && counters.readsProcessed % PROGRESS_STEP == 0)
 						printProgressMessage(counters);
+
+					if (!params.readLogPath.empty()) {
+#pragma omp critical
+						streams.readLogOut << result;
+					}
 
 				}
 

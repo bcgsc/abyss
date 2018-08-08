@@ -15,11 +15,14 @@ namespace BloomDBG {
 		std::ostream& checkpointOut;
 		/** trace file output for debugging */
 		std::ostream& traceOut;
+		/** outcomes of processing each read */
+		std::ostream& readLogOut;
 
 		AssemblyStreams(InputStreamT& in, std::ostream& out,
-			std::ostream& checkpointOut, std::ostream& traceOut) :
+			std::ostream& checkpointOut, std::ostream& traceOut,
+			std::ostream& readLogOut) :
 			in(in), out(out), checkpointOut(checkpointOut),
-			traceOut(traceOut) {}
+			traceOut(traceOut), readLogOut(readLogOut) {}
 	};
 
 }

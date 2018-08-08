@@ -90,10 +90,11 @@ static const char USAGE_MESSAGE[] =
 "  -C, --cov-track=FILE       WIG track with 0/1 indicating k-mers with\n"
 "                             coverage above the -c threshold. A reference\n"
 "                             must also be specified with -R.\n"
-"  -T, --trace-file=FILE      write debugging info about extension of\n"
-"                             each read to FILE\n"
+"  --read-log=FILE            write outcome of processing each read to FILE\n"
 "  -R, --ref=FILE             specify a reference genome. FILE may be\n"
-"                             FASTA, FASTQ, SAM, or BAM and may be gzipped."
+"                             FASTA, FASTQ, SAM, or BAM and may be gzipped.\n"
+"  -T, --trace-file=FILE      write debugging info about generation of\n"
+"                             each read to FILE\n"
 "\n"
 "Experimental Options:\n"
 "\n"
@@ -123,7 +124,7 @@ static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:v";
 
 enum {
 	OPT_HELP = 1, OPT_VERSION, QR_SEED, MIN_KMER_COV,
-	CHECKPOINT, KEEP_CHECKPOINT, CHECKPOINT_PREFIX
+	CHECKPOINT, KEEP_CHECKPOINT, CHECKPOINT_PREFIX, READ_LOG,
 };
 
 static const struct option longopts[] = {
@@ -151,6 +152,7 @@ static const struct option longopts[] = {
 	{ "standard-quality",  no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality",  no_argument, &opt::qualityOffset, 64 },
 	{ "qr-seed",           required_argument, NULL, QR_SEED },
+	{ "read-log",	       required_argument, NULL, READ_LOG },
 	{ "ref",               required_argument, NULL, 'R' },
 	{ "spaced-seed",       no_argument, NULL, 's' },
 	{ "trim-length",       no_argument, NULL, 't' },
@@ -255,9 +257,18 @@ void resumeAssemblyFromCheckpoint(int argc, char** argv,
 		assert_good(traceOut, params.tracePath);
 	}
 
+	/* logs outcome of processing of each read (`--read-log`) */
+	std::ofstream readLogOut;
+	if (!params.readLogPath.empty()) {
+		readLogOut.open(params.readLogPath.c_str());
+		assert_good(readLogOut, params.readLogPath);
+		BloomDBG::ReadRecord::printHeaders(readLogOut);
+		assert_good(readLogOut, params.readLogPath);
+	}
+
 	/* bundle input/output streams for assembly */
 	BloomDBG::AssemblyStreams<FastaConcat>
-		streams(in, out, checkpointOut, traceOut);
+		streams(in, out, checkpointOut, traceOut, readLogOut);
 
 	/* restore state of Bloom filters, counters, and input/output streams */
 	BloomDBG::resumeFromCheckpoint(solidKmerSet, visitedKmerSet,
@@ -437,6 +448,9 @@ int main(int argc, char** argv)
 			break;
 		  case CHECKPOINT_PREFIX:
 			arg >> params.checkpointPathPrefix;
+			break;
+		  case READ_LOG:
+			arg >> params.readLogPath;
 			break;
 		}
 

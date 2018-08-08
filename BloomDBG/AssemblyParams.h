@@ -27,6 +27,9 @@ namespace BloomDBG {
 		/** minimum k-mer coverage threshold */
 		unsigned minCov;
 
+		/** path to output debugging info about processing of each read */
+		std::string readLogPath;
+
 		/** WIG track containing 0/1 for sufficient k-mer cov */
 		std::string covTrackPath;
 
