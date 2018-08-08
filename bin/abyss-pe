@@ -196,6 +196,9 @@ endif
 ifdef c
 abyssopt += -c$c
 endif
+ifdef kc
+abyssopt += --kc=$(kc)
+endif
 ifdef b
 abyssopt += -b$b
 pbopt += -b$b
@@ -216,9 +219,6 @@ abyssopt += -H$H
 endif
 ifdef j
 abyssopt += -j$j
-endif
-ifdef kc
-abyssopt += --kc=$(kc)
 endif
 ifdef x
 abyssopt += -s$x

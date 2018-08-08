@@ -54,6 +54,7 @@ static const char USAGE_MESSAGE[] =
 "  -t, --trim-length=N   maximum length of blunt contigs to trim [k]\n"
 "  -c, --coverage=FLOAT  remove contigs with mean k-mer coverage\n"
 "                        less than this threshold\n"
+"      --kc=N            remove all k-mers with multiplicity < N [0]\n"
 "  -b, --bubbles=N       pop bubbles shorter than N bp [3*k]\n"
 "  -b0, --no-bubbles     do not pop bubbles\n"
 "  -e, --erode=N         erode bases at the ends of blunt contigs with coverage\n"
@@ -107,6 +108,9 @@ int trimLen = -1;
 /** Coverage cutoff. */
 float coverage = -1;
 
+/** Minimum k-mer multiplicity cutoff. */
+unsigned kc = 0;
+
 /** Pop bubbles shorter than N bp. */
 int bubbleLen = -1;
 
@@ -147,7 +151,7 @@ string assemblyCmd;
 
 static const char shortopts[] = "b:c:e:E:g:k:K:mo:Q:q:s:t:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
+enum { OPT_HELP = 1, OPT_VERSION, COVERAGE_HIST, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES, OPT_KC };
 
 static const struct option longopts[] = {
 	{ "out",         required_argument, NULL, 'o' },
@@ -164,6 +168,7 @@ static const struct option longopts[] = {
 	{ "SS",          no_argument,       &opt::ss, 1 },
 	{ "no-SS",       no_argument,       &opt::ss, 0 },
 	{ "coverage",    required_argument, NULL, 'c' },
+	{ "kc",          required_argument, NULL, OPT_KC },
 	{ "coverage-hist", required_argument, NULL, COVERAGE_HIST },
 	{ "bubble-length", required_argument, NULL, 'b' },
 	{ "no-bubbles",  no_argument,       &opt::bubbleLen, 0 },
@@ -301,6 +306,9 @@ void parse(int argc, char* const* argv)
 				break;
 			case OPT_SPECIES:
 				arg >> opt::metaVars[2];
+				break;
+			case OPT_KC:
+				arg >> opt::kc;
 				break;
 		}
 		if (optarg != NULL && !arg.eof()) {

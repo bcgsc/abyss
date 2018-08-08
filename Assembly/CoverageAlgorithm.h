@@ -112,6 +112,22 @@ void setCoverageParameters(const Histogram& h)
 	}
 }
 
+/** Remove all k-mers with multiplicity lower than the given threshold */
+static inline
+size_t applyKmerCoverageThreshold(SequenceCollectionHash& c, unsigned kc)
+{
+	if (kc == 0)
+		return 0;
+
+	for (SequenceCollectionHash::iterator it = c.begin();
+		it != c.end(); ++it) {
+		if (it->second.getMultiplicity() < kc)
+			it->second.setFlag(SF_DELETE);
+	}
+
+	return c.cleanup();
+}
+
 } // namespace AssemblyAlgorithms
 
 #endif

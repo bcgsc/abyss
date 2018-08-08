@@ -73,6 +73,15 @@ static void assemble(const string& pathIn, const string& pathOut)
 	AssemblyAlgorithms::setCoverageParameters(
 			AssemblyAlgorithms::coverageHistogram(g));
 
+	if (opt::kc > 0) {
+		cout << "Minimum k-mer multiplicity kc is " << opt::kc << endl;
+		cout << "Removing low-multiplicity k-mers" << endl;
+		size_t removed = AssemblyAlgorithms::applyKmerCoverageThreshold(g, opt::kc);
+		cout << "Removed " <<  removed
+			<< " low-multiplicity k-mers, " << g.size()
+			<< " k-mers remaining" << std::endl;
+	}
+
 	cout << "Generating adjacency" << endl;
 	AssemblyAlgorithms::generateAdjacency(&g);
 

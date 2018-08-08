@@ -14,6 +14,7 @@ namespace opt {
 	extern unsigned erodeStrand;
 	extern unsigned trimLen;
 	extern float coverage;
+	extern unsigned kc;
 	extern unsigned bubbleLen;
 	extern unsigned ss;
 	extern bool maskCov;

@@ -98,12 +98,33 @@ void NetworkSequenceCollection::run()
 					= AssemblyAlgorithms::coverageHistogram(m_data);
 				Histogram h(m_comm.reduce(myh.toVector()));
 				AssemblyAlgorithms::setCoverageParameters(h);
+
+				/*
+				 * If we have loaded the k-mer hash table from disk, then
+				 * the adjacency data for each k-mer has already been computed
+				 * in the hash table.
+				 *
+				 * `applyKmerCoverageThreshold` would not work correctly
+				 * in this case because it removes k-mer records from
+				 * the hash table without attempting to update the adjacency
+				 * info of neighbouring k-mers.
+				 */
+				if (!m_data.isAdjacencyLoaded() && opt::kc > 0) {
+					m_comm.barrier();
+					size_t removed = AssemblyAlgorithms::applyKmerCoverageThreshold(m_data, opt::kc);
+					logger(1) << "Removed " << removed
+						<< " low multiplicity k-mers" << std::endl;
+					m_comm.reduce(removed);
+					m_comm.reduce(m_data.size());
+				}
+
 				EndState();
 				SetState(NAS_WAITING);
 				break;
 			}
 			case NAS_GEN_ADJ:
 				m_comm.barrier();
+
 				m_numBasesAdjSet = 0;
 				AssemblyAlgorithms::generateAdjacency(this);
 				EndState();
@@ -474,8 +495,33 @@ void NetworkSequenceCollection::runControl()
 					= AssemblyAlgorithms::coverageHistogram(m_data);
 				Histogram h(m_comm.reduce(myh.toVector()));
 				AssemblyAlgorithms::setCoverageParameters(h);
-				EndState();
 
+				/*
+				 * If we have loaded the k-mer hash table from disk, then
+				 * the adjacency data for each k-mer has already been computed
+				 * in the hash table.
+				 *
+				 * `applyKmerCoverageThreshold` would not work correctly
+				 * in this case because it removes k-mer records from
+				 * the hash table without attempting to update the adjacency
+				 * info of neighbouring k-mers.
+				 */
+				if (!m_data.isAdjacencyLoaded() && opt::kc > 0) {
+					cout << "Minimum k-mer multiplicity kc is "
+						<< opt::kc << '\n';
+					cout << "Removing low multiplicity k-mers..." << std::endl;
+					m_comm.barrier();
+					size_t removed = AssemblyAlgorithms::applyKmerCoverageThreshold(m_data, opt::kc);
+					logger(1) << "Removed " << removed
+						<< " low multiplicity k-mers" << std::endl;
+					size_t sumRemoved = m_comm.reduce(removed);
+					size_t remaining = m_comm.reduce(m_data.size());
+					cout << "Removed " << sumRemoved
+						<< " low-multiplicity k-mers, " << remaining
+						<< " k-mers remaining" << std::endl;
+				}
+
+				EndState();
 				SetState(m_data.isAdjacencyLoaded()
 						? NAS_ERODE : NAS_GEN_ADJ);
 				break;
