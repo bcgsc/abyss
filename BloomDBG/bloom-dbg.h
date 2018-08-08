@@ -589,6 +589,7 @@ namespace BloomDBG {
 		RollingHash hash2(kmer2.c_str(), params.numHashes, params.k);
 		Vertex v2(kmer2.c_str(), hash2);
 
+		bool redundant = false;
 #pragma omp critical(redundancyCheck)
 		{
 			/*
@@ -602,17 +603,17 @@ namespace BloomDBG {
 
 				if (contigEndKmers.find(v1) != contigEndKmers.end()
 					&& contigEndKmers.find(v2) != contigEndKmers.end()) {
-					rec.redundant = true;
+					redundant = true;
 				} else {
 					contigEndKmers.insert(v1);
 					contigEndKmers.insert(v2);
 				}
 
 			} else if (allKmersInBloom(seq, assembledKmerSet)) {
-				rec.redundant = true;
+				redundant = true;
 			}
 
-			if (!rec.redundant) {
+			if (!redundant) {
 
 				/* trim previously assembled k-mers from both ends */
 				trimContigOverlaps(seq, assembledKmerSet);
@@ -622,8 +623,9 @@ namespace BloomDBG {
 
 			}
 		}
+		rec.redundant = redundant;
 
-		if (!rec.redundant)
+		if (!redundant)
 		{
 #pragma omp critical(fasta)
 			{
@@ -760,12 +762,6 @@ namespace BloomDBG {
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
 
-		ContigRecord contigRec;
-		contigRec.readID = rec.id;
-		contigRec.seedType = ST_BRANCH_KMER;
-		contigRec.extendedLeft = false;
-		contigRec.extendedRight = false;
-
 		/* extend left neighbours to generate contigs */
 
 		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
@@ -774,11 +770,16 @@ namespace BloomDBG {
 			path.push_back(*it);
 			path.push_back(branchKmer);
 
+			ContigRecord contigRec;
+			contigRec.readID = rec.id;
 			contigRec.seed = pathToSeq(path, params.k);
+			contigRec.seedType = ST_BRANCH_KMER;
 			contigRec.extendedLeft = true;
+			contigRec.extendedRight = false;
 			contigRec.leftExtensionResult =
 				extendPath(path, REVERSE, dbg, extendParams);
 			contigRec.leftExtension = path.size() - 2;
+			contigRec.redundant = false;
 
 			processContig(path, contigRec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
@@ -793,11 +794,16 @@ namespace BloomDBG {
 			path.push_back(branchKmer);
 			path.push_back(*it);
 
+			ContigRecord contigRec;
+			contigRec.readID = rec.id;
 			contigRec.seed = pathToSeq(path, params.k);
+			contigRec.seedType = ST_BRANCH_KMER;
+			contigRec.extendedLeft = false;
 			contigRec.extendedRight = true;
 			contigRec.rightExtensionResult =
 				extendPath(path, FORWARD, dbg, extendParams);
 			contigRec.rightExtension = path.size() - 2;
+			contigRec.redundant = false;
 
 			processContig(path, contigRec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
