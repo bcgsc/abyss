@@ -145,7 +145,7 @@ static inline bool lookAhead(
 	InEdgeIter iei, iei_end;
 
 	visited.insert(u);
-	if (depth == depthLimit)
+	if (depth >= depthLimit)
 		return true;
 
 	if (dir == FORWARD) {
