@@ -705,7 +705,7 @@ namespace BloomDBG {
 		unsigned outDegree2 = trueDegree(contigPath.back(),
 			FORWARD, dbg, params.trim);
 
-		if (inDegree1 > 1 && outDegree1 > 1) {
+		if (inDegree1 != 1 && outDegree1 > 1) {
 			Path<Vertex> path1;
 			path1.push_back(contigPath.front());
 			outputContig(path1, rec, assembledKmerSet,
@@ -716,7 +716,7 @@ namespace BloomDBG {
 			contigPath.pop_front();
 		}
 
-		if (inDegree2 > 1 && outDegree2 > 1) {
+		if (inDegree2 > 1 && outDegree2 != 1) {
 			Path<Vertex> path2;
 			path2.push_back(contigPath.back());
 			outputContig(path2, rec, assembledKmerSet,
