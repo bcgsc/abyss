@@ -255,25 +255,7 @@ static inline unsigned trueDegree(
 	const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	Direction dir, const Graph& g, unsigned trimLen=0)
 {
-	typedef boost::graph_traits<Graph> graph_traits;
-	typedef typename graph_traits::vertex_descriptor V;
-
-	unsigned degree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
-	if (degree <= 1)
-		return degree;
-
-	std::vector<V> branches = trueBranches(u, dir, g, trimLen);
-	/*
-	 * Note: If branches.size() == 0, we know from above that
-	 * we must have 2 or more short branches. This situation typically occurs
-	 * near coverage gaps, where one of the branches is the correct choice.
-	 * (During path extension, our heuristic is to choose the longest branch
-	 * and to continue extending.)
-	 */
-	if (branches.size() == 0)
-		return 1;
-
-	return branches.size();
+	return trueBranches(u, dir, g, trimLen).size();
 }
 
 /**
