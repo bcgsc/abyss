@@ -690,6 +690,7 @@ namespace BloomDBG {
 		if (contigPath.size() == 1) {
 			outputContig(contigPath, rec, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
+			return;
 		}
 
 		assert(contigPath.size() >= 2);
