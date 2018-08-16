@@ -622,10 +622,12 @@ void kRun(const ConnectPairsParams& params,
 				if (gapsclosed % 100 == 0)
 					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
 
-				gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
+				if (!opt::gapfilePath.empty()) {
+					gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
 						  << "_" << read2_it->second.gapStart() << "-" << read2_it->second.gapEnd()
 						  << " LN:i:" << tempSeq.length() << endl;
-				gapStream << tempSeq << endl;
+					gapStream << tempSeq << endl;
+				}
 			}
 		}
 		if (success) {
