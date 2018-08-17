@@ -919,12 +919,13 @@ namespace BloomDBG {
 				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
 
 				++branchKmers;
-				it->canonicalize();
+				Vertex canonicalKmer = it->clone();
+				canonicalKmer.canonicalize();
 
 				bool visited = true;
 #pragma omp critical(visitedBranchKmers)
-				if (visitedBranchKmers.find(*it) == visitedBranchKmers.end()) {
-					visitedBranchKmers.insert(*it);
+				if (visitedBranchKmers.find(canonicalKmer) == visitedBranchKmers.end()) {
+					visitedBranchKmers.insert(canonicalKmer);
 					visited = false;
 				}
 				if (visited) {
