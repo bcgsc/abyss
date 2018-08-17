@@ -110,8 +110,8 @@ static const char USAGE_MESSAGE[] =
 "  -s, --search-mem=N           mem limit for graph searches; multiply by the\n"
 "                               number of threads (-j) to get the total mem used\n"
 "                               for graph traversal [500M]\n"
-"  -t, --trace-file=FILE        write graph search stats to FILE\n"
 "  -g, --gap-file=FILE          write sealed gaps to FILE\n"
+"  -t, --trace-file=FILE        write graph search stats to FILE\n"
 "  -v, --verbose                display verbose output\n"
 "      --help                   display this help and exit\n"
 "      --version                output version information and exit\n"
@@ -240,7 +240,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:b:B:d:ef:F:G:i:Ij:k:lm:M:no:P:q:r:s:t:g:v";
+static const char shortopts[] = "S:L:b:B:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -625,8 +625,8 @@ void kRun(const ConnectPairsParams& params,
 				if (!opt::gapfilePath.empty()) {
 					gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
 						  << "_" << read2_it->second.gapStart() << "-" << read2_it->second.gapEnd()
-						  << " LN:i:" << tempSeq.length() << endl;
-					gapStream << tempSeq << endl;
+						  << " LN:i:" << tempSeq.length() << '\n';
+					gapStream << tempSeq << '\n';
 				}
 			}
 		}
@@ -891,9 +891,6 @@ int main(int argc, char** argv)
 
 	ofstream gapStream;
 	if (!opt::gapfilePath.empty()) {
-		if (opt::verbose)
-			cerr << "Writing sealed gaps to '"
-				<< opt::gapfilePath << "'\n";
 		gapStream.open(opt::gapfilePath.c_str());
 		assert(gapStream.is_open());
 		assert_good(gapStream, opt::gapfilePath);
