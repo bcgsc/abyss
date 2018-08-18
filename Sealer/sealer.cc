@@ -885,10 +885,10 @@ void send_string(const string& str, int target_pid) {
 }
 
 void send_closedgap(const ClosedGap& gap, int target_pid) {
-	MPI_Send(&gap.left.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
-	MPI_Send(&gap.left.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
-	MPI_Send(&gap.right.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
-	MPI_Send(&gap.right.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send((void*)&gap.left.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send((void*)&gap.left.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send((void*)&gap.right.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send((void*)&gap.right.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
 	send_string(gap.seq, target_pid);
 }
 
