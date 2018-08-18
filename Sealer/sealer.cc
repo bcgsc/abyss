@@ -881,7 +881,7 @@ void send_string(const string& str, int target_pid) {
 	int chars_len = str.length() + 1; // +1 for NULL terminator
 	MPI_Send(&chars_len, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
 	const char *chars = str.c_str();
-	MPI_Send(chars, chars_len, MPI_CHAR, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send((void*)chars, chars_len, MPI_CHAR, target_pid, 0, MPI_COMM_WORLD);
 }
 
 void send_closedgap(const ClosedGap& gap, int target_pid) {
@@ -902,7 +902,7 @@ void receive_closedgap(ClosedGap& gap, int target_pid) {
 }
 
 // Gathers closed gaps from all processes at the root process and returns the number of gaps gathered
-int gather_gaps(map<string, map<int, ClosedGap>>& allmerged) {
+int gather_gaps(map<string, map<int, ClosedGap> >& allmerged) {
 	int gatheredgaps = 0, idcount, gapcount, startposition;
 
 	if (world_pid == 0) {
@@ -928,7 +928,7 @@ int gather_gaps(map<string, map<int, ClosedGap>>& allmerged) {
 		idcount = allmerged.size();
 		MPI_Send(&idcount, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
 
-		map<string, map<int, ClosedGap>>::iterator it1;
+		map<string, map<int, ClosedGap> >::iterator it1;
 		map<int, ClosedGap>::iterator it2;
 		for (it1 = allmerged.begin(); it1 != allmerged.end(); it1++) {
 			send_string(it1->first, 0);
@@ -1110,7 +1110,7 @@ int main(int argc, char** argv)
 	ofstream dotStream;
 	string dotPathNew;
 	if (!opt::dotPath.empty()) {
-		dotPathNew = (world_pid == 0 ? (opt::dotPath) : (opt::dotPath + "_" + to_string(world_pid)));
+		dotPathNew = (world_pid == 0 ? (opt::dotPath) : (opt::dotPath + "_" + IntToString(world_pid)));
 		if (opt::verbose)
 			if (world_pid == 0) cerr << "Writing graph traversals to "
 				"dot file `" << opt::dotPath << "'\n";
@@ -1121,7 +1121,7 @@ int main(int argc, char** argv)
 	ofstream traceStream;
 	string tracefilePathNew;
 	if (!opt::tracefilePath.empty()) {
-		tracefilePathNew = (world_pid == 0 ? (opt::tracefilePath) : (opt::tracefilePath + "_" + to_string(world_pid)));
+		tracefilePathNew = (world_pid == 0 ? (opt::tracefilePath) : (opt::tracefilePath + "_" + IntToString(world_pid)));
 		if (opt::verbose)
 			if (world_pid) cerr << "Writing graph search stats to `"
 				<< opt::tracefilePath << "'\n";
@@ -1134,7 +1134,7 @@ int main(int argc, char** argv)
 	ofstream gapStream;
 	string gapfilePathNew;
 	if (!opt::gapfilePath.empty()) {
-		gapfilePathNew = (world_pid == 0 ? (opt::gapfilePath) : (opt::gapfilePath + "_" + to_string(world_pid)));
+		gapfilePathNew = (world_pid == 0 ? (opt::gapfilePath) : (opt::gapfilePath + "_" + IntToString(world_pid)));
 		gapStream.open(gapfilePathNew.c_str());
 		assert(gapStream.is_open());
 		assert_good(gapStream, gapfilePathNew);
@@ -1142,7 +1142,7 @@ int main(int argc, char** argv)
 
 	string logOutputPath(opt::outputPrefix);
 	logOutputPath.append("_log.txt");
-	string logOutputPathNew = (world_pid == 0 ? (logOutputPath) : (logOutputPath + "_" + to_string(world_pid)));
+	string logOutputPathNew = (world_pid == 0 ? (logOutputPath) : (logOutputPath + "_" + IntToString(world_pid)));
 	ofstream logStream(logOutputPathNew.c_str());
 	assert_good(logStream, logOutputPathNew);
 
@@ -1341,7 +1341,7 @@ int main(int argc, char** argv)
 
 			if (world_pid > 0) {
 				ifstream dotStreamCurrent(dotPathNew.c_str());
-				ofstream dotStream0(opt::dotPath, ofstream::out | ofstream::app);
+				ofstream dotStream0(opt::dotPath.c_str(), ios_base::app);
 				dotStream0 << dotStreamCurrent.rdbuf();
 				dotStreamCurrent.close();
  				std::remove(dotPathNew.c_str());
@@ -1354,7 +1354,7 @@ int main(int argc, char** argv)
 
 			if (world_pid > 0) {
 				ifstream traceStreamCurrent(tracefilePathNew.c_str());
-				ofstream traceStream0(opt::tracefilePath, ofstream::out | ofstream::app);
+				ofstream traceStream0(opt::tracefilePath.c_str(), ios_base::app);
 				traceStream0 << traceStreamCurrent.rdbuf();
 				traceStreamCurrent.close();
 				std::remove(tracefilePathNew.c_str());
@@ -1366,8 +1366,8 @@ int main(int argc, char** argv)
 			gapStream.close();
 
 			if (world_pid > 0) {
-				ifstream gapStreamCurrent(gapfilePathNew);
-				ofstream gapStream0(opt::gapfilePath, ofstream::out | ofstream::app);
+				ifstream gapStreamCurrent(gapfilePathNew.c_str());
+				ofstream gapStream0(opt::gapfilePath.c_str(), ios_base::app);
 				gapStream0 << gapStreamCurrent.rdbuf();
 				gapStreamCurrent.close();
 				std::remove(gapfilePathNew.c_str());
@@ -1378,8 +1378,8 @@ int main(int argc, char** argv)
 		logStream.close();
 
 		if (world_pid > 0) {
-			ifstream logStreamCurrent(logOutputPathNew);
-			ofstream logStream0(logOutputPath, ofstream::out | ofstream::app);
+			ifstream logStreamCurrent(logOutputPathNew.c_str());
+			ofstream logStream0(logOutputPath.c_str(), ios_base::app);
 			logStream0 << logStreamCurrent.rdbuf();
 			logStreamCurrent.close();
 			std::remove(logOutputPathNew.c_str());
