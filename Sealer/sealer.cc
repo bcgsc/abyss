@@ -31,6 +31,39 @@
 #include <sstream>
 #include <map>
 
+#include <mpi.h>
+static int world_pid;
+static int world_psize;
+
+// Group of processes that run the same k value
+static MPI_Comm kgroup_comm;
+static int kgroup_pid;
+static int kgroup_psize;
+static int kindex; // Index of the k value in kvector
+static int kcount; // Total number of kvector indices
+
+// Group of processes that print the results for a particular k value
+static MPI_Comm kmasters_comm;
+static int kmasters_pid;
+static int kmasters_psize;
+static bool kmaster; // Bool whether the process is a kmaster
+
+// Group of all processes that run a k value (might not include all from MPI_COMM_WORLD)
+static MPI_Comm kworkers_comm;
+static int kworkers_pid;
+static int kworkers_psize;
+
+// Execute given code, one process by one, from the given communicator
+#define ONE_BY_ONE(code, comm) { \
+	if ((comm) != MPI_COMM_NULL) { \
+		int one_by_one_pid; MPI_Comm_rank(comm, &one_by_one_pid); \
+		int one_by_one_size; MPI_Comm_size(comm, &one_by_one_size); \
+		for (int one_by_one_id = 0; one_by_one_id < one_by_one_size; one_by_one_id++) { \
+			if (one_by_one_id == one_by_one_pid ) { code } \
+			MPI_Barrier(comm); \
+		} \
+	} \
+}
 
 #if _OPENMP
 # include <omp.h>
@@ -583,7 +616,6 @@ void kRun(const ConnectPairsParams& params,
 	map<FastaRecord, map<FastaRecord, Gap> >::iterator read1_it;
 	map<FastaRecord, Gap>::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
-	bool success;
 
 	Counters g_count;
 	g_count.noStartOrGoalKmer = 0;
@@ -601,69 +633,147 @@ void kRun(const ConnectPairsParams& params,
 	g_count.readPairsMerged = 0;
 	g_count.skipped = 0;
 
-	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
-
-	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
-		success = false;
-		FastaRecord read1 = read1_it->first;
-		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
-			FastaRecord read2 = read2_it->first;
-
-			int startposition = read2_it->second.gapStart();
-			string tempSeq = merge(g, k, read2_it->second, read1, read2, params, g_count, traceStream);
-			if (!tempSeq.empty()) {
-				success = true;
-				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
-					= ClosedGap(read2_it->second, tempSeq);
-//#pragma omp atomic
-				gapsclosed++;
-//#pragma omp atomic
-				uniqueGapsClosed++;
-				if (gapsclosed % 100 == 0)
-					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
-
-				if (!opt::gapfilePath.empty()) {
-					gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
-						  << "_" << read2_it->second.gapStart() << "-" << read2_it->second.gapEnd()
-						  << " LN:i:" << tempSeq.length() << '\n';
-					gapStream << tempSeq << '\n';
-				}
-			}
-		}
-		if (success) {
-			flanks.erase(read1_it++);
-		}
-		else
-			read1_it++;
+	if (kmaster) {
+		ONE_BY_ONE({
+			printLog(logStream, "Starting K run with k = " + IntToString(opt::k) + "\n");
+			printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
+			cout.flush();
+			cerr.flush();
+		}, kmasters_comm)
 	}
 
-	printLog(logStream, IntToString(uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
+	std::vector<int> gap_ids_vector;
+	int id = 0;
+	for (read1_it = flanks.begin(); read1_it != flanks.end(); read1_it++) {
+		FastaRecord read1 = read1_it->first;
+		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
+			if (id % kgroup_psize == kgroup_pid) {
+				FastaRecord read2 = read2_it->first;
 
-	printLog(logStream, "No start/goal kmer: "
-		+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
-	printLog(logStream, "No path: "
-		+ sizetToString(g_count.noPath) + "\n");
-	printLog(logStream, "Unique path: "
-		+ sizetToString(g_count.uniquePath) + "\n");
-	printLog(logStream, "Multiple paths: "
-		+ sizetToString(g_count.multiplePaths) + "\n");
-	printLog(logStream, "Too many paths: "
-		+ sizetToString(g_count.tooManyPaths) + "\n");
-	printLog(logStream, "Too many branches: "
-		+ sizetToString(g_count.tooManyBranches) + "\n");
-	printLog(logStream, "Too many path/path mismatches: "
-		+ sizetToString(g_count.tooManyMismatches) + "\n");
-	printLog(logStream, "Too many path/read mismatches: "
-		+ sizetToString(g_count.tooManyReadMismatches) + "\n");
-	printLog(logStream, "Contains cycle: "
-		+ sizetToString(g_count.containsCycle) + "\n");
-	printLog(logStream, "Exceeded mem limit: "
-		+ sizetToString(g_count.exceededMemLimit) + "\n");
-	printLog(logStream, "Skipped: "
-		+ sizetToString(g_count.skipped) + "\n");
+				int startposition = read2_it->second.gapStart();
+				string tempSeq = merge(g, k, read2_it->second, read1, read2, params, g_count, traceStream);
+				if (!tempSeq.empty()) {
+					allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
+						= ClosedGap(read2_it->second, tempSeq);
+					gap_ids_vector.push_back(id);
+					gapsclosed++;
+					uniqueGapsClosed++;
 
-	printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
+					if (!opt::gapfilePath.empty()) {
+						gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
+							  << "_" << read2_it->second.gapStart() << "-" << read2_it->second.gapEnd()
+							  << " LN:i:" << tempSeq.length() << '\n';
+						gapStream << tempSeq << '\n';
+					}
+				}
+			}
+			id++;
+		}
+	}
 
+	/*
+		The following code shares between processes which gaps were closed,
+		deletes appropriate flanks for each, and removes gaps that should
+		not have been closed by later values of k, if they have been
+		closed by the earlier ones.
+	*/
+
+	int this_ids = gap_ids_vector.size();
+	int max_ids;
+	MPI_Allreduce(&this_ids, &max_ids, 1, MPI_INT, MPI_MAX, kworkers_comm);
+
+	if (max_ids > 0) {
+		int *gap_ids = new int[max_ids];
+		for (int i = 0; i < (int)max_ids; i++) {
+			if (i < (int)gap_ids_vector.size()) {
+				gap_ids[i] = gap_ids_vector[i];
+			} else {
+				gap_ids[i] = -1;
+			}
+		}
+
+		int *gap_ids_all = new int[kworkers_psize * max_ids];
+		MPI_Allgather(gap_ids, max_ids, MPI_INT, gap_ids_all, max_ids, MPI_INT, kworkers_comm);
+
+		id = 0;
+		for (read1_it = flanks.begin(); read1_it != flanks.end();) {
+			FastaRecord read1 = read1_it->first;
+			bool flanks_erase = false;
+			for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
+				int startposition = read2_it->second.gapStart();
+				for (int pid = 0; pid < kworkers_psize; pid++) {
+					for (int i = 0; i < max_ids; i++) {
+						if (gap_ids_all[pid * max_ids + i] == id) {
+							flanks_erase = true;
+							if ((id % kgroup_psize == kgroup_pid) &&
+								((pid % kcount) < (kworkers_pid % kcount)) &&
+								(allmerged[read1.id.substr(0,read1.id.length()-2)].count(startposition) > 0))
+							{
+								allmerged[read1.id.substr(0,read1.id.length()-2)].erase(startposition);
+								gapsclosed--;
+								uniqueGapsClosed--;
+							}
+						}
+					}
+				}
+				id++;
+			}
+			if (flanks_erase)
+				flanks.erase(read1_it++);
+			else
+				read1_it++;
+		}
+
+		delete[] gap_ids;
+		delete[] gap_ids_all;
+	}
+
+	unsigned kgroup_uniqueGapsClosed = 0;
+	unsigned total_gapsclosed = 0;
+	MPI_Reduce(&uniqueGapsClosed, &kgroup_uniqueGapsClosed, 1, MPI_INT, MPI_SUM, 0, kgroup_comm);
+	MPI_Reduce(&gapsclosed, &total_gapsclosed, 1, MPI_INT, MPI_SUM, 0, kgroup_comm);
+	if (kmaster)
+		MPI_Reduce(kmasters_pid == kmasters_psize - 1 ? MPI_IN_PLACE : &total_gapsclosed,
+			&total_gapsclosed, 1, MPI_INT, MPI_SUM, kmasters_psize - 1, kmasters_comm);
+
+	if (kmaster) {
+		ONE_BY_ONE({
+			printLog(logStream, IntToString(kgroup_uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
+
+			printLog(logStream, "No start/goal kmer: "
+				+ sizetToString(g_count.noStartOrGoalKmer) + "\n");
+			printLog(logStream, "No path: "
+				+ sizetToString(g_count.noPath) + "\n");
+			printLog(logStream, "Unique path: "
+				+ sizetToString(g_count.uniquePath) + "\n");
+			printLog(logStream, "Multiple paths: "
+				+ sizetToString(g_count.multiplePaths) + "\n");
+			printLog(logStream, "Too many paths: "
+				+ sizetToString(g_count.tooManyPaths) + "\n");
+			printLog(logStream, "Too many branches: "
+				+ sizetToString(g_count.tooManyBranches) + "\n");
+			printLog(logStream, "Too many path/path mismatches: "
+				+ sizetToString(g_count.tooManyMismatches) + "\n");
+			printLog(logStream, "Too many path/read mismatches: "
+				+ sizetToString(g_count.tooManyReadMismatches) + "\n");
+			printLog(logStream, "Contains cycle: "
+				+ sizetToString(g_count.containsCycle) + "\n");
+			printLog(logStream, "Exceeded mem limit: "
+				+ sizetToString(g_count.exceededMemLimit) + "\n");
+			printLog(logStream, "Skipped: "
+				+ sizetToString(g_count.skipped) + "\n");
+
+			printLog(logStream, IntToString(flanks.size()) + " flanks left\n");
+
+			if (kmasters_pid == kmasters_psize - 1)
+				printLog(logStream, "k" + IntToString(opt::k) + " run complete\n"
+					+ "Total gaps closed so far = " + IntToString(total_gapsclosed) + "\n\n");
+			else
+				printLog(logStream, "\n\n");
+			cout.flush();
+			cerr.flush();
+		}, kmasters_comm)
+	}
 }
 
 bool operator<(const FastaRecord& a, const FastaRecord& b)
@@ -690,7 +800,7 @@ void findFlanks(FastaRecord &record,
 
 		size_t endposition = seq.string::find_first_not_of("Nn", startposition);
 		if (endposition == string::npos) {
-			std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
+			if (world_pid) std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
 			break;
 		}
 
@@ -713,11 +823,139 @@ void findFlanks(FastaRecord &record,
 	}
 }
 
+/*
+	Creates MPI communicators for the following iteration,
+	based on how far the runs have gone.
+
+	Returns whether all processes are done
+*/
+bool setup_groups(int iteration, int kvector_size) {
+	MPI_Barrier(MPI_COMM_WORLD);
+
+	kcount = kvector_size;
+	if (iteration * world_psize >= kcount) {
+		return true;
+	}
+
+	if (iteration > 0) {
+		if (kgroup_comm != MPI_COMM_NULL) MPI_Comm_free(&kgroup_comm);
+		if (kworkers_comm != MPI_COMM_NULL) MPI_Comm_free(&kworkers_comm);
+		if (kmasters_comm != MPI_COMM_NULL) MPI_Comm_free(&kmasters_comm);
+	}
+
+	kindex = iteration * world_psize + world_pid % kcount;
+	if (kindex >= kcount) {
+		kindex = -1;
+	}
+
+	MPI_Comm_split(MPI_COMM_WORLD, kindex >= 0 ? kindex : MPI_UNDEFINED, world_pid, &kgroup_comm);
+	MPI_Comm_split(MPI_COMM_WORLD, kindex >= 0 ? 0 : MPI_UNDEFINED, world_pid, &kworkers_comm);
+	if (kindex >= 0) {
+		MPI_Comm_rank(kgroup_comm, &kgroup_pid);
+		MPI_Comm_size(kgroup_comm, &kgroup_psize);
+		MPI_Comm_rank(kworkers_comm, &kworkers_pid);
+		MPI_Comm_size(kworkers_comm, &kworkers_psize);
+	}
+
+	kmaster = world_pid < kcount && kindex >= 0;
+	MPI_Comm_split(MPI_COMM_WORLD, kmaster ? 0 : MPI_UNDEFINED, world_pid, &kmasters_comm);
+	if (kmaster) {
+		MPI_Comm_rank(kmasters_comm, &kmasters_pid);
+		MPI_Comm_size(kmasters_comm, &kmasters_psize);
+	}
+
+	return false;
+}
+
+void receive_string(string& str, int target_pid) {
+	MPI_Status status;
+	int chars_len;
+	MPI_Recv(&chars_len, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD, &status);
+	char *chars = new char[chars_len];
+	MPI_Recv(chars, chars_len, MPI_CHAR, target_pid, 0, MPI_COMM_WORLD, &status);
+	str = string(chars);
+	delete[] chars;
+}
+
+void send_string(const string& str, int target_pid) {
+	int chars_len = str.length() + 1; // +1 for NULL terminator
+	MPI_Send(&chars_len, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	const char *chars = str.c_str();
+	MPI_Send(chars, chars_len, MPI_CHAR, target_pid, 0, MPI_COMM_WORLD);
+}
+
+void send_closedgap(const ClosedGap& gap, int target_pid) {
+	MPI_Send(&gap.left.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send(&gap.left.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send(&gap.right.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	MPI_Send(&gap.right.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD);
+	send_string(gap.seq, target_pid);
+}
+
+void receive_closedgap(ClosedGap& gap, int target_pid) {
+	MPI_Status status;
+	MPI_Recv(&gap.left.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD, &status);
+	MPI_Recv(&gap.left.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD, &status);
+	MPI_Recv(&gap.right.start, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD, &status);
+	MPI_Recv(&gap.right.end, 1, MPI_INT, target_pid, 0, MPI_COMM_WORLD, &status);
+	receive_string(gap.seq, target_pid);
+}
+
+// Gathers closed gaps from all processes at the root process and returns the number of gaps gathered
+int gather_gaps(map<string, map<int, ClosedGap>>& allmerged) {
+	int gatheredgaps = 0, idcount, gapcount, startposition;
+
+	if (world_pid == 0) {
+		string id;
+		ClosedGap gap;
+		MPI_Status status;
+		for (int pid = 1; pid < world_psize; pid++) {
+			MPI_Recv(&idcount, 1, MPI_INT, pid, 0, MPI_COMM_WORLD, &status);
+
+			for (int i = 0; i < idcount; i++) {
+				receive_string(id, pid);
+
+				MPI_Recv(&gapcount, 1, MPI_INT, pid, 0, MPI_COMM_WORLD, &status);
+				for (int j = 0; j < gapcount; j++) {
+					MPI_Recv(&startposition, 1, MPI_INT, pid, 0, MPI_COMM_WORLD, &status);
+					receive_closedgap(gap, pid);
+					allmerged[id][startposition] = gap;
+					gatheredgaps++;
+				}
+			}
+		}
+	} else {
+		idcount = allmerged.size();
+		MPI_Send(&idcount, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+		map<string, map<int, ClosedGap>>::iterator it1;
+		map<int, ClosedGap>::iterator it2;
+		for (it1 = allmerged.begin(); it1 != allmerged.end(); it1++) {
+			send_string(it1->first, 0);
+
+			gapcount = it1->second.size();
+			MPI_Send(&gapcount, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+			for (it2 = it1->second.begin(); it2 != it1->second.end(); it2++) {
+				startposition = it2->first;
+				MPI_Send(&startposition, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+				send_closedgap(it2->second, 0);
+				gatheredgaps++;
+			}
+		}
+	}
+
+	return gatheredgaps;
+}
+
 /**
  * Connect pairs using a Bloom filter de Bruijn graph
  */
 int main(int argc, char** argv)
 {
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &world_pid);
+	MPI_Comm_size(MPI_COMM_WORLD, &world_psize);
+
 	bool die = false;
 
 	for (int c; (c = getopt_long(argc, argv,
@@ -811,19 +1049,19 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::inputScaffold.empty()) {
-		cerr << PROGRAM ": missing mandatory option `-S'\n";
+		if (world_pid == 0) cerr << PROGRAM ": missing mandatory option `-S'\n";
 		die = true;
 	}
 
 	if (opt::k == 0) {
-		cerr << PROGRAM ": missing mandatory option `-k'\n";
+		if (world_pid == 0) cerr << PROGRAM ": missing mandatory option `-k'\n";
 		die = true;
 	}
 
 	if (opt::bloomFilterPaths.size() < opt::kvector.size()
 		&& opt::bloomSize == 0)
 	{
-		cerr << PROGRAM ": missing mandatory option `-b' (Bloom filter size)\n"
+		if (world_pid == 0) cerr << PROGRAM ": missing mandatory option `-b' (Bloom filter size)\n"
 			<< "Here are some guidelines for sizing the Bloom filter:\n"
 			<< "  * E. coli (~5 Mbp genome), 615X coverage: -b500M\n"
 			<< "  * S. cerevisiae (~12 Mbp genome), 25X coverage: -b500M\n"
@@ -833,27 +1071,27 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::outputPrefix.empty()) {
-		cerr << PROGRAM ": missing mandatory option `-o'\n";
+		if (world_pid == 0) cerr << PROGRAM ": missing mandatory option `-o'\n";
 		die = true;
 	}
 
 	if (opt::bloomFilterPaths.size() > opt::kvector.size()) {
-		cerr << PROGRAM ": you must specify a k-mer size (-k) for each Bloom "
+		if (world_pid == 0) cerr << PROGRAM ": you must specify a k-mer size (-k) for each Bloom "
 			" filter file (-i)\n";
 		die = true;
 	} else if (opt::bloomFilterPaths.size() < opt::kvector.size()
 		&& argc - optind < 1) {
-		cerr << PROGRAM ": missing input file arguments\n";
+		if (world_pid == 0) cerr << PROGRAM ": missing input file arguments\n";
 		die = true;
 	} else if (opt::bloomFilterPaths.size() == opt::kvector.size()
 		&& argc - optind > 0) {
-		cerr << PROGRAM ": input FASTA/FASTQ args should be omitted when using "
+		if (world_pid == 0) cerr << PROGRAM ": input FASTA/FASTQ args should be omitted when using "
 			"pre-built Bloom filters (-i) for all k-mer sizes\n";
 		die = true;
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM
+		if (world_pid == 0) cerr << "Try `" << PROGRAM
 			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
@@ -870,48 +1108,45 @@ int main(int argc, char** argv)
 #endif
 
 	ofstream dotStream;
+	string dotPathNew;
 	if (!opt::dotPath.empty()) {
+		dotPathNew = (world_pid == 0 ? (opt::dotPath) : (opt::dotPath + "_" + to_string(world_pid)));
 		if (opt::verbose)
-			cerr << "Writing graph traversals to "
+			if (world_pid == 0) cerr << "Writing graph traversals to "
 				"dot file `" << opt::dotPath << "'\n";
-		dotStream.open(opt::dotPath.c_str());
-		assert_good(dotStream, opt::dotPath);
+		dotStream.open(dotPathNew.c_str());
+		assert_good(dotStream, dotPathNew);
 	}
 
 	ofstream traceStream;
+	string tracefilePathNew;
 	if (!opt::tracefilePath.empty()) {
+		tracefilePathNew = (world_pid == 0 ? (opt::tracefilePath) : (opt::tracefilePath + "_" + to_string(world_pid)));
 		if (opt::verbose)
-			cerr << "Writing graph search stats to `"
+			if (world_pid) cerr << "Writing graph search stats to `"
 				<< opt::tracefilePath << "'\n";
-		traceStream.open(opt::tracefilePath.c_str());
+		traceStream.open(tracefilePathNew.c_str());
 		assert(traceStream.is_open());
 		ConnectPairsResult::printHeaders(traceStream);
-		assert_good(traceStream, opt::tracefilePath);
+		assert_good(traceStream, tracefilePathNew);
 	}
 
 	ofstream gapStream;
+	string gapfilePathNew;
 	if (!opt::gapfilePath.empty()) {
-		gapStream.open(opt::gapfilePath.c_str());
+		gapfilePathNew = (world_pid == 0 ? (opt::gapfilePath) : (opt::gapfilePath + "_" + to_string(world_pid)));
+		gapStream.open(gapfilePathNew.c_str());
 		assert(gapStream.is_open());
-		assert_good(gapStream, opt::gapfilePath);
+		assert_good(gapStream, gapfilePathNew);
 	}
 
 	string logOutputPath(opt::outputPrefix);
 	logOutputPath.append("_log.txt");
-	ofstream logStream(logOutputPath.c_str());
-	assert_good(logStream, logOutputPath);
+	string logOutputPathNew = (world_pid == 0 ? (logOutputPath) : (logOutputPath + "_" + to_string(world_pid)));
+	ofstream logStream(logOutputPathNew.c_str());
+	assert_good(logStream, logOutputPathNew);
 
-	string scaffoldOutputPath(opt::outputPrefix);
-	scaffoldOutputPath.append("_scaffold.fa");
-	ofstream scaffoldStream(scaffoldOutputPath.c_str());
-	assert_good(scaffoldStream, scaffoldOutputPath);
-
-	string mergedOutputPath(opt::outputPrefix);
-	mergedOutputPath.append("_merged.fa");
-	ofstream mergedStream(mergedOutputPath.c_str());
-	assert_good(mergedStream, mergedOutputPath);
-
-	printLog(logStream, "Finding flanks\n");
+	if (world_pid == 0) printLog(logStream, "Finding flanks\n");
 
 	ConnectPairsParams params;
 
@@ -952,11 +1187,11 @@ int main(int argc, char** argv)
 	}
 
 	temp = IntToString(gapsfound) + " gaps found\n";
-	printLog(logStream, temp);
+	if (world_pid == 0) printLog(logStream, temp);
 	temp = IntToString((int)flanks.size()) + " flanks extracted\n\n";
-	printLog(logStream, temp);
+	if (world_pid == 0) printLog(logStream, temp);
 
-	if (opt::printFlanks > 0) {
+	if (opt::printFlanks > 0 && world_pid == 0) {
 		map<FastaRecord, map<FastaRecord, Gap> >::iterator read1_it;
 		map<FastaRecord, Gap>::iterator read2_it;
 
@@ -995,110 +1230,163 @@ int main(int argc, char** argv)
 	map<string, map<int, ClosedGap> > allmerged;
 	unsigned gapsclosed=0;
 
-	for (unsigned i = 0; i<opt::kvector.size(); i++) {
-		opt::k = opt::kvector.at(i);
-		Kmer::setLength(opt::k);
+	for (int iteration = 0; ; iteration++) {
+		if (setup_groups(iteration, opt::kvector.size())) break;
 
-		BloomFilter* bloom;
-		CascadingBloomFilter* cascadingBloom = NULL;
+		if (kindex >= 0) {
+			opt::k = opt::kvector.at(kindex);
+			Kmer::setLength(opt::k);
 
-		if (!opt::bloomFilterPaths.empty() && i < opt::bloomFilterPaths.size()) {
+			BloomFilter* bloom;
+			CascadingBloomFilter* cascadingBloom = NULL;
 
-			temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(i) + "'...\n";
-			printLog(logStream, temp);
+			if (!opt::bloomFilterPaths.empty() && kindex < (int)opt::bloomFilterPaths.size()) {
 
-			bloom = new BloomFilter();
+				temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(kindex) + "'...\n";
+				printLog(logStream, temp);
 
-			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
-			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
-			assert_good(inputBloom, inputPath);
-			inputBloom >> *bloom;
-			assert_good(inputBloom, inputPath);
-			inputBloom.close();
-		} else {
-			printLog(logStream, "Building bloom filter\n");
+				bloom = new BloomFilter();
 
-			size_t bits = opt::bloomSize * 8 / 2;
-			cascadingBloom = new CascadingBloomFilter(bits, opt::max_count);
-#ifdef _OPENMP
-			ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
-			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(cbf, opt::k, argv[i], 0 /*opt::verbose*/);
-#else
-			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0 /* opt::verbose*/);
-#endif
-			bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
+				const char* inputPath = opt::bloomFilterPaths.at(kindex).c_str();
+				ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
+				assert_good(inputBloom, inputPath);
+				inputBloom >> *bloom;
+				assert_good(inputBloom, inputPath);
+				inputBloom.close();
+			} else {
+				printLog(logStream, "Building bloom filter\n");
+
+				size_t bits = opt::bloomSize * 8 / 2;
+				cascadingBloom = new CascadingBloomFilter(bits, opt::max_count);
+				#ifdef _OPENMP
+				ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
+				for (int i = optind; i < argc; i++)
+					Bloom::loadFile(cbf, opt::k, argv[i], 0 /*opt::verbose*/);
+				#else
+				for (int i = optind; i < argc; i++)
+					Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0 /* opt::verbose*/);
+				#endif
+				bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
+			}
+
+			assert(bloom != NULL);
+
+			if (kmaster) {
+				ONE_BY_ONE({
+					if (opt::verbose)
+						cerr << "Bloom filter FPR: " << setprecision(3)
+							<< 100 * bloom->FPR() << "%" << endl;
+				}, kmasters_comm)
+			}
+
+			DBGBloom<BloomFilter> g(*bloom);
+
+			kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream, gapStream);
+
+			if (!opt::inputBloomPath.empty())
+				delete bloom;
+			else
+				delete cascadingBloom;
+		}
+	}
+
+	if (world_pid == 0) printLog(logStream, "K sweep complete\nCreating new scaffold with gaps closed...\n");
+
+	gapsclosed = gather_gaps(allmerged) + gapsclosed;
+
+	if (world_pid == 0) {
+		map<string, map<int, map<string, string> > >::iterator scaf_it;
+		map<int, map<string, string> >::reverse_iterator pos_it;
+		FastaReader reader2(scaffoldInputPath, FastaReader::FOLD_CASE);
+		unsigned gapsclosedfinal = 0;
+
+		string scaffoldOutputPath(opt::outputPrefix);
+		scaffoldOutputPath.append("_scaffold.fa");
+		ofstream scaffoldStream(scaffoldOutputPath.c_str());
+		assert_good(scaffoldStream, scaffoldOutputPath);
+
+		string mergedOutputPath(opt::outputPrefix);
+		mergedOutputPath.append("_merged.fa");
+		ofstream mergedStream(mergedOutputPath.c_str());
+		assert_good(mergedStream, mergedOutputPath);
+
+		/** creating new scaffold with gaps closed */
+		for (FastaRecord record;;) {
+			bool good;
+			good = reader2 >> record;
+			if (good) {
+				insertIntoScaffold(scaffoldStream, mergedStream, record, allmerged, gapsclosedfinal);
+			}
+			else
+				break;
 		}
 
-		assert(bloom != NULL);
-
-		if (opt::verbose)
-			cerr << "Bloom filter FPR: " << setprecision(3)
-				<< 100 * bloom->FPR() << "%\n";
-
-		DBGBloom<BloomFilter> g(*bloom);
-
-		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
-		printLog(logStream, temp);
-
-		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream, gapStream);
-
-		temp = "k" + IntToString(opt::k) + " run complete\n"
-				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
-		printLog(logStream, temp);
-
-		if (!opt::inputBloomPath.empty())
-			delete bloom;
-		else
-			delete cascadingBloom;
-	}
-
-	printLog(logStream, "K sweep complete\nCreating new scaffold with gaps closed...\n");
-
-	map<string, map<int, map<string, string> > >::iterator scaf_it;
-	map<int, map<string, string> >::reverse_iterator pos_it;
-	FastaReader reader2(scaffoldInputPath, FastaReader::FOLD_CASE);
-	unsigned gapsclosedfinal = 0;
-
-	/** creating new scaffold with gaps closed */
-	for (FastaRecord record;;) {
-		bool good;
-		good = reader2 >> record;
-		if (good) {
-			insertIntoScaffold(scaffoldStream, mergedStream, record, allmerged, gapsclosedfinal);
+		printLog(logStream, "New scaffold complete\n");
+		printLog(logStream, "Gaps closed = " + IntToString(gapsclosed) + "\n");
+		logStream << (float)100 * gapsclosed / gapsfound << "%\n\n";
+		if (opt::verbose > 0) {
+			cerr << (float)100 * gapsclosed / gapsfound << "%\n\n";
 		}
-		else
-			break;
-	}
-	printLog(logStream, "New scaffold complete\n");
-	printLog(logStream, "Gaps closed = " + IntToString(gapsclosed) + "\n");
-	logStream << (float)100 * gapsclosed / gapsfound << "%\n\n";
-	if (opt::verbose > 0) {
-		cerr << (float)100 * gapsclosed / gapsfound << "%\n\n";
+
+		assert_good(scaffoldStream, scaffoldOutputPath.c_str());
+		scaffoldStream.close();
+		assert_good(mergedStream, mergedOutputPath.c_str());
+		mergedStream.close();
 	}
 
-	assert_good(scaffoldStream, scaffoldOutputPath.c_str());
-	scaffoldStream.close();
-	assert_good(mergedStream, mergedOutputPath.c_str());
-	mergedStream.close();
-	assert_good(logStream, logOutputPath.c_str());
-	logStream.close();
+	ONE_BY_ONE({
+		if (!opt::dotPath.empty()) {
+			assert_good(dotStream, dotPathNew);
+			dotStream.close();
 
-	if (!opt::dotPath.empty()) {
-		assert_good(dotStream, opt::dotPath);
-		dotStream.close();
-	}
+			if (world_pid > 0) {
+				ifstream dotStreamCurrent(dotPathNew.c_str());
+				ofstream dotStream0(opt::dotPath, ofstream::out | ofstream::app);
+				dotStream0 << dotStreamCurrent.rdbuf();
+				dotStreamCurrent.close();
+ 				std::remove(dotPathNew.c_str());
+			}
+		}
 
-	if (!opt::tracefilePath.empty()) {
-		assert_good(traceStream, opt::tracefilePath);
-		traceStream.close();
-	}
+		if (!opt::tracefilePath.empty()) {
+			assert_good(traceStream, tracefilePathNew);
+			traceStream.close();
 
-	if (!opt::gapfilePath.empty()) {
-		assert_good(gapStream, opt::gapfilePath);
-		gapStream.close();
-	}
+			if (world_pid > 0) {
+				ifstream traceStreamCurrent(tracefilePathNew.c_str());
+				ofstream traceStream0(opt::tracefilePath, ofstream::out | ofstream::app);
+				traceStream0 << traceStreamCurrent.rdbuf();
+				traceStreamCurrent.close();
+				std::remove(tracefilePathNew.c_str());
+			}
+		}
+
+		if (!opt::gapfilePath.empty()) {
+			assert_good(gapStream, gapfilePathNew);
+			gapStream.close();
+
+			if (world_pid > 0) {
+				ifstream gapStreamCurrent(gapfilePathNew);
+				ofstream gapStream0(opt::gapfilePath, ofstream::out | ofstream::app);
+				gapStream0 << gapStreamCurrent.rdbuf();
+				gapStreamCurrent.close();
+				std::remove(gapfilePathNew.c_str());
+			}
+		}
+
+		assert_good(logStream, logOutputPathNew.c_str());
+		logStream.close();
+
+		if (world_pid > 0) {
+			ifstream logStreamCurrent(logOutputPathNew);
+			ofstream logStream0(logOutputPath, ofstream::out | ofstream::app);
+			logStream0 << logStreamCurrent.rdbuf();
+			logStreamCurrent.close();
+			std::remove(logOutputPathNew.c_str());
+		}
+	}, MPI_COMM_WORLD)
+
+	MPI_Finalize();
 
 	return 0;
 }
