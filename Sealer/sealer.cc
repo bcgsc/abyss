@@ -453,8 +453,8 @@ template <typename Graph>
 string merge(const Graph& g,
 	unsigned k,
 	const Gap& gap,
-	FastaRecord &read1,
-	FastaRecord &read2,
+	const FastaRecord &read1,
+	const FastaRecord &read2,
 	const ConnectPairsParams& params,
 	Counters& g_count,
 	ofstream& traceStream)
@@ -644,15 +644,23 @@ void kRun(const ConnectPairsParams& params,
 
 	std::vector<int> gap_ids_vector;
 	int id = 0;
+	#pragma omp parallel private(read1_it, read2_it) firstprivate(id)
 	for (read1_it = flanks.begin(); read1_it != flanks.end(); read1_it++) {
 		FastaRecord read1 = read1_it->first;
 		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
-			if (id % kgroup_psize == kgroup_pid) {
+			if (
+				(id % kgroup_psize == kgroup_pid)
+				#if _OPENMP
+				&& ((id / kgroup_psize) % omp_get_num_threads() == omp_get_thread_num())
+				#endif
+			) {
 				FastaRecord read2 = read2_it->first;
 
 				int startposition = read2_it->second.gapStart();
 				string tempSeq = merge(g, k, read2_it->second, read1, read2, params, g_count, traceStream);
-				if (!tempSeq.empty()) {
+				if (!tempSeq.empty())
+				#pragma omp critical (allmerged)
+				{
 					allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
 						= ClosedGap(read2_it->second, tempSeq);
 					gap_ids_vector.push_back(id);
