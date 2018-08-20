@@ -4,7 +4,7 @@
 # Anthony Raymond <traymond@bcgsc.ca>.
 
 SHELL=bash -e -o pipefail
-ifneq ($(shell command -v zsh),)
+ifeq ($(shell zsh -e -o pipefail -c 'true' 2>/dev/null; echo $$?), 0)
 # Set pipefail to ensure that all commands of a pipe succeed.
 SHELL=zsh -e -o pipefail
 # Report run time and memory usage with zsh.
