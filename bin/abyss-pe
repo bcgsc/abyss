@@ -530,45 +530,45 @@ endif
 
 ifdef B
 %-1.fa:
-	abyss-bloom-dbg $(abyssopt) $(ABYSS_OPTIONS) $(in) $(se) > $@
+	$(gtime) abyss-bloom-dbg $(abyssopt) $(ABYSS_OPTIONS) $(in) $(se) > $@
 else ifdef K
 
 ifdef np
 %-1.fa:
-	$(mpirun) -np $(np) abyss-paired-dbg-mpi $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa $(in) $(se)
+	$(gtime) $(mpirun) -np $(np) abyss-paired-dbg-mpi $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa $(in) $(se)
 else
 %-1.fa %-1.$g:
-	abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
+	$(gtime) abyss-paired-dbg $(abyssopt) $(ABYSS_OPTIONS) -o $*-1.fa -g $*-1.$g $(in) $(se)
 endif
 
 else ifdef np
 %-1.fa:
-	$(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+	$(gtime) $(mpirun) -np $(np) ABYSS-P $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 else
 %-1.fa:
-	ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
+	$(gtime) ABYSS $(abyssopt) $(ABYSS_OPTIONS) -o $@ $(in) $(se)
 endif
 
 # Find overlapping contigs
 
 %-1.$g: %-1.fa
-	AdjList $(alopt) --$g $< >$@
+	$(gtime) AdjList $(alopt) --$g $< >$@
 
 # Remove shim contigs
 
 %-2.$g1 %-1.path: %-1.$g %-1.fa
-	abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
+	$(gtime) abyss-filtergraph $v --$g $(fgopt) $(FILTERGRAPH_OPTIONS) -k$k -g $*-2.$g1 $^ >$*-1.path
 
 %-2.fa %-2.$g: %-1.fa %-2.$g1 %-1.path
-	MergeContigs --$g $(mcopt) -g $*-2.$g -o $*-2.fa $^
+	$(gtime) MergeContigs --$g $(mcopt) -g $*-2.$g -o $*-2.fa $^
 
 # Pop bubbles
 
 %-2.path %-3.$g: %-2.fa %-2.$g
-	PopBubbles $v --$g -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.$g $^ >$*-2.path
+	$(gtime) PopBubbles $v --$g -j$j -k$k $(SS) $(pbopt) $(POPBUBBLES_OPTIONS) -g $*-3.$g $^ >$*-2.path
 
 %-3.fa: %-2.fa %-2.$g %-2.path
-	MergeContigs $(mcopt) -o $@ $^
+	$(gtime) MergeContigs $(mcopt) -o $@ $^
 	awk '!/^>/ {x[">" $$1]=1; next} {getline s} $$1 in x {print $$0 "\n" s}' \
 		$*-2.path $*-1.fa >$*-indel.fa
 
@@ -581,27 +581,27 @@ endif
 # Estimate distances between unitigs
 
 %-3.sam.gz %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|$(gzip) >$*-3.sam.gz
 
 %-3.bam %-3.hist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-3.bam
 
 %-3.dist: %-3.sam.gz %-3.hist
 	gunzip -c $< \
-	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
+	|$(gtime) $(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: %-3.bam %-3.hist
-	samtools view -h $< \
+	$(gtime) samtools view -h $< \
 	|$(DistanceEst) $(deopt) -o $@ $*-3.hist
 
 %-3.dist: $(name)-3.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-3.hist \
 		|sort -snk3 -k4 \
 		|$(DistanceEst) $(deopt) -o $@ $*-3.hist
@@ -610,25 +610,25 @@ dist=$(addsuffix -3.dist, $(pe))
 
 ifneq ($(name)-3.dist, $(dist))
 $(name)-3.dist: $(name)-3.fa $(dist)
-	abyss-todot $v --dist -e $^ >$@
+	$(gtime) abyss-todot $v --dist -e $^ >$@
 
 $(name)-3.bam: $(addsuffix -3.bam, $(pe))
-	samtools merge -r $@ $^
+	$(gtime) samtools merge -r $@ $^
 endif
 
 # Find overlaps between contigs
 
 %-4.fa %-4.$g: %-3.fa %-3.$g %-3.dist
-	Overlap $v --$g $(SS) $(OVERLAP_OPTIONS) -k$k -g $*-4.$g -o $*-4.fa $^
+	$(gtime) Overlap $v --$g $(SS) $(OVERLAP_OPTIONS) -k$k -g $*-4.$g -o $*-4.fa $^
 
 # Assemble contigs
 
 %-4.path1: %-4.$g %-3.dist
-	SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
+	$(gtime) SimpleGraph $v $(sgopt) $(SIMPLEGRAPH_OPTIONS) -j$j -k$k -o $@ $^
 
 %-4.path2: %-4.path1 %-3.fa.fai %-4.fa.fai
 	cat $*-3.fa.fai $*-4.fa.fai \
-		|MergePaths $(mpopt) $(MERGEPATHS_OPTIONS) -o $@ - $<
+		|$(gtime) MergePaths $(mpopt) $(MERGEPATHS_OPTIONS) -o $@ - $<
 
 %-4.path3: %-4.$g %-4.path2
 	PathOverlap --assemble $(poopt) $(SS) $^ >$@
@@ -637,10 +637,10 @@ ifndef cs
 
 %-5.path %-5.fa %-5.$g: %-3.fa %-4.fa %-4.$g %-4.path3
 	cat $(wordlist 1, 2, $^) \
-		|PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
+		|$(gtime) PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -o $*-5.path -s $*-5.fa -g $*-5.$g - $(wordlist 3, 4, $^)
 
 %-6.fa: %-3.fa %-4.fa %-5.fa %-5.$g %-5.path
-	cat $(wordlist 1, 3, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
+	cat $(wordlist 1, 3, $^) |$(gtime) MergeContigs $(mcopt) -o $@ - $(wordlist 4, 5, $^)
 
 else
 
@@ -649,18 +649,18 @@ else
 	ln -sf $*-4.path3 $*-5.path
 
 %-cs.fa: %-3.fa %-4.fa %-4.$g %-4.path3
-	cat $(wordlist 1, 2, $^) |MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
+	cat $(wordlist 1, 2, $^) |$(gtime) MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 # Convert colour-space sequence to nucleotides
 
 %-6.fa: %-cs.fa
-	KAligner $v --seq -m -j$j -l$l $(in) $(se) $< \
+	$(gtime) KAligner $v --seq -m -j$j -l$l $(in) $(se) $< \
 		|Consensus $v -o $@ $<
 
 endif
 
 %-6.$g: %-5.$g %-5.path
-	PathOverlap --overlap $(poopt) --$g $^ >$@
+	$(gtime) PathOverlap --overlap $(poopt) --$g $^ >$@
 
 %-contigs.fa: %-6.fa
 	ln -sf $< $@
@@ -671,27 +671,27 @@ endif
 # Estimate distances between contigs
 
 %-6.sam.gz %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|$(gzip) >$*-6.sam.gz
 
 %-6.bam %-6.hist: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|samtools view -Sb - -o $*-6.bam
 
 %-6.dist.dot: %-6.sam.gz %-6.hist
 	gunzip -c $< \
-	|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
+	|$(gtime) $(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: %-6.bam %-6.hist
 	samtools view -h $< \
-	|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
+	|$(gtime) $(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
 
 %-6.dist.dot: $(name)-6.fa
-	$(align) $(mapopt) $(strip $($*)) $< \
+	$(gtime) $(align) $(mapopt) $(strip $($*)) $< \
 		|$(fixmate) $(fmopt) -h $*-6.hist \
 		|sort -snk3 -k4 \
 		|$(DistanceEst) $(scaffold_deopt) -o $@ $*-6.hist
@@ -699,17 +699,17 @@ endif
 # Scaffold
 
 %-6.path: $(name)-6.$g $(addsuffix -6.dist.dot, $(mp))
-	abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
+	$(gtime) abyss-scaffold $(scopt) -s$S -n$N -g $@.dot $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-7.path %-7.$g %-7.fa: %-6.fa %-6.$g %-6.path
-	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
+	$(gtime) PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-7.fa -g $*-7.$g -o $*-7.path $^
 
 %-8.fa: %-6.fa %-7.fa %-7.$g %-7.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
+		|$(gtime) MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 %-8.$g: %-7.$g %-7.path
-	PathOverlap --overlap $(poopt) --$g $^ >$@
+	$(gtime) PathOverlap --overlap $(poopt) --$g $^ >$@
 
 # Scaffold using linked reads
 ifdef lr
@@ -790,16 +790,16 @@ arcs_z=500
 # Create a graph of linked contigs using ARCS.
 %.arcs.dist.gv: %.lr.sortn.sam.gz
 	gunzip -c $< \
-	| arcs $v -c$(arcs_c) -d$(arcs_d) -e$(arcs_e) -l$(arcs_l) -m$(arcs_m) -r$(arcs_r) -s$(arcs_s) -z$(arcs_z) \
+	|$(gtime) arcs $v -c$(arcs_c) -d$(arcs_d) -e$(arcs_e) -l$(arcs_l) -m$(arcs_m) -r$(arcs_r) -s$(arcs_s) -z$(arcs_z) \
 		-g $*.arcs.dist.gv --tsv=$*.arcs.tsv --barcode-counts=$*.arcs.barcode-counts.tsv /dev/stdin
 
 # Scaffold using ARCS and abyss-scaffold.
 %.arcs.path: %.arcs.dist.gv
-	abyss-scaffold $(scopt) -s$(lr_s) -n$(lr_n) -g $@.dot $(LR_SCAFFOLD_OPTIONS) $< >$@
+	$(gtime) abyss-scaffold $(scopt) -s$(lr_s) -n$(lr_n) -g $@.dot $(LR_SCAFFOLD_OPTIONS) $< >$@
 
 # Create the FASTA file of ARCS scaffolds.
 %.arcs.fa: %.fa %.arcs.path
-	MergeContigs $(mcopt) -o $@ $^
+	$(gtime) MergeContigs $(mcopt) -o $@ $^
 
 %-scaffolds.fa: %-8.tigmint.arcs.fa
 	ln -sf $< $@
@@ -818,7 +818,7 @@ endif
 sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 
 %-8_scaffold.fa: %-8.fa
-	abyss-sealer -v -j$j --print-flanks -o$*-8 -S$< $(sealer_ks) $(SEALER_OPTIONS) $(in) $(se)
+	$(gtime) abyss-sealer -v -j$j --print-flanks -o$*-8 -S$< $(sealer_ks) $(SEALER_OPTIONS) $(in) $(se)
 
 %-scaffolds-sealed.fa: %-8_scaffold.fa
 	ln -s $< $@
@@ -834,28 +834,28 @@ sealer_ks?=-k90 -k80 -k70 -k60 -k50 -k40 -k30
 # Transcriptome assisted scaffolding
 
 %.fa.bwt: %.fa
-	bwa index $<
+	$(gtime) bwa index $<
 
 %-8.sam.gz: $(name)-8.fa.bwt
-	bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
+	$(gtime) bwa mem -a -t$j -S -P -k$l $(name)-8.fa $(strip $($*)) \
 		|$(gzip) >$@
 
 %-8.dist.dot: %-8.sam.gz
-	abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
+	$(gtime) abyss-longseqdist -k$k $(LONGSEQDIST_OPTIONS) $< \
 		|grep -v "l=" >$@
 
 %-8.path: $(name)-8.$g $(addsuffix -8.dist.dot, $(long))
-	abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
+	$(gtime) abyss-scaffold $(scopt) -s$S -n1 -g $@.$g $(SCAFFOLD_OPTIONS) $^ >$@
 
 %-9.path %-9.$g %-9.fa: %-8.fa %-8.$g %-8.path
-	PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
+	$(gtime) PathConsensus $v --$g -k$k $(pcopt) $(PATHCONSENSUS_OPTIONS) -s $*-9.fa -g $*-9.$g -o $*-9.path $^
 
 %-10.fa: %-8.fa %-9.fa %-9.$g %-9.path
 	cat $(wordlist 1, 2, $^) \
-		|MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
+		|$(gtime) MergeContigs $(mcopt) -o $@ - $(wordlist 3, 4, $^)
 
 %-10.$g: %-9.$g %-9.path
-	PathOverlap --overlap $(poopt) --$g $^ >$@
+	$(gtime) PathOverlap --overlap $(poopt) --$g $^ >$@
 
 %-long-scaffs.fa: %-10.fa
 	ln -sf $< $@
@@ -881,11 +881,11 @@ endif
 endif
 
 $(name)-unitigs.bam: %.bam: %.fa
-	$(align) $v -j$j -l$l $(ALIGNER_OPTIONS) $(se) $< \
+	$(gtime) $(align) $v -j$j -l$l $(ALIGNER_OPTIONS) $(se) $< \
 		|samtools view -Su - |samtools sort -o - - >$@
 
 $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
-	$(align) $v -j$j -l$l $(ALIGNER_OPTIONS) \
+	$(gtime) $(align) $v -j$j -l$l $(ALIGNER_OPTIONS) \
 		$(call map, deref, $(sort $(lib) $(pe) $(mp))) $< \
 		|$(fixmate) $v $(FIXMATE_OPTIONS) \
 		|sort -snk3 -k4 \
@@ -894,14 +894,14 @@ $(name)-contigs.bam $(name)-scaffolds.bam: %.bam: %.fa
 # Align the variants to the assembly
 
 %-variants.bam: %.fa.bwt
-	bwa bwasw -t$j $*.fa <(cat $(name)-bubbles.fa $(name)-indel.fa) \
+	$(gtime) bwa bwasw -t$j $*.fa <(cat $(name)-bubbles.fa $(name)-indel.fa) \
 		|samtools view -Su - |samtools sort -o - - >$@
 
 %-variants.vcf.gz: %.fa %-variants.bam
-	samtools mpileup -Buf $^ |bcftools view -vp1 - |bgzip >$@
+	$(gtime) samtools mpileup -Buf $^ |bcftools view -vp1 - |bgzip >$@
 
 %.gz.tbi: %.gz
-	tabix -pvcf $<
+	$(gtime) tabix -pvcf $<
 
 # Calculate assembly contiguity statistics
 
@@ -938,17 +938,17 @@ $(name)-stats.tab:
 # Create an AGP file and FASTA file of scaftigs from scaffolds
 
 %.agp %-agp.fa: %.fa
-	abyss-fatoagp $(FATOAGP_OPTIONS) -f $*-agp.fa $< >$*.agp
+	$(gtime) abyss-fatoagp $(FATOAGP_OPTIONS) -f $*-agp.fa $< >$*.agp
 
 # Align the contigs to the reference
 
 %-$(ref).sam.gz: %.fa
-	bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |$(gzip) >$@
+	$(gtime) bwa bwasw $(bwaswopt) $(BWASW_OPTIONS) $($(ref)) $< |$(gzip) >$@
 
 # Find breakpoints in the alignments
 
 %.break: %.sam.gz
-	abyss-samtobreak $(SAMTOBREAK_OPTIONS) $< >$@
+	$(gtime) abyss-samtobreak $(SAMTOBREAK_OPTIONS) $< >$@
 
 # Report ABySS configuration variable(s) and value(s) currently set.
 
