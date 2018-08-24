@@ -979,7 +979,7 @@ namespace BloomDBG {
 	 * as an argument to the `breadthFirstSearch` function.
 	 */
 	template <typename GraphT>
-	class GraphvizBFSVisitor
+	class GraphvizBFSVisitor : public DefaultBFSVisitor<GraphT>
 	{
 		typedef typename boost::graph_traits<GraphT>::vertex_descriptor VertexT;
 		typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeT;
@@ -1001,31 +1001,21 @@ namespace BloomDBG {
 			m_out << "}\n";
 		}
 
-		/** Invoked when a vertex is initialized */
-		void initialize_vertex(const VertexT&, const GraphT&) {}
-
 		/** Invoked when a vertex is visited for the first time */
-		void discover_vertex(const VertexT& v, const GraphT&)
+		BFSVisitorResult discover_vertex(const VertexT& v, const GraphT&)
 		{
 			++m_nodesVisited;
 			/* declare vertex (GraphViz) */
 			m_out << '\t' << v.kmer().c_str() << ";\n";
+
+			return BFS_SUCCESS;
 		}
-
-		/** Invoked each time a vertex is visited */
-		void examine_vertex(const VertexT&, const GraphT&) {}
-
-		/**
-		 * Invoked when all of a vertex's outgoing edges have been
-		 * traversed.
-		 */
-		void finish_vertex(const VertexT&, const GraphT&) {}
 
 		/**
 		 * Invoked when an edge is traversed. (Each edge
 		 * in the graph is traversed exactly once.)
 		 */
-		void examine_edge(const EdgeT& e, const GraphT& g)
+		BFSVisitorResult examine_edge(const EdgeT& e, const GraphT& g)
 		{
 			++m_edgesVisited;
 			const VertexT& u = source(e, g);
@@ -1034,33 +1024,9 @@ namespace BloomDBG {
 			/* declare edge (GraphViz) */
 			m_out << '\t' << u.kmer().c_str() << " -> "
 				<< v.kmer().c_str() << ";\n";
+
+			return BFS_SUCCESS;
 		}
-
-		/**
-		 * Invoked when an edge is traversed to a "gray" vertex.
-		 * A vertex is gray when some but not all of its outgoing edges
-		 * have been traversed.
-		 */
-		void gray_target(const EdgeT&, const GraphT&) {}
-
-		/**
-		 * Invoked when an edge is traversed to a "black" vertex.
-		 * A vertex is black when all of its outgoing edges have
-		 * been traversed.
-		 */
-		void black_target(const EdgeT&, const GraphT&) {}
-
-		/**
-		 * Invoked when an edge is traversed to a "gray" or
-		 * "black" vertex.
-		 */
-		void non_tree_edge(const EdgeT&, const GraphT&) {}
-
-		/**
-		 * Invoked when an edge is traversed to a "white" vertex.
-		 * A vertex is a white if it is previously unvisited.
-		 */
-		void tree_edge(const EdgeT&, const GraphT&) {}
 
 		/** Return number of distinct nodes visited */
 		size_t getNumNodesVisited() const
@@ -1140,14 +1106,14 @@ namespace BloomDBG {
 				std::string startKmer = seq.substr(0, k);
 				Vertex start(startKmer.c_str(),
 					RollingHash(startKmer, numHashes, k));
-				breadthFirstSearch(dbg, start, visitor, colorMap);
+				breadthFirstSearch(start, dbg, colorMap, visitor);
 
 				/* BFS traversal in reverse dir */
 				Sequence rcSeq = reverseComplement(seq);
 				std::string rcStartKmer = rcSeq.substr(0, k);
 				Vertex rcStart(rcStartKmer.c_str(),
 					RollingHash(rcStartKmer, numHashes, k));
-				breadthFirstSearch(dbg, rcStart, visitor, colorMap);
+				breadthFirstSearch(rcStart, dbg, colorMap, visitor);
 
 			}
 

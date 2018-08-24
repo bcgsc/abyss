@@ -3,19 +3,19 @@
 
 #include "Common/UnorderedMap.h"
 #include "Common/IOUtil.h"
+#include "Graph/BreadthFirstSearch.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/Path.h"
 #include "Graph/HashGraph.h"
 #include "Graph/AllPathsSearch.h"
 #include <boost/graph/graph_traits.hpp>
-#include <boost/graph/breadth_first_search.hpp>
 #include <iostream>
 #include <sstream>
 #include <vector>
 #include <algorithm>
 
 template <typename G>
-class ConstrainedBFSVisitor : public boost::default_bfs_visitor
+class ConstrainedBFSVisitor : public DefaultBFSVisitor<G>
 {
 public:
 
@@ -65,13 +65,14 @@ public:
 
 #if 0
 	// for debugging
-	void examine_vertex(const V& v, const G& g)
+	BFSVisitorResult examine_vertex(const V& v, const G& g)
 	{
 		std::cout << "visiting vertex: " << v << "\n";
+		return BFS_SUCCESS;
 	}
 #endif
 
-	void examine_edge(const E& e, const G& g)
+	BFSVisitorResult examine_edge(const E& e, const G& g)
 	{
 
 		V u = source(e, g);
@@ -84,7 +85,7 @@ public:
 
 		if (m_tooManyBranches) {
 			put(m_colorMap, v, boost::black_color);
-			return;
+			return BFS_ABORT_SEARCH;
 		}
 
 		if (v == m_goal)
@@ -116,6 +117,7 @@ public:
 			put(m_colorMap, v, boost::black_color);
 		}
 
+		return BFS_SUCCESS;
 	}
 
 	AllPathsSearchResult<V> uniquePathToGoal()

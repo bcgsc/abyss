@@ -9,7 +9,7 @@
 using namespace std;
 using namespace boost;
 
-typedef adjacency_list<> Graph;
+typedef adjacency_list<vecS, vecS, bidirectionalS> Graph;
 typedef graph_traits<Graph>::vertex_descriptor V;
 typedef std::vector< Path<V> > PathList;
 
@@ -46,7 +46,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyUniquePath)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleAcyclicGraph, colorMap, visitor);
 
 	AllPathsSearchResult<V> result = visitor.uniquePathToGoal();
 
@@ -65,7 +65,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMaxDepthLimit)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleAcyclicGraph, colorMap, visitor);
 
 	EXPECT_EQ(visitor.getMaxDepthVisited(), 1);
 	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, NO_PATH);
@@ -81,7 +81,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectMinDepthLimit)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleAcyclicGraph, colorMap, visitor);
 
 	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, NO_PATH);
 }
@@ -96,7 +96,7 @@ TEST_F(ConstrainedBFSVisitorTest, IdentifyMultiplePaths)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleCyclicGraph, colorMap, visitor);
 
 	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, TOO_MANY_PATHS);
 }
@@ -111,7 +111,7 @@ TEST_F(ConstrainedBFSVisitorTest, ReturnMultiplePaths)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleCyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleCyclicGraph, colorMap, visitor);
 
 	AllPathsSearchResult<V> result = visitor.pathsToGoal(2);
 
@@ -136,7 +136,7 @@ TEST_F(ConstrainedBFSVisitorTest, RespectBranchLimit)
 
 	DefaultColorMap<Graph> colorMap;
 	ConstrainedBFSVisitor<Graph> visitor(start, goal, minDepth, maxDepth, maxBranches, colorMap);
-	breadthFirstSearch(simpleAcyclicGraph, start, visitor, colorMap);
+	breadthFirstSearch(start, simpleAcyclicGraph, colorMap, visitor);
 
 	EXPECT_EQ(visitor.uniquePathToGoal().resultCode, TOO_MANY_BRANCHES);
 }
