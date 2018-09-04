@@ -2,8 +2,13 @@
 #define ABYSS_ROLLING_HASH_H 1
 
 #include "config.h"
-#include "lib/rolling-hash/rolling.h"
+
+#include "BloomDBG/LightweightKmer.h"
 #include "BloomDBG/MaskedKmer.h"
+#include "Common/Sense.h"
+#include "lib/nthash/nthash.hpp"
+
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -61,45 +66,15 @@ public:
 	 */
 	void reset(const std::string& kmer)
 	{
-		if (!MaskedKmer::mask().empty())
-			resetMasked(kmer.c_str());
-		else
-			resetUnmasked(kmer);
-	}
+		/* compute initial hash values for forward and reverse-complement k-mer */
+		NTC64(kmer.c_str(), m_k, m_hash1, m_rcHash1);
 
-	/**
-	 * Initialize hash values from current k-mer. When computing the hash
-	 * value, mask out "don't care" positions as per the active
-	 * k-mer mask.
-	 */
-	void resetMasked(const char* kmer)
-	{
-		const std::string& spacedSeed = MaskedKmer::mask();
-		assert(spacedSeed.length() == m_k);
-
-		/* compute first hash function for k-mer */
-		uint64_t hash1 = getFhval(m_hash1, spacedSeed.c_str(), kmer, m_k);
-
-		/* compute first hash function for reverse complement of k-mer */
-		uint64_t rcHash1 = getRhval(m_rcHash1, spacedSeed.c_str(), kmer, m_k);
-
-		m_hash = canonicalHash(hash1, rcHash1);
-	}
-
-	/**
-	 * Initialize hash values from sequence.
-	 * @param kmer k-mer used to initialize hash state
-	 */
-	void resetUnmasked(const std::string& kmer)
-	{
-		/* compute first hash function for k-mer */
-		m_hash1 = getFhval(kmer.c_str(), m_k);
-
-		/* compute first hash function for reverse complement
-		 * of k-mer */
-		m_rcHash1 = getRhval(kmer.c_str(), m_k);
-
+		/* get canonical hash value from forward/reverse hash values */
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
+
+		if (!MaskedKmer::mask().empty())
+			m_hash = maskHash(m_hash1, m_rcHash1, MaskedKmer::mask().c_str(),
+				kmer.c_str(), m_k);
 	}
 
 	/**
@@ -110,38 +85,18 @@ public:
 	 */
 	void rollRight(const char* kmer, char charIn)
 	{
-		if (!MaskedKmer::mask().empty())
-			rollRightMasked(kmer, charIn);
-		else
-			rollRightUnmasked(kmer, charIn);
-	}
-
-	/**
-	 * Compute hash values for next k-mer to the right and
-	 * update internal state.  When computing the new hash, mask
-	 * out "don't care" positions according to the active
-	 * k-mer mask.
-	 * @param kmer current k-mer
-	 * @param nextKmer k-mer we are rolling into
-	 */
-	void rollRightMasked(const char* kmer, char charIn)
-	{
-		const std::string& spacedSeed = MaskedKmer::mask();
-		m_hash = rollHashesRight(m_hash1, m_rcHash1, spacedSeed.c_str(),
-			kmer, charIn, m_k);
-	}
-
-	/**
-	 * Compute hash values for next k-mer to the right and
-	 * update internal state.
-	 * @param kmer current k-mer
-	 * @param nextKmer k-mer we are rolling into
-	 */
-	void rollRightUnmasked(const char* kmer, char charIn)
-	{
-		/* update first hash function */
-		rollHashesRight(m_hash1, m_rcHash1, kmer[0], charIn, m_k);
+		NTC64(kmer[0], charIn, m_k, m_hash1, m_rcHash1);
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
+
+		if (!MaskedKmer::mask().empty()) {
+			// TODO: copying the k-mer and shifting is very inefficient;
+			// we need a specialized nthash function that rolls and masks
+			// simultaneously
+			LightweightKmer next(kmer);
+			next.shift(SENSE, charIn);
+			m_hash = maskHash(m_hash1, m_rcHash1, MaskedKmer::mask().c_str(),
+				next.c_str(), m_k);
+		}
 	}
 
 	/**
@@ -152,38 +107,18 @@ public:
 	 */
 	void rollLeft(char charIn, const char* kmer)
 	{
-		if (!MaskedKmer::mask().empty())
-			rollLeftMasked(charIn, kmer);
-		else
-			rollLeftUnmasked(charIn, kmer);
-	}
-
-	/**
-	 * Compute hash values for next k-mer to the left and
-	 * update internal state.  When computing the new hash, mask
-	 * out "don't care" positions according to the active
-	 * k-mer mask.
-	 * @param prevKmer k-mer we are rolling into
-	 * @param kmer current k-mer
-	 */
-	void rollLeftMasked(char charIn, const char* kmer)
-	{
-		const std::string& spacedSeed = MaskedKmer::mask();
-		m_hash = rollHashesLeft(m_hash1, m_rcHash1, spacedSeed.c_str(),
-			kmer, charIn, m_k);
-	}
-
-	/**
-	 * Compute hash values for next k-mer to the left and
-	 * update internal state.
-	 * @param prevKmer k-mer we are rolling into
-	 * @param kmer current k-mer
-	 */
-	void rollLeftUnmasked(char charIn, const char* kmer)
-	{
-		/* update first hash function */
-		rollHashesLeft(m_hash1, m_rcHash1, charIn, kmer[m_k-1], m_k);
+		NTC64L(kmer[m_k-1], charIn, m_k, m_hash1, m_rcHash1);
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
+
+		if (!MaskedKmer::mask().empty()) {
+			// TODO: copying the k-mer and shifting is very inefficient;
+			// we need a specialized nthash function that rolls and masks
+			// simultaneously
+			LightweightKmer next(kmer);
+			next.shift(ANTISENSE, charIn);
+			m_hash = maskHash(m_hash1, m_rcHash1, MaskedKmer::mask().c_str(),
+				next.c_str(), m_k);
+		}
 	}
 
 	/**
@@ -203,11 +138,8 @@ public:
 	 */
 	void getHashes(size_t hashes[]) const
 	{
-		uint64_t tmpHashes[MAX_HASHES];
-		multiHash(tmpHashes, m_hash, m_numHashes, m_k);
-		for (unsigned i = 0; i < m_numHashes; ++i) {
-			hashes[i] = (size_t)tmpHashes[i];
-		}
+		for (unsigned i = 0; i < m_numHashes; ++i)
+			hashes[i] = NTE64(m_hash, m_k, i);
 	}
 
 	/** Equality operator */
@@ -230,45 +162,31 @@ public:
 	}
 
 	/**
-	 * Set the base at a given position in the k-mer and update the hash
-	 * value accordingly.
+	 * Change the hash value to reflect a change in the first/last base of
+	 * the k-mer.
 	 * @param kmer point to the k-mer char array
-	 * @param pos position of the base to be changed
+	 * @param dir if SENSE, change last base; if ANTISENSE,
+	 * change first base
 	 * @param base new value for the base
 	 */
-	void setBase(char* kmer, unsigned pos, char base)
+	void setLastBase(char* kmer, extDirection dir, char base)
 	{
+		if (dir == SENSE) {
+			/* roll left to remove old last char */
+			NTC64L(kmer[m_k-1], 'A', m_k, m_hash1, m_rcHash1);
+			/* roll right to add new last char */
+			NTC64('A', base, m_k, m_hash1, m_rcHash1);
+		} else {
+			/* roll right to remove old first char */
+			NTC64(kmer[0], 'A', m_k, m_hash1, m_rcHash1);
+			/* roll left to add new first char */
+			NTC64L('A', base, m_k, m_hash1, m_rcHash1);
+		}
+		m_hash = canonicalHash(m_hash1, m_rcHash1);
+
 		if (!MaskedKmer::mask().empty())
-			setBaseMasked(kmer, pos, base);
-		else
-			setBaseUnmasked(kmer, pos, base);
-	}
-
-	/**
-	 * Set the base at a given position in the k-mer and update the hash
-	 * value accordingly.
-	 * @param kmer point to the k-mer char array
-	 * @param pos position of the base to be changed
-	 * @param base new value for the base
-	 */
-	void setBaseMasked(char* kmer, unsigned pos, char base)
-	{
-		const std::string& spacedSeed = MaskedKmer::mask();
-		assert(spacedSeed.length() == m_k);
-		m_hash = ::setBase(m_hash1, m_rcHash1, spacedSeed.c_str(), kmer,
-			pos, base, m_k);
-	}
-
-	/**
-	 * Set the base at a given position in the k-mer and update the hash
-	 * value accordingly.
-	 * @param kmer point to the k-mer char array
-	 * @param pos position of the base to be changed
-	 * @param base new value for the base
-	 */
-	void setBaseUnmasked(char* kmer, unsigned pos, char base)
-	{
-		m_hash = ::setBase(m_hash1, m_rcHash1, kmer, pos, base, m_k);
+			m_hash = maskHash(m_hash1, m_rcHash1, MaskedKmer::mask().c_str(),
+				kmer, m_k);
 	}
 
 private:

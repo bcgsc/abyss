@@ -57,7 +57,7 @@ SUBDIRS = \
 	Sealer \
 	AdjList \
 	lib/bloomfilter \
-	lib/rolling-hash \
+	lib/nthash \
 	$(GTest) \
 	$(UnitTest)
 

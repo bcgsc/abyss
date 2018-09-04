@@ -153,43 +153,24 @@ TEST_F(RollingHashTest, resetMasked)
 	ASSERT_EQ(rightKmerHash, middleKmerHash);
 }
 
-TEST_F(RollingHashTest, setBase)
+TEST_F(RollingHashTest, setLastBase)
 {
 	MaskedKmer::mask().clear();
 
 	char kmer1[] = "ACGT";
-	char kmer2[] = "ACCT";
+	char kmer2[] = "ACGA";
+	char kmer3[] = "GCGT";
 
 	RollingHash hash1(kmer1, m_numHashes, m_k);
 	RollingHash hash2(kmer2, m_numHashes, m_k);
+	RollingHash hash3(kmer3, m_numHashes, m_k);
 
 	ASSERT_NE(hash2, hash1);
-	hash1.setBase(kmer1, 2, 'C');
-	ASSERT_EQ(0, strcmp(kmer1, kmer2));
+	hash1.setLastBase(kmer1, SENSE, 'A');
 	ASSERT_EQ(hash2, hash1);
-}
 
-TEST_F(RollingHashTest, setBaseMasked)
-{
-	MaskedKmer::setMask("1101");
-
-	char kmer1[] = "ACGT";
-	char kmer2[] = "ACCT";
-
-	RollingHash hash1(kmer1, m_numHashes, m_k);
-	RollingHash hash2(kmer2, m_numHashes, m_k);
-
-	/* hashes should agree since mismatch is in masked position */
-	ASSERT_EQ(hash2, hash1);
-	ASSERT_NE(0, strcmp(kmer1, kmer2));
-
-	/* fix mismatch in masked position (hash values shouldn't change) */
-	hash1.setBase(kmer1, 2, 'C');
-	ASSERT_EQ(hash2, hash1);
-	ASSERT_EQ(0, strcmp(kmer1, kmer2));
-
-	/* create mismatch in unmasked position (hash value should now differ) */
-	hash1.setBase(kmer1, 1, 'G');
-	ASSERT_NE(hash2, hash1);
-	ASSERT_NE(0, strcmp(kmer1, kmer2));
+	hash1.reset(kmer1);
+	ASSERT_NE(hash3, hash1);
+	hash1.setLastBase(kmer1, ANTISENSE, 'G');
+	ASSERT_EQ(hash3, hash1);
 }

@@ -45,6 +45,8 @@ public:
 		: m_kmer(kmer), m_rollingHash(rollingHash) {}
 
 	const LightweightKmer& kmer() const { return m_kmer; };
+	LightweightKmer& kmer() { return m_kmer; };
+
 	const RollingHash& rollingHash() const { return m_rollingHash; }
 
 	RollingBloomDBGVertex clone() const {
@@ -63,12 +65,8 @@ public:
 
 	void setLastBase(extDirection dir, char base)
 	{
-		const unsigned k = Kmer::length();
-		if (dir == SENSE) {
-			m_rollingHash.setBase(m_kmer.c_str(), k-1, base);
-		} else {
-			m_rollingHash.setBase(m_kmer.c_str(), 0, base);
-		}
+		m_rollingHash.setLastBase(kmer().c_str(), dir, base);
+		kmer().setLastBase(dir, base);
 	}
 
 	/**

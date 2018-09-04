@@ -1,6 +1,8 @@
 #ifndef LIGHTWEIGHT_KMER_H
 #define LIGHTWEIGHT_KMER_H 1
 
+#include "BloomDBG/MaskedKmer.h"
+
 #include <algorithm>
 #include <cstring>
 #include <boost/shared_array.hpp>
