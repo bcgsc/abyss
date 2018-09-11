@@ -111,6 +111,7 @@ static const char USAGE_MESSAGE[] =
 "  -s, --search-mem=N           mem limit for graph searches; multiply by the\n"
 "                               number of threads (-j) to get the total mem used\n"
 "                               for graph traversal [500M]\n"
+"  -g, --gap-file=FILE          write sealed gaps to FILE\n"
 "  -t, --trace-file=FILE        write graph search stats to FILE\n"
 "  -v, --verbose                display verbose output\n"
 "      --help                   display this help and exit\n"
@@ -205,6 +206,9 @@ namespace opt {
 	/** Output file for graph search stats */
 	static string tracefilePath;
 
+	/** Output file for sealed gaps */
+	static string gapfilePath;
+
 	/** Mask bases not in flanks */
 	static int mask = 0;
 
@@ -237,7 +241,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:b:B:d:ef:F:G:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "S:L:b:B:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -274,6 +278,7 @@ static const struct option longopts[] = {
 	{ "read-name",        required_argument, NULL, 'r' },
 	{ "search-mem",       required_argument, NULL, 's' },
 	{ "trace-file",       required_argument, NULL, 't' },
+	{ "gap-file",         required_argument, NULL, 'g' },
 	{ "verbose",          no_argument, NULL, 'v' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
@@ -416,8 +421,8 @@ template <typename Graph>
 string merge(const Graph& g,
 	unsigned k,
 	const Gap& gap,
-	FastaRecord &read1,
-	FastaRecord &read2,
+	const FastaRecord &read1,
+	const FastaRecord &read2,
 	const ConnectPairsParams& params,
 	Counters& g_count,
 	ofstream& traceStream)
@@ -573,12 +578,12 @@ void kRun(const ConnectPairsParams& params,
 	map<FastaRecord, map<FastaRecord, Gap> > &flanks,
 	unsigned &gapsclosed,
 	ofstream &logStream,
-	ofstream &traceStream)
+	ofstream &traceStream,
+	ofstream &gapStream)
 {
 	map<FastaRecord, map<FastaRecord, Gap> >::iterator read1_it;
 	map<FastaRecord, Gap>::iterator read2_it;
 	unsigned uniqueGapsClosed = 0;
-	bool success;
 
 	Counters g_count;
 	g_count.noStartOrGoalKmer = 0;
@@ -598,31 +603,50 @@ void kRun(const ConnectPairsParams& params,
 
 	printLog(logStream, "Flanks inserted into k run = " + IntToString(flanks.size()) + "\n");
 
-	for (read1_it = flanks.begin(); read1_it != flanks.end();) {
-		success = false;
+	int counter = 0;
+	vector<map<FastaRecord, map<FastaRecord, Gap> >::iterator> flanks_closed;
+#pragma omp parallel private(read1_it, read2_it) firstprivate(counter)
+	for (read1_it = flanks.begin(); read1_it != flanks.end(); ++read1_it) {
 		FastaRecord read1 = read1_it->first;
-		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); read2_it++) {
+		bool success = false;
+		for (read2_it = flanks[read1].begin(); read2_it != flanks[read1].end(); ++read2_it, ++counter) {
+#if _OPENMP
+			if (counter % omp_get_num_threads() != omp_get_thread_num())
+				continue;
+#endif
 			FastaRecord read2 = read2_it->first;
 
 			int startposition = read2_it->second.gapStart();
 			string tempSeq = merge(g, k, read2_it->second, read1, read2, params, g_count, traceStream);
 			if (!tempSeq.empty()) {
 				success = true;
+#pragma omp critical (allmerged)
 				allmerged[read1.id.substr(0,read1.id.length()-2)][startposition]
 					= ClosedGap(read2_it->second, tempSeq);
-//#pragma omp atomic
-				gapsclosed++;
-//#pragma omp atomic
-				uniqueGapsClosed++;
-				if (gapsclosed % 100 == 0)
+#pragma omp atomic
+				++uniqueGapsClosed;
+#pragma omp critical (gapsclosed)
+				if (++gapsclosed % 100 == 0)
 					printLog(logStream, IntToString(gapsclosed) + " gaps closed so far\n");
+
+				if (!opt::gapfilePath.empty())
+#pragma omp critical (gapStream)
+					gapStream << ">" << read1.id.substr(0,read1.id.length()-2)
+						  << "_" << read2_it->second.gapStart() << "-" << read2_it->second.gapEnd()
+						  << " LN:i:" << tempSeq.length() << '\n'
+						  << tempSeq << '\n';
 			}
 		}
 		if (success) {
-			flanks.erase(read1_it++);
+#pragma omp critical (flanks_closed)
+			flanks_closed.push_back(read1_it);
 		}
-		else
-			read1_it++;
+	}
+
+	for (vector<map<FastaRecord, map<FastaRecord, Gap> >::iterator>::iterator it = flanks_closed.begin();
+			it != flanks_closed.end(); ++it) {
+		if (flanks.count((*it)->first) > 0)
+		    flanks.erase(*it);
 	}
 
 	printLog(logStream, IntToString(uniqueGapsClosed) + " unique gaps closed for k" + IntToString(k) + "\n");
@@ -772,6 +796,8 @@ int main(int argc, char** argv)
 			opt::searchMem = SIToBytes(arg); break;
 		  case 't':
 			arg >> opt::tracefilePath; break;
+		  case 'g':
+		    arg >> opt::gapfilePath; break;
 		  case 'v':
 			opt::verbose++; break;
 		  case OPT_HELP:
@@ -873,6 +899,13 @@ int main(int argc, char** argv)
 		assert(traceStream.is_open());
 		ConnectPairsResult::printHeaders(traceStream);
 		assert_good(traceStream, opt::tracefilePath);
+	}
+
+	ofstream gapStream;
+	if (!opt::gapfilePath.empty()) {
+		gapStream.open(opt::gapfilePath.c_str());
+		assert(gapStream.is_open());
+		assert_good(gapStream, opt::gapfilePath);
 	}
 
 	string logOutputPath(opt::outputPrefix);
@@ -1021,7 +1054,7 @@ int main(int argc, char** argv)
 		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
 		printLog(logStream, temp);
 
-		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream);
+		kRun(params, opt::k, g, allmerged, flanks, gapsclosed, logStream, traceStream, gapStream);
 
 		temp = "k" + IntToString(opt::k) + " run complete\n"
 				+ "Total gaps closed so far = " + IntToString(gapsclosed) + "\n\n";
@@ -1072,6 +1105,11 @@ int main(int argc, char** argv)
 	if (!opt::tracefilePath.empty()) {
 		assert_good(traceStream, opt::tracefilePath);
 		traceStream.close();
+	}
+
+	if (!opt::gapfilePath.empty()) {
+		assert_good(gapStream, opt::gapfilePath);
+		gapStream.close();
 	}
 
 	return 0;
