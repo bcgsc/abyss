@@ -1,3 +1,34 @@
+2018-09-11  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.1.1
+
+	abyss-bloom-dbg:
+	* upgrade to most recent version of ntHash to reduce
+	some assembly/hashing artifacts. On a human assembly, this
+	reduced QUAST major misassemblies by 5% and increased
+	scaffold contiguity by 10%
+	* `kc` parameter now also applies to MPI assemblies (see below)
+
+	abyss-fac:
+	* change N20 and N80 to N25 and N75, respectively
+
+	ABYSS-P:
+	* add `--kc` option, with implements a hard minimum k-mer
+	multiplicity cutoff
+
+	abyss-pe:
+	* fix `zsh: no such option: pipefail` error with
+	old versions of `zsh` (fallback to `bash` instead)
+	* adding `time=1` now times *all* assembly commands
+
+	abyss-sealer:
+	* parallelize gap sealing with OpenMP (thanks to
+	@schutzekatze!)
+	* add `--gap-file` option (thanks to @schutzekatze!)
+
+	DistanceEst:
+	* add support for GFA output
+
 2018-04-13  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.1.0

@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 2.1.0, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 2.1.1, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 m4_include(m4/m4_ax_pthread.m4)
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
@@ -263,7 +263,7 @@ elif test x"$enable_werror" = x"yes"; then
 	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 else
 	# default
-	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra')
 fi
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi

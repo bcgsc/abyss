@@ -26,4 +26,4 @@ abyss_bloom_dbg_SOURCES = \
 	RollingHashIterator.h \
 	SpacedSeed.h \
 	$(top_srcdir)/lib/bloomfilter/BloomFilter.hpp \
-	$(top_srcdir)/lib/rolling-hash/rolling.h
+	$(top_srcdir)/lib/nthash/nthash.hpp
