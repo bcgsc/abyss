@@ -813,6 +813,24 @@ namespace BloomDBG {
 
 	}
 
+	/** Return true if a sequence contains duplicate k-mers */
+	bool containsDuplicateKmers(const Sequence& seq, unsigned k,
+		bool canonical = true)
+	{
+		const unsigned numHashes = 1;
+		unordered_set<Vertex> seen;
+		for (RollingHashIterator it(seq, numHashes, k);
+			 it != RollingHashIterator::end(); ++it) {
+			Vertex v(it.kmer().c_str(), it.rollingHash());
+			if (canonical)
+				v.canonicalize();
+			if (seen.find(v) != seen.end())
+				return true;
+			seen.insert(v);
+		}
+		return false;
+	}
+
 	/** Extend a read left/right from its start/end k-mers */
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
@@ -822,6 +840,10 @@ namespace BloomDBG {
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
+		/* don't extend reads that contain duplicate k-mers */
+		if (containsDuplicateKmers(rec.seq, params.k))
+			return;
+
 	    unsigned l = path.size();
 
 		ExtendPathParams extendParams;
