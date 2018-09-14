@@ -838,8 +838,8 @@ namespace BloomDBG {
 
 		contigRec.leftExtensionResult
 			= extendPath(path, REVERSE, dbg, extendParams);
-		bool leftBlunt = contigRec.leftExtensionResult == DEAD_END
-			|| contigRec.leftExtensionResult == EXTENDED_TO_DEAD_END;
+		bool leftBlunt = contigRec.leftExtensionResult != BRANCHING_POINT
+			&& contigRec.leftExtensionResult != EXTENDED_TO_BRANCHING_POINT;
 		contigRec.leftExtension = path.size() - l;
 
 		if (leftBlunt && contigRec.leftExtension < params.trim)
@@ -847,8 +847,8 @@ namespace BloomDBG {
 
 		contigRec.rightExtensionResult
 			= extendPath(path, FORWARD, dbg, extendParams);
-		bool rightBlunt = contigRec.rightExtensionResult == DEAD_END
-			|| contigRec.rightExtensionResult == EXTENDED_TO_DEAD_END;
+		bool rightBlunt = contigRec.rightExtensionResult != BRANCHING_POINT
+			&& contigRec.rightExtensionResult != EXTENDED_TO_BRANCHING_POINT;
 		contigRec.rightExtension = path.size() - l - contigRec.leftExtension;
 
 		if (rightBlunt && contigRec.rightExtension < params.trim)
