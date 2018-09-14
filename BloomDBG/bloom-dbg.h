@@ -479,46 +479,6 @@ namespace BloomDBG {
 	}
 
 	/**
-	 * Trim contiguous stretches of previously-assembled k-mers from
-	 * both ends of a contig.
-	 *
-	 * @param seq contig to be trimmed
-	 * @param assembledKmerSet Bloom filter of k-mers from previously
-	 * assembled contigs
-	 */
-	template <typename BloomT>
-	inline static void trimContigOverlaps(Sequence &seq,
-		const BloomT& assembledKmerSet)
-	{
-		const unsigned k = assembledKmerSet.getKmerSize();
-		const unsigned numHashes = assembledKmerSet.getHashNum();
-
-		/* trim previously assembled k-mers from start of sequence */
-		RollingHashIterator fwd(seq, numHashes, k);
-		for (; fwd != RollingHashIterator::end(); ++fwd) {
-			if (!assembledKmerSet.contains(*fwd))
-				break;
-		}
-		if (fwd != RollingHashIterator::end() && fwd.pos() > 0)
-			seq.erase(0, fwd.pos());
-
-		/* trim previously assembled k-mers from end of sequence */
-		Sequence rcSeq = reverseComplement(seq);
-		RollingHashIterator rev(rcSeq, numHashes, k);
-		for (; rev != RollingHashIterator::end(); ++rev) {
-			if (!assembledKmerSet.contains(*rev))
-				break;
-		}
-		if (rev != RollingHashIterator::end() && rev.pos() > 0)
-			rcSeq.erase(0, rev.pos());
-
-		/* flip seq back to original orientation */
-		seq = reverseComplement(rcSeq);
-
-		assert(seq.length() >= k);
-	}
-
-	/**
 	 * Return true if the left end of the given sequence is a blunt end
 	 * in the Bloom filterde Bruijn graph. PRECONDITION: `seq` does not contain
 	 * any non-ACGT chars.
@@ -614,9 +574,6 @@ namespace BloomDBG {
 			}
 
 			if (!redundant) {
-
-				/* trim previously assembled k-mers from both ends */
-				trimContigOverlaps(seq, assembledKmerSet);
 
 				/* mark remaining k-mers as assembled */
 				addKmersToBloom(seq, assembledKmerSet);
