@@ -367,6 +367,13 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			if (d >= maxDepth) {
 				maxDepth = d;
 				longestBranch = v;
+			} else if (d == maxDepth && v < longestBranch) {
+				/*
+				 * make an arbitrary choice among branches
+				 * of equal length using the vertex comparison
+				 * operator (operator<).
+				 */
+				longestBranch = v;
 			}
 		}
 	} else {
@@ -378,6 +385,13 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			size_t d = depth(v, dir, g);
 			if (d >= maxDepth) {
 				maxDepth = d;
+				longestBranch = v;
+			} else if (d == maxDepth && v < longestBranch) {
+				/*
+				 * make an arbitrary choice among branches
+				 * of equal length using the vertex comparison
+				 * operator (operator<).
+				 */
 				longestBranch = v;
 			}
 		}

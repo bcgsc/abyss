@@ -105,6 +105,15 @@ public:
 	{
 		return !(*this == o);
 	}
+
+	/**
+	 * Comparison operator that is invariant under reverse-complement.
+	 */
+	bool operator<(const RollingBloomDBGVertex& o) const
+	{
+		return kmer() < o.kmer();
+	}
+
 };
 
 NAMESPACE_STD_HASH_BEGIN

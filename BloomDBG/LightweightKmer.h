@@ -150,6 +150,37 @@ public:
 	{
 		return !operator==(o);
 	}
+
+	/** Comparison operator that is invariant under reverse complement */
+	bool operator<(const LightweightKmer& o) const
+	{
+		unsigned k = Kmer::length();
+
+		bool rc1 = !isCanonical();
+		bool rc2 = !o.isCanonical();
+		int end1 = rc1 ? -1 : k;
+		int end2 = rc2 ? -1 : k;
+		int inc1 = rc1 ? -1 : 1;
+		int inc2 = rc2 ? -1 : 1;
+
+		int pos1 = rc1 ? k-1 : 0;
+		int pos2 = rc2 ? k-1 : 0;
+		for (; pos1 != end1 && pos2 != end2; pos1+=inc1, pos2+=inc2) {
+			char c1 = toupper(m_kmer.get()[pos1]);
+			char c2 = toupper(o.m_kmer.get()[pos2]);
+			if (rc1)
+				c1 = complementBaseChar(c1);
+			if (rc2)
+				c2 = complementBaseChar(c2);
+			if (c1 > c2)
+				return false;
+			if (c1 < c2)
+				return true;
+		}
+
+		return false;
+	}
+
 };
 
 #endif
