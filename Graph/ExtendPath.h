@@ -364,7 +364,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			degree++;
 			const V& v = target(*oei, g);
 			size_t d = depth(v, dir, g);
-			if (d >= maxDepth) {
+			if (d > maxDepth) {
 				maxDepth = d;
 				longestBranch = v;
 			} else if (d == maxDepth && v < longestBranch) {
@@ -383,7 +383,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			degree++;
 			const V& v = source(*iei, g);
 			size_t d = depth(v, dir, g);
-			if (d >= maxDepth) {
+			if (d > maxDepth) {
 				maxDepth = d;
 				longestBranch = v;
 			} else if (d == maxDepth && v < longestBranch) {
