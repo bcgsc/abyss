@@ -608,6 +608,66 @@ namespace BloomDBG {
 	}
 
 	/**
+	 * Special case behaviour for circular contigs.
+	 *
+	 * A circular contig can contain at most one branch k-mer (and it
+	 * may contain zero branch k-mers). If a circular contig contains
+	 * a branch k-mer, always output it as a separate contig.
+	 */
+	template <typename GraphT, typename AssembledKmerSetT,
+		typename AssemblyStreamsT>
+	static inline void processCircularContig(const Path<Vertex>& contigPath,
+		ContigRecord& rec, const GraphT& dbg,
+		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
+		const AssemblyParams& params, AssemblyCounters& counters,
+		AssemblyStreamsT& streams)
+	{
+		typedef typename Path<Vertex>::const_iterator PathIt;
+
+		/* check that the contig is circular */
+		assert(edge(contigPath.back(), contigPath.front(), dbg).second);
+
+		PathIt branchIt = contigPath.end();
+		for (PathIt it = contigPath.begin(); it != contigPath.end(); ++it) {
+			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
+				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
+				branchIt = it;
+			}
+		}
+
+		/* if the circular contig is only one k-mer long (i.e. a self edge)
+		 * or if there is no branch k-mer, just output the contig as is */
+
+		if (contigPath.size() == 1 || branchIt == contigPath.end()) {
+			outputContig(contigPath, rec, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+			return;
+		}
+
+		assert(branchIt != contigPath.end());
+
+		/* output branch k-mer as separate contig */
+
+		Path<Vertex> branchKmer;
+		branchKmer.push_back(*branchIt);
+		outputContig(branchKmer, rec, dbg, assembledKmerSet,
+			contigEndKmers, params, counters, streams);
+
+		/*
+		 * join the two halves of the circular contig, before
+		 * and after the branch k-mer
+		 */
+
+		PathIt right = branchIt;
+		++right;
+		Path<Vertex> joined;
+		joined.insert(joined.end(), right, contigPath.end());
+		joined.insert(joined.end(), contigPath.begin(), branchIt);
+		outputContig(joined, rec, dbg, assembledKmerSet,
+			contigEndKmers, params, counters, streams);
+	}
+
+	/**
 	 * Ensure that branching k-mers are not repeated in the output
 	 * contigs by selectively trimming contig ends.
 	 *
@@ -650,6 +710,14 @@ namespace BloomDBG {
 		}
 
 		assert(contigPath.size() >= 2);
+
+		/* special case: circular contigs */
+
+		if (edge(contigPath.back(), contigPath.front(), dbg).second) {
+			processCircularContig(contigPath, rec, dbg, assembledKmerSet,
+				contigEndKmers, params, counters, streams);
+			return;
+		}
 
 		unsigned inDegree1 = trueDegree(contigPath.front(),
 			REVERSE, dbg, params.trim);

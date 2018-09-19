@@ -509,4 +509,22 @@ get(edge_bundle_t, const RollingBloomDBG<BloomT>&,
 	return no_property();
 }
 
+template <typename Graph>
+static inline
+std::pair<typename boost::graph_traits<Graph>::edge_descriptor, bool>
+edge(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	const typename boost::graph_traits<Graph>::vertex_descriptor&v,
+	const Graph& g)
+{
+	typedef typename boost::graph_traits<Graph>::edge_descriptor E;
+	typedef typename boost::graph_traits<Graph>::adjacency_iterator AdjIt;
+	AdjIt it, end;
+	E e(u, v);
+	for (boost::tie(it, end) = adjacent_vertices(u, g); it != end; ++it) {
+		if (*it == v)
+			return std::make_pair(e, true);
+	}
+	return std::make_pair(e, false);
+}
+
 #endif
