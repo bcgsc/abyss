@@ -469,9 +469,8 @@ namespace BloomDBG {
 		contig.id = id.str();
 		contig.comment = comment.str();
 
-		/* set seq (in canonical orientation) */
+		/* set seq */
 		contig.seq = seq;
-		canonicalize(contig.seq);
 
 		/* output FASTQ record */
 		out << contig;
