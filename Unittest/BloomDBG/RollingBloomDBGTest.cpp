@@ -189,6 +189,43 @@ TEST_F(RollingBloomDBGTest, pathTraversal)
 	ASSERT_EQ(ei_end, ei);
 }
 
+TEST_F(RollingBloomDBGTest, vertexComparison)
+{
+	/*
+	 * Note: vertex comparision should be
+	 * invariant with respect to k-mer orientation.
+	 * In other words, a k-mer and its reverse
+	 * complement are considered to be the same
+	 * vertex. Different vertices are compared
+	 * by converting them to their canonical
+	 * orientations.
+	 */
+
+	const V kmer1("ACGTA", RollingHash("ACGTA", m_numHashes, m_k));
+	const V rcKmer1("TACGT", RollingHash("TACGT", m_numHashes, m_k));
+
+	const V kmer2("TGCAT", RollingHash("TGCAT", m_numHashes, m_k));
+	const V rcKmer2("ATGCA", RollingHash("ATGCA", m_numHashes, m_k));
+
+	ASSERT_TRUE(kmer1.isCanonical());
+	ASSERT_FALSE(kmer2.isCanonical());
+
+	/* we expect a vertex to be equal to its reverse complement */
+
+	ASSERT_EQ(kmer1, rcKmer1);
+	ASSERT_EQ(kmer2, rcKmer2);
+
+	/*
+	 * we expect kmer1 < kmer2, regardless of the orientation
+	 * of the two k-mers
+	 */
+
+	ASSERT_TRUE(kmer1 < kmer2);
+	ASSERT_TRUE(kmer1 < rcKmer2);
+	ASSERT_TRUE(rcKmer1 < kmer2);
+	ASSERT_TRUE(rcKmer1 < rcKmer2);
+}
+
 /** Test fixture for RollingBloomDBG with spaced seed k-mers. */
 class RollingBloomDBGSpacedSeedTest : public ::testing::Test
 {

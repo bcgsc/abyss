@@ -30,34 +30,3 @@ TEST(LightweightKmerTest, canonicalize)
 	EXPECT_NE(kmer2, kmer2Copy);
 	EXPECT_EQ(kmer1, kmer2Copy);
 }
-
-TEST(LightweightKmerTest, LessThan)
-{
-	/*
-	 * Note: the less-than operator (i.e. `operator<`)
-	 * is written to be invariant under reverse-complement.
-	 * In other words, it compares the canonical orientations
-	 * of the two k-mers.
-	 */
-
-	Kmer::setLength(5);
-
-	const LightweightKmer kmer1("ACGTA");
-	const LightweightKmer rcKmer1("TACGT");
-
-	const LightweightKmer kmer2("TGCAT");
-	const LightweightKmer rcKmer2("ATGCA");
-
-	ASSERT_TRUE(kmer1.isCanonical());
-	ASSERT_FALSE(kmer2.isCanonical());
-
-	/*
-	 * we expect kmer1 < kmer2, regardless of the orientation
-	 * of the two k-mers
-	 */
-
-	ASSERT_TRUE(kmer1 < kmer2);
-	ASSERT_TRUE(kmer1 < rcKmer2);
-	ASSERT_TRUE(rcKmer1 < kmer2);
-	ASSERT_TRUE(rcKmer1 < rcKmer2);
-}

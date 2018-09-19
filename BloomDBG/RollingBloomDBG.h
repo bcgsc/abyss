@@ -95,7 +95,7 @@ public:
 		if (m_rollingHash != o.m_rollingHash)
 			return false;
 
-		return m_kmer == o.m_kmer;
+		return compare(o) == 0;
 	}
 
 	/**
@@ -111,7 +111,51 @@ public:
 	 */
 	bool operator<(const RollingBloomDBGVertex& o) const
 	{
-		return kmer() < o.kmer();
+		return compare(o) < 0;
+	}
+
+	/** Comparison operator that is invariant under reverse complement */
+	int compare(const RollingBloomDBGVertex& o) const
+	{
+		unsigned k = Kmer::length();
+		const std::string& spacedSeed = MaskedKmer::mask();
+
+		const LightweightKmer& kmer1 = kmer();
+		const LightweightKmer& kmer2 = o.kmer();
+
+		bool rc1 = !kmer1.isCanonical();
+		bool rc2 = !kmer2.isCanonical();
+		int end1 = rc1 ? -1 : k;
+		int end2 = rc2 ? -1 : k;
+		int inc1 = rc1 ? -1 : 1;
+		int inc2 = rc2 ? -1 : 1;
+
+		int pos1 = rc1 ? k-1 : 0;
+		int pos2 = rc2 ? k-1 : 0;
+		for (; pos1 != end1 && pos2 != end2; pos1+=inc1, pos2+=inc2) {
+
+			char c1 = toupper(kmer1.c_str()[pos1]);
+			char c2 = toupper(kmer2.c_str()[pos2]);
+
+			/* ignore positions masked by spaced seed */
+			if (!spacedSeed.empty() && spacedSeed.at(pos1) != '1') {
+				/* spaced seed must be symmetric */
+				assert(spacedSeed.at(pos2) != '1');
+				continue;
+			}
+
+			if (rc1)
+				c1 = complementBaseChar(c1);
+			if (rc2)
+				c2 = complementBaseChar(c2);
+			if (c1 > c2)
+				return 1;
+			if (c1 < c2)
+				return -1;
+
+		}
+
+		return 0;
 	}
 
 };
