@@ -424,12 +424,18 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 
 	assert(dir == FORWARD || dir == REVERSE);
 
+	/* current head node of the path */
+
 	V& u = (dir == FORWARD) ? path.back() : path.front();
+
+	/* check if we have hit a dead end in the graph */
 
 	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
 	if (outDegree == 0) {
 		return SE_DEAD_END;
 	}
+
+	/* check if the path can be extended unambigously */
 
 	unsigned inDegree = 0;
 	if (params.lookBehind)
@@ -446,6 +452,12 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 		}
 		return SE_EXTENDED;
 	}
+
+	/*
+	 * check if the extension becomes unambiguous when we exclude
+	 * branches that are likely false (i.e. branches created by
+	 * sequencing errors or Bloom filter false positives).
+	 */
 
 	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
 	std::vector<V> longBranchesOut = trueBranches(u, dir, g, params.trimLen);
