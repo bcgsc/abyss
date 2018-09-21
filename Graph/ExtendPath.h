@@ -460,11 +460,11 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	 */
 
 	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
-	std::vector<V> longBranchesOut = trueBranches(u, dir, g, params.trimLen);
-	std::vector<V> longBranchesIn;
+	std::vector<V> trueBranchesOut = trueBranches(u, dir, g, params.trimLen);
+	std::vector<V> trueBranchesIn;
 
 	if (params.lookBehind) {
-		longBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
+		trueBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
 		/*
 		 * Tricky: Make sure the path we are extending
 		 * is treated as a valid incoming branch, even if it is less
@@ -474,18 +474,18 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 		if (path.size() > 1) {
 			const V& predecessor = (dir == FORWARD) ?
 				*(path.rbegin() + 1) : *(path.begin() + 1);
-			if (std::find(longBranchesIn.begin(), longBranchesIn.end(),
-				predecessor) == longBranchesIn.end()) {
-				longBranchesIn.push_back(predecessor);
+			if (std::find(trueBranchesIn.begin(), trueBranchesIn.end(),
+				predecessor) == trueBranchesIn.end()) {
+				trueBranchesIn.push_back(predecessor);
 			}
 		}
 	}
 
-	if ((params.lookBehind && longBranchesIn.size() > 1) ||
-		longBranchesOut.size() > 1)
+	if ((params.lookBehind && trueBranchesIn.size() > 1) ||
+		trueBranchesOut.size() > 1)
 		return SE_BRANCHING_POINT;
 
-	if (longBranchesOut.size() == 0) {
+	if (trueBranchesOut.size() == 0) {
 		/*
 		 * If we have multiple branches that are shorter
 		 * than the trim length then choose the longest one.
@@ -502,9 +502,9 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	}
 
 	if (dir == FORWARD)
-		path.push_back(longBranchesOut.front());
+		path.push_back(trueBranchesOut.front());
 	else
-		path.push_front(longBranchesOut.front());
+		path.push_front(trueBranchesOut.front());
 
 	return SE_EXTENDED;
 }
