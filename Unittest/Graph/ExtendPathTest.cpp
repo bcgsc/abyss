@@ -222,28 +222,36 @@ TEST(extendPath, withTrimming)
 	params.trimLen = 1;
 
 	/*
-	 *       2
-	 *      /
-	 *  0--1--3--4
+	 *          3
+	 *         /
+	 *  0--1--2--4--5
 	 */
 
 	Graph g;
 	add_edge(0, 1, g);
 	add_edge(1, 2, g);
-	add_edge(1, 3, g);
-	add_edge(3, 4, g);
+	add_edge(2, 3, g);
+	add_edge(2, 4, g);
+	add_edge(4, 5, g);
 
 	Path<Vertex> expectedPath;
 	expectedPath.push_back(0);
 	expectedPath.push_back(1);
-	expectedPath.push_back(3);
+	expectedPath.push_back(2);
 	expectedPath.push_back(4);
+	expectedPath.push_back(5);
 
-	Path<Vertex> path;
-	path.push_back(0);
+	Path<Vertex> pathFwd;
+	pathFwd.push_back(0);
 
-	extendPath(path, FORWARD, g, params);
-	ASSERT_EQ(expectedPath, path);
+	extendPath(pathFwd, FORWARD, g, params);
+	ASSERT_EQ(expectedPath, pathFwd);
+
+	Path<Vertex> pathRev;
+	pathRev.push_back(5);
+
+	extendPath(pathRev, REVERSE, g, params);
+	ASSERT_EQ(expectedPath, pathRev);
 
 	/*
 	 *       2  4
