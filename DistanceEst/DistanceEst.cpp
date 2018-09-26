@@ -59,6 +59,8 @@ static const char USAGE_MESSAGE[] =
 "  -o, --out=FILE        write result to FILE\n"
 "      --mle             use the MLE [default]\n"
 "                        (maximum likelihood estimator)\n"
+"      --median          use the difference of the population median\n"
+"                        and the sample median\n"
 "      --mean            use the difference of the population mean\n"
 "                        and the sample mean\n"
 "      --dist            output the graph in dist format [default]\n"
@@ -78,7 +80,7 @@ static const char USAGE_MESSAGE[] =
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 /** Which estimator to use. See opt::method. */
-enum { MLE, MEAN };
+enum { MLE, MEAN, MEDIAN };
 
 namespace opt {
 	string db;
@@ -131,6 +133,7 @@ static const struct option longopts[] = {
 	{ "mind",        required_argument, NULL, OPT_MIND },
 	{ "maxd",        required_argument, NULL, OPT_MAXD },
 	{ "mle",         no_argument,       &opt::method, MLE },
+	{ "median",      no_argument,       &opt::method, MEDIAN },
 	{ "mean",        no_argument,       &opt::method, MEAN },
 	{ "kmer",        required_argument, NULL, 'k' },
 	{ "npairs",      required_argument, NULL, 'n' },
@@ -164,6 +167,29 @@ static int estimateDistanceUsingMean(
 	Histogram h(samples.begin(), samples.end());
 	int d = (int)round(pmf.mean() - h.mean());
 
+	// Count the number of samples that agree with the distribution.
+	unsigned n = 0;
+	for (Histogram::const_iterator it = h.begin();
+			it != h.end(); ++it)
+		if (pmf[it->first + d] > pmf.minProbability())
+			n += it->second;
+
+	numPairs = n;
+	return d;
+}
+
+/** Estimate the distance between two contigs using the difference of
+ * the population median and the sample median.
+ * @param numPairs [out] the number of pairs that agree with the
+ * expected distribution
+ * @return the estimated distance
+ */
+static int estimateDistanceUsingMedian(
+		const std::vector<int>& samples, const PMF& pmf,
+		unsigned& numPairs)
+{
+	Histogram h(samples.begin(), samples.end());
+	int d = (int)round(pmf.median() - h.median());
 	// Count the number of samples that agree with the distribution.
 	unsigned n = 0;
 	for (Histogram::const_iterator it = h.begin();
@@ -256,6 +282,11 @@ static int estimateDistance(unsigned len0, unsigned len1,
 		// Use the difference of the population mean
 		// and the sample mean.
 		return estimateDistanceUsingMean(
+				fragmentSizes, pmf, numPairs);
+	  case MEDIAN:
+		// Use the difference of the population median
+		// and the sample median.
+		return estimateDistanceUsingMedian(
 				fragmentSizes, pmf, numPairs);
 	  default:
 		assert(false);
