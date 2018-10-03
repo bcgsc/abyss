@@ -607,64 +607,81 @@ namespace BloomDBG {
 
 	}
 
-	/**
-	 * Special case behaviour for circular contigs.
-	 *
-	 * A circular contig can contain at most one branch k-mer (and it
-	 * may contain zero branch k-mers). If a circular contig contains
-	 * a branch k-mer, always output it as a separate contig.
-	 */
-	template <typename GraphT, typename AssembledKmerSetT,
-		typename AssemblyStreamsT>
-	static inline void processCircularContig(const Path<Vertex>& contigPath,
-		ContigRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
+	enum ContigType { CT_LINEAR, CT_CIRCULAR, CT_HAIRPIN };
+
+	template <typename GraphT>
+	static inline ContigType getContigType(const Path<Vertex>& contigPath,
+		const GraphT& dbg)
 	{
-		typedef typename Path<Vertex>::const_iterator PathIt;
+		if (edge(contigPath.back(), contigPath.front(), dbg).second) {
 
-		/* check that the contig is circular */
-		assert(edge(contigPath.back(), contigPath.front(), dbg).second);
+			Vertex v = contigPath.front().clone();
+			v.shift(ANTISENSE, contigPath.back().kmer().getBase(0));
 
-		PathIt branchIt = contigPath.end();
-		for (PathIt it = contigPath.begin(); it != contigPath.end(); ++it) {
-			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
-				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
-				branchIt = it;
-			}
+			if (v.kmer() == contigPath.back().kmer())
+				return CT_CIRCULAR;
+			else
+				return CT_HAIRPIN;
+
 		}
 
-		/* if the circular contig is only one k-mer long (i.e. a self edge)
-		 * or if there is no branch k-mer, just output the contig as is */
+		return CT_LINEAR;
+	}
 
-		if (contigPath.size() == 1 || branchIt == contigPath.end()) {
-			outputContig(contigPath, rec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
+	/** Special case behaviour for circular/hairpin contigs */
+	template <typename GraphT>
+	static inline void preprocessCircularContig(Path<Vertex>& contigPath,
+		const GraphT& dbg, unsigned trim)
+	{
+		assert(!contigPath.empty());
+
+		ContigType contigType = getContigType(contigPath, dbg);
+		assert(contigType != CT_LINEAR);
+
+		if (contigPath.size() == 1)
 			return;
-		}
-
-		assert(branchIt != contigPath.end());
-
-		/* output branch k-mer as separate contig */
-
-		Path<Vertex> branchKmer;
-		branchKmer.push_back(*branchIt);
-		outputContig(branchKmer, rec, dbg, assembledKmerSet,
-			contigEndKmers, params, counters, streams);
 
 		/*
-		 * join the two halves of the circular contig, before
-		 * and after the branch k-mer
+		 * Note: A circular/hairpin contig contains at most two branch k-mers.
+		 * And if it does contain branch k-mers, they will be the first/last
+		 * k-mers.
+		 *
+		 * If only one end of the circular/hairpin contig is a branch k-mer,
+		 * add that k-mer to the other end of the contig as well. This
+		 * enables the usual branch k-mer trimming logic for linear contigs to
+		 * produce the correct results downstream.
 		 */
 
-		PathIt right = branchIt;
-		++right;
-		Path<Vertex> joined;
-		joined.insert(joined.end(), right, contigPath.end());
-		joined.insert(joined.end(), contigPath.begin(), branchIt);
-		outputContig(joined, rec, dbg, assembledKmerSet,
-			contigEndKmers, params, counters, streams);
+		bool branchStart = trueDegree(contigPath.front(), REVERSE, dbg, trim) > 1
+			|| trueDegree(contigPath.front(), FORWARD, dbg, trim) > 1;
+
+		bool branchEnd = trueDegree(contigPath.back(), REVERSE, dbg, trim) > 1
+			|| trueDegree(contigPath.back(), FORWARD, dbg, trim) > 1;
+
+		if (branchStart && !branchEnd) {
+
+			if (contigType == CT_CIRCULAR) {
+				contigPath.push_back(contigPath.front());
+			} else {
+				assert(contigType == CT_HAIRPIN);
+				Vertex rc = contigPath.front().clone();
+				rc.reverseComplement();
+				contigPath.push_back(rc);
+			}
+
+		} else if (!branchStart && branchEnd) {
+
+			if (contigType == CT_CIRCULAR) {
+				contigPath.push_front(contigPath.back());
+			} else {
+				assert(contigType == CT_HAIRPIN);
+				Vertex rc = contigPath.back().clone();
+				rc.reverseComplement();
+				contigPath.push_front(rc);
+			}
+
+		}
+
 	}
 
 	/**
@@ -711,13 +728,11 @@ namespace BloomDBG {
 
 		assert(contigPath.size() >= 2);
 
-		/* special case: circular contigs */
+		/* special case: circular/hairpin contigs */
 
-		if (edge(contigPath.back(), contigPath.front(), dbg).second) {
-			processCircularContig(contigPath, rec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-			return;
-		}
+		ContigType contigType = getContigType(contigPath, dbg);
+		if (contigType == CT_CIRCULAR || contigType == CT_HAIRPIN)
+			preprocessCircularContig(contigPath, dbg, params.trim);
 
 		unsigned inDegree1 = trueDegree(contigPath.front(),
 			REVERSE, dbg, params.trim);
