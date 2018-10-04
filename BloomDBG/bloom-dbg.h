@@ -720,13 +720,14 @@ namespace BloomDBG {
 	{
 		assert(!contigPath.empty());
 
-		if (contigPath.size() == 1) {
-			outputContig(contigPath, rec, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-			return;
-		}
+		/* filter out contigs that are tips */
 
-		assert(contigPath.size() >= 2);
+		if ((rec.leftExtensionResult == DEAD_END
+			|| rec.leftExtensionResult == EXTENDED_TO_DEAD_END
+			|| rec.rightExtensionResult == DEAD_END
+			|| rec.rightExtensionResult == EXTENDED_TO_DEAD_END)
+			&& contigPath.size() <= params.trim)
+			return;
 
 		/* special case: circular/hairpin contigs */
 
@@ -751,9 +752,11 @@ namespace BloomDBG {
 				contigEndKmers, params, counters, streams);
 		}
 
-		if (outDegree1 > 1) {
+		if (outDegree1 > 1)
 			contigPath.pop_front();
-		}
+
+		if (contigPath.empty())
+			return;
 
 		if (inDegree2 > 1 && outDegree2 != 1) {
 			Path<Vertex> path2;
@@ -762,9 +765,8 @@ namespace BloomDBG {
 				contigEndKmers, params, counters, streams);
 		}
 
-		if (inDegree2 > 1) {
+		if (inDegree2 > 1)
 			contigPath.pop_back();
-		}
 
 		if (contigPath.empty())
 			return;
@@ -773,152 +775,48 @@ namespace BloomDBG {
 			contigEndKmers, params, counters, streams);
 	}
 
-	/**
-	 * Create all contigs connected to a given branch k-mer, by extending
-	 * the neighbour k-mers up to the next dead-end or branch point.
-	 */
+	/** Extend a k-mer left and right within the DBG to create a contig. */
 	template <typename GraphT, typename AssembledKmerSetT,
 		typename AssemblyStreamsT>
-	inline static void processBranchKmer(const Vertex& branchKmer,
+	static inline void processKmer(const Vertex& v,
 		const FastaRecord& rec, const GraphT& dbg,
 		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
-		typedef typename boost::graph_traits<GraphT>::vertex_descriptor V;
-		typedef typename std::vector<V>::iterator VIt;
+		/* check if k-mer if in an already-assembled region of the DBG */
 
-		/* get neighbour k-mers that extend past trim length */
-
-		std::vector<V> inBranches
-			= trueBranches(branchKmer, REVERSE, dbg, params.trim);
-		std::vector<V> outBranches
-			= trueBranches(branchKmer, FORWARD, dbg, params.trim);
-
-		assert(inBranches.size() > 1 || outBranches.size() > 1);
-
-		ExtendPathParams extendParams;
-		extendParams.trimLen = params.trim;
-		extendParams.maxLen = NO_LIMIT;
-		extendParams.lookBehind = true;
-
-		/* extend left neighbours to generate contigs */
-
-		for (VIt it = inBranches.begin(); it != inBranches.end(); ++it) {
-
-			Path<V> path;
-			path.push_back(*it);
-			path.push_back(branchKmer);
-
-			ContigRecord contigRec;
-			contigRec.readID = rec.id;
-			contigRec.seed = pathToSeq(path, params.k);
-			contigRec.seedType = ST_BRANCH_KMER;
-			contigRec.extendedLeft = true;
-			contigRec.extendedRight = false;
-			contigRec.leftExtensionResult =
-				extendPath(path, REVERSE, dbg, extendParams);
-			contigRec.leftExtension = path.size() - 2;
-			contigRec.redundant = false;
-
-			processContig(path, contigRec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-
-		}
-
-		/* extend right neighours to generate contigs */
-
-		for (VIt it = outBranches.begin(); it != outBranches.end(); ++it) {
-
-			Path<V> path;
-			path.push_back(branchKmer);
-			path.push_back(*it);
-
-			ContigRecord contigRec;
-			contigRec.readID = rec.id;
-			contigRec.seed = pathToSeq(path, params.k);
-			contigRec.seedType = ST_BRANCH_KMER;
-			contigRec.extendedLeft = false;
-			contigRec.extendedRight = true;
-			contigRec.rightExtensionResult =
-				extendPath(path, FORWARD, dbg, extendParams);
-			contigRec.rightExtension = path.size() - 2;
-			contigRec.redundant = false;
-
-			processContig(path, contigRec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-
-		}
-
-	}
-
-	/** Return true if a sequence contains duplicate k-mers */
-	bool containsDuplicateKmers(const Sequence& seq, unsigned k,
-		bool canonical = true)
-	{
-		const unsigned numHashes = 1;
-		unordered_set<Vertex> seen;
-		for (RollingHashIterator it(seq, numHashes, k);
-			 it != RollingHashIterator::end(); ++it) {
-			Vertex v(it.kmer().c_str(), it.rollingHash());
-			if (canonical)
-				v.canonicalize();
-			if (seen.find(v) != seen.end())
-				return true;
-			seen.insert(v);
-		}
-		return false;
-	}
-
-	/** Extend a read left/right from its start/end k-mers */
-	template <typename GraphT, typename AssembledKmerSetT,
-		typename AssemblyStreamsT>
-	inline static void processNonBranchingRead(Path<Vertex>& path,
-		const FastaRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
-	{
-		/* don't extend reads that contain duplicate k-mers */
-		if (containsDuplicateKmers(rec.seq, params.k))
+		size_t hashes[MAX_HASHES];
+		v.rollingHash().getHashes(hashes);
+		if (assembledKmerSet.contains(hashes))
 			return;
 
-	    unsigned l = path.size();
-
 		ExtendPathParams extendParams;
 		extendParams.trimLen = params.trim;
 		extendParams.maxLen = NO_LIMIT;
 		extendParams.lookBehind = true;
+		extendParams.lookBehindStartVertex = false;
 
 		ContigRecord contigRec;
 		contigRec.readID = rec.id;
 		contigRec.seedType = ST_READ;
-		contigRec.seed = rec.seq;
+		contigRec.seed = v.kmer().c_str();
 		contigRec.extendedLeft = true;
 		contigRec.extendedRight = true;
 
-		contigRec.leftExtensionResult
-			= extendPath(path, REVERSE, dbg, extendParams);
-		bool leftBlunt = contigRec.leftExtensionResult != BRANCHING_POINT
-			&& contigRec.leftExtensionResult != EXTENDED_TO_BRANCHING_POINT;
-		contigRec.leftExtension = path.size() - l;
+		Path<Vertex> contigPath;
+		contigPath.push_back(v);
 
-		if (leftBlunt && contigRec.leftExtension < params.trim)
-			return;
+		contigRec.leftExtensionResult
+			= extendPath(contigPath, REVERSE, dbg, extendParams);
+		contigRec.leftExtension = contigPath.size() - 1;
 
 		contigRec.rightExtensionResult
-			= extendPath(path, FORWARD, dbg, extendParams);
-		bool rightBlunt = contigRec.rightExtensionResult != BRANCHING_POINT
-			&& contigRec.rightExtensionResult != EXTENDED_TO_BRANCHING_POINT;
-		contigRec.rightExtension = path.size() - l - contigRec.leftExtension;
+			= extendPath(contigPath, FORWARD, dbg, extendParams);
+		contigRec.rightExtension = contigPath.size()
+			- contigRec.leftExtension - 1;
 
-		if (rightBlunt && contigRec.rightExtension < params.trim)
-			return;
-
-#pragma omp atomic
-		counters.nonBranchingContigs++;
-
-		processContig(path, contigRec, dbg, assembledKmerSet,
+		processContig(contigPath, contigRec, dbg, assembledKmerSet,
 			contigEndKmers, params, counters, streams);
 	}
 
@@ -933,6 +831,8 @@ namespace BloomDBG {
 		const AssemblyParams& params, AssemblyCounters& counters,
 		AssemblyStreamsT& streams)
 	{
+		(void)visitedBranchKmers;
+
 		typedef typename Path<Vertex>::iterator PathIt;
 
 		/* Boost graph API for Bloom filter */
@@ -969,51 +869,8 @@ namespace BloomDBG {
 
 		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
 
-		/*
-		 * identify unvisited branch k-mers within the read and extend outwards
-		 * from their neighbour k-mers to generate contigs
-		 */
-		unsigned branchKmers = 0;
-		bool numVisited = 0;
 		for (PathIt it = path.begin(); it != path.end(); ++it) {
-			if (trueDegree(*it, REVERSE, dbg, params.trim) > 1
-				|| trueDegree(*it, FORWARD, dbg, params.trim) > 1) {
-
-				++branchKmers;
-				Vertex canonicalKmer = it->clone();
-				canonicalKmer.canonicalize();
-
-				bool visited = true;
-#pragma omp critical(visitedBranchKmers)
-				if (visitedBranchKmers.find(canonicalKmer) == visitedBranchKmers.end()) {
-					visitedBranchKmers.insert(canonicalKmer);
-					visited = false;
-				}
-				if (visited) {
-					++numVisited;
-					continue;
-				}
-
-				processBranchKmer(*it, rec, dbg, assembledKmerSet,
-					contigEndKmers, params, counters, streams);
-			}
-		}
-
-		if (branchKmers > 0 && numVisited == branchKmers) {
-#pragma omp atomic
-			counters.allBranchKmersVisited++;
-			return ReadRecord(rec.id, RR_ALL_BRANCH_KMERS_VISITED);
-		}
-
-		/*
-		 * If read contains no branch k-mers, extend from first/last k-mer
-		 * in the read instead. This is useful for recovering contigs that are
-		 * disconnected from neighbouring branch k-mers by coverage gaps.
-		 */
-		if (branchKmers == 0) {
-#pragma omp atomic
-			counters.nonBranchingReads++;
-			processNonBranchingRead(path, rec, dbg, assembledKmerSet,
+			processKmer(*it, rec, dbg, assembledKmerSet,
 				contigEndKmers, params, counters, streams);
 		}
 
