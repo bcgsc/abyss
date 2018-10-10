@@ -702,122 +702,37 @@ namespace BloomDBG {
 	 *
 	 * If a branch k-mer has both indegree > 1 and outdegree > 1, it is
 	 * output separately as its own contig of length k.
-	 *
-	 * @param seq the contig to trim
-	 * @param k k-mer size
-	 * @param numHashes number of Bloom filter hash functions
-	 * @param minBranchLen minimum length of a "true" branch (shorter
-	 * branches are assumed to be caused by sequencing errors or
-	 * Bloom filter false positives).
 	 */
-	template <typename GraphT, typename AssembledKmerSetT,
-		typename AssemblyStreamsT>
-	inline static void processContig(Path<Vertex>& contigPath,
-		ContigRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
+	template <typename GraphT>
+	inline static void trimBranchKmers(
+		Path<Vertex>& contigPath, const GraphT& dbg, unsigned trim)
 	{
 		assert(!contigPath.empty());
 
-		/* filter out contigs that are tips */
-
-		if ((rec.leftExtensionResult == DEAD_END
-			|| rec.leftExtensionResult == EXTENDED_TO_DEAD_END
-			|| rec.rightExtensionResult == DEAD_END
-			|| rec.rightExtensionResult == EXTENDED_TO_DEAD_END)
-			&& contigPath.size() <= params.trim)
+		if (contigPath.size() == 1)
 			return;
 
 		/* special case: circular/hairpin contigs */
 
 		ContigType contigType = getContigType(contigPath, dbg);
 		if (contigType == CT_CIRCULAR || contigType == CT_HAIRPIN)
-			preprocessCircularContig(contigPath, dbg, params.trim);
+			preprocessCircularContig(contigPath, dbg, trim);
 
-		unsigned inDegree1 = trueDegree(contigPath.front(),
-			REVERSE, dbg, params.trim);
 		unsigned outDegree1 = trueDegree(contigPath.front(),
-			FORWARD, dbg, params.trim);
+			FORWARD, dbg, trim);
 
 		unsigned inDegree2 = trueDegree(contigPath.back(),
-			REVERSE, dbg, params.trim);
-		unsigned outDegree2 = trueDegree(contigPath.back(),
-			FORWARD, dbg, params.trim);
-
-		if (inDegree1 != 1 && outDegree1 > 1) {
-			Path<Vertex> path1;
-			path1.push_back(contigPath.front());
-			outputContig(path1, rec, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-		}
+			REVERSE, dbg, trim);
 
 		if (outDegree1 > 1)
 			contigPath.pop_front();
 
-		if (contigPath.empty())
-			return;
-
-		if (inDegree2 > 1 && outDegree2 != 1) {
-			Path<Vertex> path2;
-			path2.push_back(contigPath.back());
-			outputContig(path2, rec, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
-		}
+		assert(!contigPath.empty());
 
 		if (inDegree2 > 1)
 			contigPath.pop_back();
 
-		if (contigPath.empty())
-			return;
-
-		outputContig(contigPath, rec, assembledKmerSet,
-			contigEndKmers, params, counters, streams);
-	}
-
-	/** Extend a k-mer left and right within the DBG to create a contig. */
-	template <typename GraphT, typename AssembledKmerSetT,
-		typename AssemblyStreamsT>
-	static inline void processKmer(const Vertex& v,
-		const FastaRecord& rec, const GraphT& dbg,
-		AssembledKmerSetT& assembledKmerSet, KmerHash& contigEndKmers,
-		const AssemblyParams& params, AssemblyCounters& counters,
-		AssemblyStreamsT& streams)
-	{
-		/* check if k-mer if in an already-assembled region of the DBG */
-
-		size_t hashes[MAX_HASHES];
-		v.rollingHash().getHashes(hashes);
-		if (assembledKmerSet.contains(hashes))
-			return;
-
-		ExtendPathParams extendParams;
-		extendParams.trimLen = params.trim;
-		extendParams.maxLen = NO_LIMIT;
-		extendParams.lookBehind = true;
-		extendParams.lookBehindStartVertex = false;
-
-		ContigRecord contigRec;
-		contigRec.readID = rec.id;
-		contigRec.seedType = ST_READ;
-		contigRec.seed = v.kmer().c_str();
-		contigRec.extendedLeft = true;
-		contigRec.extendedRight = true;
-
-		Path<Vertex> contigPath;
-		contigPath.push_back(v);
-
-		contigRec.leftExtensionResult
-			= extendPath(contigPath, REVERSE, dbg, extendParams);
-		contigRec.leftExtension = contigPath.size() - 1;
-
-		contigRec.rightExtensionResult
-			= extendPath(contigPath, FORWARD, dbg, extendParams);
-		contigRec.rightExtension = contigPath.size()
-			- contigRec.leftExtension - 1;
-
-		processContig(contigPath, contigRec, dbg, assembledKmerSet,
-			contigEndKmers, params, counters, streams);
+		assert(!contigPath.empty());
 	}
 
 	/**
@@ -867,11 +782,69 @@ namespace BloomDBG {
 			return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
 		}
 
-		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
+		/*
+		 * We use `assembledKmers` to track read k-mers
+		 * that have already been included in the output contigs, and
+		 * therefore do not need to be processed (extended) again.
+		 * Note that we do not use `assembledKmerSet` (a Bloom filter)
+		 * for this purpose because Bloom filter false positives
+		 * may cause us to omit short contigs (e.g. contigs with length k).
+		 */
+		unordered_set<Vertex> assembledKmers;
 
+		Path<Vertex> path = seqToPath(rec.seq, params.k, params.numHashes);
 		for (PathIt it = path.begin(); it != path.end(); ++it) {
-			processKmer(*it, rec, dbg, assembledKmerSet,
-				contigEndKmers, params, counters, streams);
+
+			if (assembledKmers.find(*it) != assembledKmers.end())
+				continue;
+
+			ExtendPathParams extendParams;
+			extendParams.trimLen = params.trim;
+			extendParams.maxLen = NO_LIMIT;
+			extendParams.lookBehind = true;
+			extendParams.lookBehindStartVertex = false;
+
+			ContigRecord contigRec;
+			contigRec.readID = rec.id;
+			contigRec.seedType = ST_READ;
+			contigRec.seed = it->kmer().c_str();
+			contigRec.extendedLeft = true;
+			contigRec.extendedRight = true;
+
+			Path<Vertex> contigPath;
+			contigPath.push_back(*it);
+
+			contigRec.leftExtensionResult
+				= extendPath(contigPath, REVERSE, dbg, extendParams);
+			contigRec.leftExtension = contigPath.size() - 1;
+
+			contigRec.rightExtensionResult
+				= extendPath(contigPath, FORWARD, dbg, extendParams);
+			contigRec.rightExtension = contigPath.size()
+				- contigRec.leftExtension - 1;
+
+			/* check if the contig is a tip */
+			bool isTip = (contigRec.leftExtensionResult == DEAD_END
+				|| contigRec.leftExtensionResult == EXTENDED_TO_DEAD_END
+				|| contigRec.rightExtensionResult == DEAD_END
+				|| contigRec.rightExtensionResult == EXTENDED_TO_DEAD_END)
+				&& contigPath.size() <= params.trim;
+
+			if (!isTip) {
+
+				/* selectively trim branch k-mers contig ends */
+				trimBranchKmers(contigPath, dbg, params.trim);
+
+				/* output contig to FASTA file */
+				outputContig(contigPath, contigRec, dbg, assembledKmerSet,
+					contigEndKmers, params, counters, streams);
+
+			}
+
+			/* mark contig k-mers as visited */
+			for (PathIt it2 = contigPath.begin(); it2 != contigPath.end(); ++it2)
+				assembledKmers.insert(*it2);
+
 		}
 
 		return ReadRecord(rec.id, RR_GENERATED_CONTIGS);
