@@ -459,52 +459,48 @@ static inline SingleExtensionResult extendPathBySingleVertex(
 	 * sequencing errors or Bloom filter false positives).
 	 */
 
-	Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
 	std::vector<V> trueBranchesOut = trueBranches(u, dir, g, params.trimLen);
-	std::vector<V> trueBranchesIn;
+	if (trueBranchesOut.size() > 1)
+		return SE_BRANCHING_POINT;
+
+	/*
+	 * If we have multiple branches that are shorter
+	 * than the trim length then choose the longest one.
+	 * (This type of situation usually occurs near
+	 * coverage gaps.)
+	 */
+	V v = trueBranchesOut.empty() ? longestBranch(u, dir, g)
+		: trueBranchesOut.front();
 
 	if (params.lookBehind) {
-		trueBranchesIn = trueBranches(u, otherDir, g, params.trimLen);
+
+		Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
+		std::vector<V> trueBranchesIn
+			= trueBranches(u, otherDir, g, params.trimLen);
+
+		if (trueBranchesIn.size() > 1)
+			return SE_BRANCHING_POINT;
+
+		V t = (trueBranchesIn.size() == 0) ? longestBranch(u, otherDir, g)
+			: trueBranchesIn.front();
+
 		/*
-		 * Tricky: Make sure the path we are extending
-		 * is treated as a valid incoming branch, even if it is less
-		 * than trimLen. This can happen if we seeded the path on
-		 * an error branch or a branch that has a coverage gap.
+		 * Tricky: If our path started on a tip, we want to stop the
+		 * extension. We can detect that we are on tip when the preceding
+		 * path vertex does not match the expected predecessor `t`.
 		 */
 		if (path.size() > 1) {
-			const V& predecessor = (dir == FORWARD) ?
+			const V& prev = (dir == FORWARD) ?
 				*(path.rbegin() + 1) : *(path.begin() + 1);
-			if (std::find(trueBranchesIn.begin(), trueBranchesIn.end(),
-				predecessor) == trueBranchesIn.end()) {
-				trueBranchesIn.push_back(predecessor);
-			}
+			if (prev != t)
+				return SE_BRANCHING_POINT;
 		}
 	}
 
-	if ((params.lookBehind && trueBranchesIn.size() > 1) ||
-		trueBranchesOut.size() > 1)
-		return SE_BRANCHING_POINT;
-
-	if (trueBranchesOut.size() == 0) {
-		/*
-		 * If we have multiple branches that are shorter
-		 * than the trim length then choose the longest one.
-		 * (This type of situation usually occurs near
-		 * coverage gaps.)
-		 */
-		V v = longestBranch(u, dir, g);
-		if (dir == FORWARD)
-			path.push_back(v);
-		else
-			path.push_front(v);
-
-		return SE_EXTENDED;
-	}
-
 	if (dir == FORWARD)
-		path.push_back(trueBranchesOut.front());
+		path.push_back(v);
 	else
-		path.push_front(trueBranchesOut.front());
+		path.push_front(v);
 
 	return SE_EXTENDED;
 }
