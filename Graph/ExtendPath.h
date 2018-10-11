@@ -239,6 +239,24 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 	return branchRoots;
 }
 
+template <class Graph>
+static inline std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>
+trueBranches(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	const typename boost::graph_traits<Graph>::vertex_descriptor& include,
+	Direction dir, const Graph& g, unsigned trim=0)
+{
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+	typedef typename std::vector<V>::const_iterator VIt;
+
+	std::vector<V> branches = trueBranches(u, dir, g, trim);
+
+	VIt it = find(branches.begin(), branches.end(), include);
+	if (it == branches.end())
+		branches.push_back(include);
+
+	return branches;
+}
+
 /**
  * Return the in/out degree of a vertex, disregarding branches
  * <= trimLen.
@@ -256,6 +274,15 @@ static inline unsigned trueDegree(
 	Direction dir, const Graph& g, unsigned trimLen=0)
 {
 	return trueBranches(u, dir, g, trimLen).size();
+}
+
+template <typename Graph>
+static inline unsigned trueDegree(
+	const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	const typename boost::graph_traits<Graph>::vertex_descriptor& include,
+	Direction dir, const Graph& g, unsigned trimLen=0)
+{
+	return trueBranches(u, include, dir, g, trimLen).size();
 }
 
 /**

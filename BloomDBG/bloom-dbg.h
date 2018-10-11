@@ -718,11 +718,13 @@ namespace BloomDBG {
 		if (contigType == CT_CIRCULAR || contigType == CT_HAIRPIN)
 			preprocessCircularContig(contigPath, dbg, trim);
 
-		unsigned outDegree1 = trueDegree(contigPath.front(),
-			FORWARD, dbg, trim);
+		unsigned l = contigPath.size();
 
-		unsigned inDegree2 = trueDegree(contigPath.back(),
-			REVERSE, dbg, trim);
+		unsigned outDegree1 = trueDegree(contigPath.at(0),
+			contigPath.at(1), FORWARD, dbg, trim);
+
+		unsigned inDegree2 = trueDegree(contigPath.at(l-1),
+			contigPath.at(l-2), REVERSE, dbg, trim);
 
 		if (outDegree1 > 1)
 			contigPath.pop_front();
@@ -832,7 +834,7 @@ namespace BloomDBG {
 
 			if (!isTip) {
 
-				/* selectively trim branch k-mers contig ends */
+				/* selectively trim branch k-mers from contig ends */
 				trimBranchKmers(contigPath, dbg, params.trim);
 
 				/* output contig to FASTA file */
