@@ -220,6 +220,7 @@ TEST(extendPath, withTrimming)
 {
 	ExtendPathParams params;
 	params.trimLen = 1;
+	params.fpTrim = 0;
 
 	/*
 	 *          3

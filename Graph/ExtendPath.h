@@ -20,6 +20,8 @@ struct ExtendPathParams
 {
 	/* ignore branches shorter than or equal to this length */
 	unsigned trimLen;
+	/* longest branch of Bloom filter false positives */
+	unsigned fpTrim;
 	/* maximum length after extension */
 	unsigned maxLen;
 	/*
@@ -35,7 +37,7 @@ struct ExtendPathParams
     bool lookBehindStartVertex;
 
 	/* constructor */
-	ExtendPathParams() : trimLen(0), maxLen(NO_LIMIT), lookBehind(true),
+	ExtendPathParams() : trimLen(0), fpTrim(0), maxLen(NO_LIMIT), lookBehind(true),
 		lookBehindStartVertex(true) {}
 };
 
@@ -195,6 +197,91 @@ static inline bool lookAhead(
 }
 
 /**
+ * Return true if the given edge represents the start of a "true branch".
+ * Roughly speaking, a path is a true branch if it has length >= trim
+ * or terminates in a branching node, where a branching node is (recursively)
+ * defined to be a node with either >= 2 incoming true branches or >= outgoing
+ * true branches.
+ */
+template <class Graph>
+static inline bool trueBranch(
+	const typename boost::graph_traits<Graph>::edge_descriptor& e,
+	unsigned depth, Direction dir, const Graph& g, unsigned trim,
+	unsigned fpTrim, unordered_set<typename boost::graph_traits<Graph>::vertex_descriptor>& visited)
+{
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+
+	typename boost::graph_traits<Graph>::out_edge_iterator oei, oei_end;
+	typename boost::graph_traits<Graph>::in_edge_iterator iei, iei_end;
+
+	const V& u = (dir == FORWARD) ? source(e, g) : target(e, g);
+	const V& v = (dir == FORWARD) ? target(e, g) : source(e, g);
+
+	/* branches with bubbles/cycles are considered true branches */
+	if (visited.find(v) != visited.end())
+		return true;
+
+	if (depth >= trim)
+		return true;
+
+	visited.insert(v);
+
+	if (dir == FORWARD) {
+		for (boost::tie(oei, oei_end) = out_edges(v, g);
+			oei != oei_end; ++oei) {
+			if (trueBranch(*oei, depth+1, FORWARD, g, trim, fpTrim, visited))
+				return true;
+		}
+		if (depth >= fpTrim || lookAhead(v, FORWARD, fpTrim, g)) {
+			for (boost::tie(iei, iei_end) = in_edges(v, g);
+				iei != iei_end; ++iei) {
+				if (source(*iei, g) == u)
+					continue;
+				if (trueBranch(*iei, 0, REVERSE, g, trim, fpTrim, visited))
+					return true;
+			}
+		}
+	} else {
+		assert(dir == REVERSE);
+		for (boost::tie(iei, iei_end) = in_edges(v, g);
+			iei != iei_end; ++iei) {
+			if (trueBranch(*iei, depth+1, REVERSE, g, trim, fpTrim, visited))
+				return true;
+		}
+		if (depth >= fpTrim || lookAhead(v, REVERSE, fpTrim, g)) {
+			for (boost::tie(oei, oei_end) = out_edges(v, g);
+				 oei != oei_end; ++oei) {
+				if (target(*oei, g) == u)
+					continue;
+				if (trueBranch(*oei, 0, FORWARD, g, trim, fpTrim, visited))
+					return true;
+			}
+		}
+	}
+
+	visited.erase(v);
+
+	return false;
+}
+
+/**
+ * Return true if the given edge represents the start of a "true branch".
+ * Roughly speaking, a path is a true branch if it has length >= trim
+ * or terminates in a branching node, where a branching node is (recursively)
+ * defined to be a node with either >= 2 incoming true branches or >= outgoing
+ * true branches.
+ */
+template <class Graph>
+static inline bool trueBranch(
+	const typename boost::graph_traits<Graph>::edge_descriptor& e,
+	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
+{
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+	unordered_set<V> visited;
+	return trueBranch(e, 0, dir, g, trim, fpTrim, visited);
+}
+
+/**
  * Return neighbour vertices that begin branches that are longer than trimLen.
  *
  * @param u root vertex
@@ -207,7 +294,7 @@ static inline bool lookAhead(
 template <class BidirectionalGraph>
 static inline std::vector<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>
 trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor& u,
-	Direction dir, const BidirectionalGraph& g, unsigned trimLen=0)
+	Direction dir, const BidirectionalGraph& g, unsigned trim, unsigned fpTrim)
 {
 	typedef BidirectionalGraph G;
 	typedef boost::graph_traits<G> graph_traits;
@@ -222,7 +309,7 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 		for (boost::tie(oei, oei_end) = out_edges(u, g);
 			oei != oei_end; ++oei) {
 			const V& v = target(*oei, g);
-			if (lookAhead(v, dir, trimLen, g))
+			if (trueBranch(*oei, dir, g, trim, fpTrim))
 				branchRoots.push_back(v);
 		}
 	} else {
@@ -230,7 +317,7 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 		for (boost::tie(iei, iei_end) = in_edges(u, g);
 			iei != iei_end; ++iei) {
 			const V& v = source(*iei, g);
-			if (lookAhead(v, dir, trimLen, g)) {
+			if (trueBranch(*iei, dir, g, trim, fpTrim)) {
 				branchRoots.push_back(v);
 			}
 		}
@@ -239,50 +326,162 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
 	return branchRoots;
 }
 
+/**
+ * Return the unique predecessor/successor of a given vertex. In
+ * cases where a predecessor/successor does not exist (i.e. a dead end)
+ * or is not unique (i.e. a branching point), return an result code indicating
+ * why a unique successor could not be returned.
+ */
 template <class Graph>
-static inline std::vector<typename boost::graph_traits<Graph>::vertex_descriptor>
-trueBranches(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
-	const typename boost::graph_traits<Graph>::vertex_descriptor& include,
-	Direction dir, const Graph& g, unsigned trim=0)
+static inline std::pair<typename boost::graph_traits<Graph>::vertex_descriptor,
+	SingleExtensionResult>
+successor(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
 {
 	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
-	typedef typename std::vector<V>::const_iterator VIt;
+	typedef typename boost::graph_traits<Graph>::in_edge_iterator InEdgeIt;
+	typedef typename boost::graph_traits<Graph>::out_edge_iterator OutEdgeIt;
 
-	std::vector<V> branches = trueBranches(u, dir, g, trim);
+	InEdgeIt iei, iei_end;
+    OutEdgeIt oei, oei_end;
 
-	VIt it = find(branches.begin(), branches.end(), include);
-	if (it == branches.end())
-		branches.push_back(include);
+	unsigned degree;
+	if (dir == FORWARD) {
+		degree = out_degree(u, g);
+		if (degree == 1)
+			return std::make_pair(
+				target(*out_edges(u, g).first, g), SE_EXTENDED);
+	} else {
+		degree = in_degree(u, g);
+		if (degree == 1)
+			return std::make_pair(
+				source(*in_edges(u, g).first, g), SE_EXTENDED);
+	}
 
-	return branches;
+	if (degree == 0)
+		return std::make_pair(u, SE_DEAD_END);
+
+	V v;
+	unsigned trueBranches = 0;
+	if (dir == FORWARD) {
+		for (boost::tie(oei, oei_end) = out_edges(u, g); oei != oei_end; ++oei) {
+			if (trueBranch(*oei, FORWARD, g, trim, fpTrim)) {
+				v = target(*oei, g);
+				++trueBranches;
+				if (trueBranches >= 2)
+					break;
+			}
+		}
+	} else {
+		assert(dir == REVERSE);
+		for (boost::tie(iei, iei_end) = in_edges(u, g); iei != iei_end; ++iei) {
+			if (trueBranch(*iei, REVERSE, g, trim, fpTrim)) {
+				v = source(*iei, g);
+				++trueBranches;
+				if (trueBranches >= 2)
+					break;
+			}
+		}
+	}
+
+	if (trueBranches == 1)
+		return std::make_pair(v, SE_EXTENDED);
+
+	if (trueBranches >= 2)
+		return std::make_pair(v, SE_BRANCHING_POINT);
+
+	v = longestBranch(u, dir, g);
+	return std::make_pair(v, SE_EXTENDED);
 }
 
 /**
- * Return the in/out degree of a vertex, disregarding branches
- * <= trimLen.
- *
- * @param u the vertex of interest
- * @param dir FORWARD for out degree, REVERSE for in degree
- * @param g the graph
- * @param trimLen branches less then or equal to this length
- * are ignored (unless they are the only option)
- * @return the in/out degree of u, ignoring branches <= trimLen
+ * Return true if the given vertex has more than one possible
+ * predecessor/successor in the graph.
  */
-template <typename Graph>
-static inline unsigned trueDegree(
-	const typename boost::graph_traits<Graph>::vertex_descriptor& u,
-	Direction dir, const Graph& g, unsigned trimLen=0)
+template <class Graph>
+static inline bool
+ambiguous(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
 {
-	return trueBranches(u, dir, g, trimLen).size();
+	return successor(u, dir, g, trim, fpTrim).second == SE_BRANCHING_POINT;
 }
 
-template <typename Graph>
-static inline unsigned trueDegree(
-	const typename boost::graph_traits<Graph>::vertex_descriptor& u,
-	const typename boost::graph_traits<Graph>::vertex_descriptor& include,
-	Direction dir, const Graph& g, unsigned trimLen=0)
+/**
+ * Return true if the given vertex has more than one possible
+ * predecessor/successor in the graph.
+ *
+ * @param expected always include this vertex in the set of possible
+ * predecssors/successors, even if it is not a true branch.
+ */
+template <class Graph>
+static inline bool
+ambiguous(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
+	const typename boost::graph_traits<Graph>::vertex_descriptor& expected,
+	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
 {
-	return trueBranches(u, include, dir, g, trimLen).size();
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+
+	V v;
+	SingleExtensionResult result;
+
+	boost::tie(v, result) = successor(u, dir, g, trim, fpTrim);
+
+	return result == SE_BRANCHING_POINT
+		|| (result == SE_EXTENDED && v != expected);
+}
+
+/**
+ * Extend path by a single vertex, if there is a unique predecessor/successor
+ * in the direction of extension.
+ */
+template <class Graph>
+static inline SingleExtensionResult
+extendPath(Path<typename boost::graph_traits<Graph>::vertex_descriptor>& path,
+	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim,
+	bool lookBehind)
+{
+	assert(!path.empty());
+
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+
+	V t, v;
+	SingleExtensionResult result;
+
+	const V& head = (dir == FORWARD) ? path.back() : path.front();
+
+	boost::tie(v, result) = successor(head, dir, g, trim, fpTrim);
+	if (result != SE_EXTENDED)
+		return result;
+
+	if (lookBehind) {
+
+		Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
+		boost::tie(t, result) = successor(head, otherDir, g, trim, fpTrim);
+
+		if (result == SE_BRANCHING_POINT)
+			return result;
+
+		/*
+		 * Tricky: If our path was seeded on a tip, we want to stop the
+		 * extension when we reach a branching point. We can detect that
+		 * we are on tip if the previous path vertex does not match
+		 * the expected predecessor `t`.
+		 */
+		if (result == SE_EXTENDED && path.size() > 1) {
+			const V& prev = (dir == FORWARD) ?
+				*(path.rbegin() + 1) : *(path.begin() + 1);
+			if (prev != t)
+				return SE_BRANCHING_POINT;
+		}
+
+	}
+
+	if (dir == FORWARD)
+		path.push_back(v);
+	else
+		path.push_front(v);
+
+	return SE_EXTENDED;
 }
 
 /**
@@ -428,111 +627,6 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 }
 
 /**
- * If the given path has only one possible next/prev vertex in the graph,
- * append/prepend that vertex to the path.
- *
- * @param path the path to extend (a list of vertices)
- * @param dir direction of extension (FORWARD or REVERSE)
- * @param g the graph to use for traversal
- * @param params parameters controlling extension (e.g. trimLen)
- * @return PathExtensionResult: NO_EXTENSION, HIT_BRANCHING_POINT, or EXTENDED
- */
-template <class BidirectionalGraph>
-static inline SingleExtensionResult extendPathBySingleVertex(
-	Path<typename boost::graph_traits<BidirectionalGraph>::vertex_descriptor>& path,
-	Direction dir, const BidirectionalGraph& g, const ExtendPathParams& params)
-{
-	typedef BidirectionalGraph G;
-	typedef boost::graph_traits<G> graph_traits;
-	typedef typename graph_traits::vertex_descriptor V;
-
-	typename graph_traits::out_edge_iterator oei, oei_end;
-	typename graph_traits::in_edge_iterator iei, iei_end;
-
-	assert(dir == FORWARD || dir == REVERSE);
-
-	/* current head node of the path */
-
-	V& u = (dir == FORWARD) ? path.back() : path.front();
-
-	/* check if we have hit a dead end in the graph */
-
-	unsigned outDegree = (dir == FORWARD) ? out_degree(u, g) : in_degree(u, g);
-	if (outDegree == 0) {
-		return SE_DEAD_END;
-	}
-
-	/* check if the path can be extended unambigously */
-
-	unsigned inDegree = 0;
-	if (params.lookBehind)
-		inDegree = (dir == FORWARD) ? in_degree(u, g) : out_degree(u, g);
-
-	if ((!params.lookBehind || inDegree <= 1) && outDegree == 1) {
-		if (dir == FORWARD) {
-			const V& v = target(*(out_edges(u, g).first), g);
-			path.push_back(v);
-		} else {
-			assert(dir == REVERSE);
-			const V& v = source(*(in_edges(u, g).first), g);
-			path.push_front(v);
-		}
-		return SE_EXTENDED;
-	}
-
-	/*
-	 * check if the extension becomes unambiguous when we exclude
-	 * branches that are likely false (i.e. branches created by
-	 * sequencing errors or Bloom filter false positives).
-	 */
-
-	std::vector<V> trueBranchesOut = trueBranches(u, dir, g, params.trimLen);
-	if (trueBranchesOut.size() > 1)
-		return SE_BRANCHING_POINT;
-
-	/*
-	 * If we have multiple branches that are shorter
-	 * than the trim length then choose the longest one.
-	 * (This type of situation usually occurs near
-	 * coverage gaps.)
-	 */
-	V v = trueBranchesOut.empty() ? longestBranch(u, dir, g)
-		: trueBranchesOut.front();
-
-	if (params.lookBehind) {
-
-		Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
-		std::vector<V> trueBranchesIn
-			= trueBranches(u, otherDir, g, params.trimLen);
-
-		if (trueBranchesIn.size() > 1)
-			return SE_BRANCHING_POINT;
-
-		V t = (trueBranchesIn.size() == 0) ? longestBranch(u, otherDir, g)
-			: trueBranchesIn.front();
-
-		/*
-		 * Tricky: If our path started on a tip, we want to stop the
-		 * extension. We can detect that we are on tip when the preceding
-		 * path vertex does not match the expected predecessor `t`.
-		 */
-		if (path.size() > 1) {
-			const V& prev = (dir == FORWARD) ?
-				*(path.rbegin() + 1) : *(path.begin() + 1);
-			if (prev != t)
-				return SE_BRANCHING_POINT;
-		}
-	}
-
-	if (dir == FORWARD)
-		path.push_back(v);
-	else
-		path.push_front(v);
-
-	return SE_EXTENDED;
-}
-
-/**
  * Extend a path up to the next branching point in the graph.
  *
  * @param path path to extend (modified by this function)
@@ -564,48 +658,35 @@ static inline PathExtensionResult extendPath(
 		return LENGTH_LIMIT;
 
 	SingleExtensionResult result = SE_EXTENDED;
-	bool detectedCycle = false;
-	ExtendPathParams paramsCopy = params;
+	bool cycle = false;
+	bool lookBehind = params.lookBehindStartVertex;
 
-	bool isStartVertex = true;
-	while (result == SE_EXTENDED && !detectedCycle &&
-		path.size() < params.maxLen)
+	assert(!path.empty());
+	while (result == SE_EXTENDED && path.size() < params.maxLen)
 	{
-		/*
-		 * If `lookBehindStartVertex` is false, we ignore incoming branches
-		 * on the start vertex.  This is useful when we are intentionally
-		 * starting our path extension at a branch vertex.
-		 */
-		paramsCopy.lookBehind = (isStartVertex && !params.lookBehindStartVertex)
-			? false : params.lookBehind;
+		result = extendPath(path, dir, g, params.trimLen, params.fpTrim,
+			lookBehind);
 
-		result = extendPathBySingleVertex(path, dir, g, paramsCopy);
 		if (result == SE_EXTENDED) {
-			std::pair<typename unordered_set<V>::iterator,bool> inserted;
-			if (dir == FORWARD) {
-				inserted = visited.insert(path.back());
-			} else {
-				assert(dir == REVERSE);
-				inserted = visited.insert(path.front());
+			const V& head = (dir == FORWARD) ? path.back() : path.front();
+			bool inserted;
+			boost::tie(boost::tuples::ignore, inserted) = visited.insert(head);
+			if (!inserted) {
+				cycle = true;
+				if (dir == FORWARD)
+					path.pop_back();
+				else
+					path.pop_front();
+				break;
 			}
-			if (!inserted.second)
-				detectedCycle = true;
 		}
-		isStartVertex = false;
-	}
 
-	/** the last kmer we added is a repeat, so remove it */
-	if (detectedCycle) {
-		if (dir == FORWARD) {
-			path.pop_back();
-		} else {
-			assert(dir == REVERSE);
-			path.pop_front();
-		}
+		/* override `lookBehindStartVertex` after first extension */
+		lookBehind = params.lookBehind;
 	}
 
 	if (path.size() > origPathLen) {
-		if (detectedCycle) {
+		if (cycle) {
 			return EXTENDED_TO_CYCLE;
 		} else if (result == SE_DEAD_END) {
 			return EXTENDED_TO_DEAD_END;
@@ -618,7 +699,7 @@ static inline PathExtensionResult extendPath(
 		}
 	} else {
 		assert(path.size() == origPathLen);
-		if (detectedCycle) {
+		if (cycle) {
 			return CYCLE;
 		} else if (result == SE_DEAD_END) {
 			return DEAD_END;

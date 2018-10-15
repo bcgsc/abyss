@@ -641,6 +641,9 @@ namespace BloomDBG {
 		if (contigPath.size() == 1)
 			return;
 
+		/* longest branch of Bloom filter positives */
+		const unsigned fpTrim = 5;
+
 		/*
 		 * Note: A circular/hairpin contig contains at most two branch k-mers.
 		 * And if it does contain branch k-mers, they will be the first/last
@@ -652,11 +655,11 @@ namespace BloomDBG {
 		 * produce the correct results downstream.
 		 */
 
-		bool branchStart = trueDegree(contigPath.front(), REVERSE, dbg, trim) > 1
-			|| trueDegree(contigPath.front(), FORWARD, dbg, trim) > 1;
+		bool branchStart = ambiguous(contigPath.front(), FORWARD, dbg, trim, fpTrim)
+			|| ambiguous(contigPath.front(), REVERSE, dbg, trim, fpTrim);
 
-		bool branchEnd = trueDegree(contigPath.back(), REVERSE, dbg, trim) > 1
-			|| trueDegree(contigPath.back(), FORWARD, dbg, trim) > 1;
+		bool branchEnd = ambiguous(contigPath.back(), FORWARD, dbg, trim, fpTrim)
+			|| ambiguous(contigPath.back(), REVERSE, dbg, trim, fpTrim);
 
 		if (branchStart && !branchEnd) {
 
@@ -720,18 +723,21 @@ namespace BloomDBG {
 
 		unsigned l = contigPath.size();
 
-		unsigned outDegree1 = trueDegree(contigPath.at(0),
-			contigPath.at(1), FORWARD, dbg, trim);
+		/* longest branch of Bloom filter false positives */
+		const unsigned fpTrim = 5;
 
-		unsigned inDegree2 = trueDegree(contigPath.at(l-1),
-			contigPath.at(l-2), REVERSE, dbg, trim);
+		bool ambiguous1 = ambiguous(contigPath.at(0), contigPath.at(1),
+			FORWARD, dbg, trim, fpTrim);
 
-		if (outDegree1 > 1)
+		bool ambiguous2 = ambiguous(contigPath.at(l-1), contigPath.at(l-2),
+			REVERSE, dbg, trim, fpTrim);
+
+		if (ambiguous1)
 			contigPath.pop_front();
 
 		assert(!contigPath.empty());
 
-		if (inDegree2 > 1)
+		if (ambiguous2)
 			contigPath.pop_back();
 
 		assert(!contigPath.empty());
@@ -802,6 +808,7 @@ namespace BloomDBG {
 
 			ExtendPathParams extendParams;
 			extendParams.trimLen = params.trim;
+			extendParams.fpTrim = 5;
 			extendParams.maxLen = NO_LIMIT;
 			extendParams.lookBehind = true;
 			extendParams.lookBehindStartVertex = false;

@@ -477,8 +477,11 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		std::string::npos)
 		return false;
 
+	/* longest branch of Bloom filter false positives */
+	const unsigned fpTrim = 5;
+
 	Kmer head(seq.substr(startKmerPos, k));
-	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen);
+	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen, fpTrim);
 
 	/* more than two branches -- not a simple bubble */
 	if (buds.size() != 2)
@@ -498,6 +501,7 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 
 	ExtendPathParams params;
 	params.trimLen = trimLen;
+	params.fpTrim = 5;
 	params.maxLen = k + 2;
 	params.lookBehind = true;
 
@@ -708,6 +712,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 		ExtendPathParams params;
 		params.trimLen = trimLen;
+		params.fpTrim = 5;
 		params.maxLen = maxPathLen;
 		params.lookBehind = false;
 

@@ -1082,6 +1082,9 @@ int calcLeftTrim(const Sequence& seq, unsigned k, const Konnector::BloomFilter& 
 	// of the sequence
 	bool firstKmerMatch = true;
 
+	// longest branch of Bloom filter false positives
+	const unsigned fpTrim = 5;
+
 	KmerIterator it(seq, k);
 	for (; it != KmerIterator::end(); ++it) {
 
@@ -1092,19 +1095,21 @@ int calcLeftTrim(const Sequence& seq, unsigned k, const Konnector::BloomFilter& 
 		if (!bloom[kmer])
 			continue;
 
-		// in degree, disregarding false branches
-		unsigned inDegree = trueBranches(kmer, REVERSE, g,
-				minBranchLen).size();
-		// out degree, disregarding false branches
-		unsigned outDegree = trueBranches(kmer, FORWARD, g,
-				minBranchLen).size();
+		SingleExtensionResult leftResult, rightResult;
+		boost::tie(boost::tuples::ignore, leftResult)
+			= successor(kmer, REVERSE, g, minBranchLen, fpTrim);
+		boost::tie(boost::tuples::ignore, rightResult)
+			= successor(kmer, FORWARD, g, minBranchLen, fpTrim);
 
 		if (firstKmerMatch) {
-			bool leftTip = (inDegree == 0 && outDegree == 1);
-			bool rightTip = (inDegree == 1 && outDegree == 0);
+			bool leftTip = leftResult == SE_DEAD_END
+				&& rightResult == SE_EXTENDED;
+			bool rightTip = leftResult == SE_EXTENDED
+				&& rightResult == SE_DEAD_END;
 			if (!leftTip && !rightTip)
 				break;
-		} else if (inDegree != 1 || outDegree != 1) {
+		} else if (leftResult == SE_BRANCHING_POINT
+			|| rightResult == SE_BRANCHING_POINT) {
 			// end of linear path
 			break;
 		}
