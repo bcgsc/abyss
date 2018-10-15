@@ -294,6 +294,38 @@ TEST(extendPath, withTrimming)
 	ASSERT_EQ(3u, path2.at(2));
 }
 
+TEST(extendPath, trueBranch)
+{
+	const unsigned trim = 1;
+	const unsigned fpTrim = 1;
+
+	/*
+	 * This "X" structure is created frequently
+	 * by Bloom filter false positives. (The "*"'s
+	 * denote the positions of the false
+	 * positives.)
+	 *
+	 *    5
+	 *    |
+	 * 3* 4
+	 * |\/|
+	 * |/\|
+	 * 1  2*
+	 * |
+	 * 0
+	 */
+
+	Graph g;
+	add_edge(0, 1, g);
+	add_edge(1, 3, g);
+	add_edge(2, 3, g);
+	add_edge(2, 4, g);
+	add_edge(4, 5, g);
+
+	ASSERT_FALSE(trueBranch(edge(1, 3, g).first, FORWARD, g, trim, fpTrim));
+	ASSERT_TRUE(trueBranch(edge(1, 4, g).first, FORWARD, g, trim, fpTrim));
+}
+
 TEST(extendPath, cycles)
 {
 	PathExtensionResult result;
