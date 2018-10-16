@@ -1055,10 +1055,10 @@ int main(int argc, char** argv)
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(cbf, opt::k, argv[i], 0 /*opt::verbose*/);
+				Bloom::loadFile(cbf, opt::k, argv[i], opt::verbose >= 2);
 #else
 			for (int i = optind; i < argc; i++)
-				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], 0 /* opt::verbose*/);
+				Bloom::loadFile(*cascadingBloom, opt::k, argv[i], opt::verbose >= 2);
 #endif
 			bloom = &cascadingBloom->getBloomFilter(opt::max_count - 1);
 		}
