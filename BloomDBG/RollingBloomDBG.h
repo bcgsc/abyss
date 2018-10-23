@@ -362,9 +362,11 @@ struct in_edge_iterator
 // Subgraph
 
 /** Return whether this vertex exists in the subgraph. */
-template <typename Graph>
+template <typename BloomT>
 static inline bool
-vertex_exists(const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
+vertex_exists(
+	const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+	const RollingBloomDBG<BloomT>& g)
 {
 	size_t hashes[MAX_HASHES];
 	u.rollingHash().getHashes(hashes);
@@ -376,7 +378,7 @@ static inline
 std::pair<typename graph_traits<Graph>::adjacency_iterator,
 		typename graph_traits<Graph>::adjacency_iterator>
 adjacent_vertices(
-		const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
+	const typename graph_traits<Graph>::vertex_descriptor& u, const Graph& g)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator adjacency_iterator;
 	return std::make_pair(adjacency_iterator(g, u), adjacency_iterator(g));
@@ -387,46 +389,48 @@ template <typename Graph>
 static inline
 typename graph_traits<Graph>::degree_size_type
 out_degree(
-		const typename graph_traits<Graph>::vertex_descriptor& u,
-		const Graph& g)
+	const typename graph_traits<Graph>::vertex_descriptor& u,
+	const Graph& g)
 {
 	typedef typename graph_traits<Graph>::adjacency_iterator Ait;
 	std::pair<Ait, Ait> adj = adjacent_vertices(u, g);
 	return std::distance(adj.first, adj.second);
 }
 
-template <typename Graph>
+template <typename BloomT>
 static inline typename
-std::pair<typename graph_traits<Graph>::out_edge_iterator,
-	typename graph_traits<Graph>::out_edge_iterator>
+std::pair<typename graph_traits<RollingBloomDBG<BloomT> >::out_edge_iterator,
+	typename graph_traits<RollingBloomDBG<BloomT> >::out_edge_iterator>
 out_edges(
-		const typename graph_traits<Graph>::vertex_descriptor& u,
-		const Graph& g)
+	const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+	const RollingBloomDBG<BloomT>& g)
 {
+	typedef RollingBloomDBG<BloomT> Graph;
 	typedef typename graph_traits<Graph>::out_edge_iterator Oit;
 	return std::make_pair(Oit(g, u), Oit(g));
 }
 
 // BidirectionalGraph
-template <typename Graph>
+template <typename BloomT>
 static inline
-std::pair<typename graph_traits<Graph>::in_edge_iterator,
-	typename graph_traits<Graph>::in_edge_iterator>
+std::pair<typename graph_traits<RollingBloomDBG<BloomT> >::in_edge_iterator,
+	typename graph_traits<RollingBloomDBG<BloomT> >::in_edge_iterator>
 in_edges(
-		const typename graph_traits<Graph>::vertex_descriptor& u,
-		const Graph& g)
+		const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+		const RollingBloomDBG<BloomT>& g)
 {
+	typedef RollingBloomDBG<BloomT> Graph;
 	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	return std::make_pair(Iit(g, u), Iit(g));
 }
 
-template <typename Graph>
+template <typename BloomT>
 static inline
-typename graph_traits<Graph>::degree_size_type
-in_degree(const typename graph_traits<Graph>::vertex_descriptor& u,
-		  const Graph& g)
+typename graph_traits<RollingBloomDBG<BloomT> >::degree_size_type
+in_degree(const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+	const RollingBloomDBG<BloomT>& g)
 {
-	//return out_degree(reverseComplement(u), g);
+	typedef RollingBloomDBG<BloomT> Graph;
 	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	std::pair<Iit, Iit> it = in_edges(u, g);
 	return std::distance(it.first, it.second);
@@ -435,48 +439,46 @@ in_degree(const typename graph_traits<Graph>::vertex_descriptor& u,
 // PropertyGraph
 
 /** Return the reverse complement of the specified k-mer. */
-template <typename Graph>
+template <typename BloomT>
 static inline
-typename graph_traits<Graph>::vertex_descriptor
-get(vertex_complement_t, const Graph&,
-		typename graph_traits<Graph>::vertex_descriptor u)
+typename graph_traits< RollingBloomDBG<BloomT> >::vertex_descriptor
+get(vertex_complement_t, const RollingBloomDBG<BloomT>&,
+	typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor u)
 {
+	typedef RollingBloomDBG<BloomT> Graph;
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	return V(reverseComplement(u.first), u.second);
 }
 
 /** Return the name of the specified vertex. */
-template <typename Graph>
+template <typename BloomT>
 static inline
-MaskedKmer get(vertex_name_t, const Graph&,
-		typename graph_traits<Graph>::vertex_descriptor u)
+MaskedKmer get(vertex_name_t, const RollingBloomDBG<BloomT>&,
+	typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor u)
 {
 	return u.first;
 }
 
-template <typename Graph>
-static inline
-bool
-get(vertex_removed_t, const Graph&,
-		typename graph_traits<Graph>::vertex_descriptor)
+template <typename BloomT>
+static inline bool
+get(vertex_removed_t, const RollingBloomDBG<BloomT>&,
+	typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor)
 {
 	return false;
 }
 
-template <typename Graph>
-static inline
-no_property
-get(vertex_bundle_t, const Graph&,
-		typename graph_traits<Graph>::edge_descriptor)
+template <typename BloomT>
+static inline no_property
+get(vertex_bundle_t, const RollingBloomDBG<BloomT>&,
+	typename graph_traits<RollingBloomDBG<BloomT> >::edge_descriptor)
 {
 	return no_property();
 }
 
-template <typename Graph>
-static inline
-no_property
-get(edge_bundle_t, const Graph&,
-		typename graph_traits<Graph>::edge_descriptor)
+template <typename BloomT>
+static inline no_property
+get(edge_bundle_t, const RollingBloomDBG<BloomT>&,
+	typename graph_traits<RollingBloomDBG<BloomT> >::edge_descriptor)
 {
 	return no_property();
 }

@@ -7,6 +7,7 @@
 #include "Common/Kmer.h"
 #include "Common/BitUtil.h"
 #include "Common/KmerIterator.h"
+#include "Common/UnorderedSet.h"
 #include "Graph/Path.h"
 #include "Graph/ExtendPath.h"
 #include "Konnector/DBGBloom.h"
@@ -18,8 +19,11 @@
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/BloomFilterWindow.h"
 #include "Bloom/CascadingBloomFilterWindow.h"
+#include "Bloom/RollingBloomDBGVisitor.h"
 #include "BloomDBG/BloomIO.h"
 #include "BloomDBG/HashAgnosticCascadingBloom.h"
+#include "BloomDBG/RollingBloomDBG.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include "lib/bloomfilter/BloomFilter.hpp"
 
 #include <cstdlib>
@@ -51,9 +55,11 @@ static const char USAGE_MESSAGE[] =
 "Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
-"Usage 6: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
-"Usage 7: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
-"Build and manipulate bloom filter files.\n"
+"Usage 6: " PROGRAM " graph [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
+"Usage 7: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 8: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
+"\n"
+"Build and manipulate Bloom filter files.\n"
 "\n"
 " Global options:\n"
 "\n"
@@ -98,6 +104,13 @@ static const char USAGE_MESSAGE[] =
 "  -m, --method=`String'      choose distance calculation method \n"
 "                             [`jaccard'(default), `forbes', `czekanowski']\n"
 "\n"
+" Options for `" PROGRAM " graph':\n"
+"\n"
+"  -d, --depth=N              depth of neighbouring from --root [k]\n"
+"  -R, --root=KMER            root k-mer from graph traversal [required]\n"
+"  -T, --tag=TAG:FASTA        assign tag=TAG to nodes (k-mers) that are present\n"
+"                             in the given FASTA\n"
+"\n"
 " Options for `" PROGRAM " kmers':\n"
 "\n"
 "  -r, --inverse              get k-mers that are *NOT* in the bloom filter\n"
@@ -119,6 +132,9 @@ namespace opt {
 
 	/** The size of the I/O buffer of each thread, in bytes  */
 	size_t bufferSize = 100000;
+
+	/** Depth of graph traversal */
+	size_t depth = 0;
 
 	/** The number of parallel threads. */
 	unsigned threads = 1;
@@ -150,6 +166,13 @@ namespace opt {
 	/** The type of Bloom filter to build */
 	BloomFilterType bloomType = BT_KONNECTOR;
 
+	/**
+	 * Assign tag=tag to k-mer nodes that are contained in the associated
+	 * FASTA file
+	 */
+	string tag;
+	string tagFasta;
+
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
 	unsigned windowIndex = 0;
@@ -168,10 +191,13 @@ namespace opt {
 	 */
 	bool inverse = false;
 
+	/** Root node (k-mer) for `graph` subcommand */
+	string root;
+
 	OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "b:B:h:H:j:k:l:L:m:n:q:rvt:w:";
+static const char shortopts[] = "b:B:d:h:H:j:k:l:L:m:n:q:rR:vt:T:w:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
@@ -179,6 +205,7 @@ static const struct option longopts[] = {
 	{ "bloom-size", required_argument, NULL, 'b' },
 	{ "bloom-type", required_argument, NULL, 't' },
 	{ "buffer-size", required_argument, NULL, 'B' },
+	{ "depth", required_argument, NULL, 'd' },
 	{ "hash-seed", required_argument, NULL, 'h' },
 	{ "num-hashes", required_argument, NULL, 'H' },
 	{ "threads", required_argument, NULL, 'j' },
@@ -193,12 +220,14 @@ static const struct option longopts[] = {
 	{ "trim-quality", required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "tag", required_argument, NULL, 'T' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ "window", required_argument, NULL, 'w' },
 	{ "method", required_argument, NULL, 'm' },
 	{ "inverse", required_argument, NULL, 'r' },
+	{ "root", required_argument, NULL, 'R' },
 	{ "bed", no_argument, NULL, OPT_BED },
 	{ "fasta", no_argument, NULL, OPT_FASTA },
 	{ "raw", no_argument, NULL, OPT_RAW },
@@ -844,6 +873,108 @@ int compare(int argc, char ** argv){
   return 1;
 }
 
+int graph(int argc, char** argv)
+{
+	parseGlobalOpts(argc, argv);
+
+	// default graph neighbourhood depth
+	opt::depth = opt::k;
+
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
+		istringstream arg(optarg != NULL ? optarg : "");
+		switch (c) {
+		  case '?':
+			dieWithUsageError();
+		  case 'd':
+			arg >> opt::depth; break;
+		  case 'R':
+			arg >> opt::root; break;
+		  case 'T':
+			{
+				string s;
+				arg >> s;
+				size_t pos = s.find(":");
+				if (pos < s.length()) {
+					opt::tag = s.substr(0, pos);
+					opt::tagFasta = s.substr(pos + 1);
+				}
+				if (opt::tag.empty() || opt::tagFasta.empty())
+					arg.setstate(ios::failbit);
+				break;
+			}
+		}
+		if (optarg != NULL && (!arg.eof() || arg.fail())) {
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (opt::root.empty()) {
+		cerr << PROGRAM ": missing required option --root <KMER>\n";
+		dieWithUsageError();
+	}
+
+	if (opt::root.size() != opt::k) {
+		cerr << PROGRAM ": --root arg must be a k-mer of length "
+			<< opt::k << "\n";
+		dieWithUsageError();
+	}
+
+	if (argc - optind != 1) {
+		cerr << PROGRAM ": missing arguments\n";
+		dieWithUsageError();
+	}
+
+	typedef RollingBloomDBG<HashAgnosticCascadingBloom> Graph;
+	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+
+	string bloomPath(argv[optind]);
+	optind++;
+
+	unordered_set<V> tagSet;
+	if (!opt::tag.empty() && !opt::tagFasta.empty()) {
+		if (opt::verbose)
+			cerr << "Loading k-mers from `" << opt::tagFasta << "', to be "
+				<< "annotated with tag='" << opt::tag << "'\n";
+
+		size_t count = 0;
+		size_t checkpoint = 0;
+		const size_t step = 10000;
+
+		FastaReader in(opt::tagFasta.c_str(), FastaReader::FOLD_CASE);
+		for (FastaRecord rec; in >> rec;) {
+			for (RollingHashIterator it(rec.seq, 1, opt::k);
+				 it != RollingHashIterator::end(); ++it, ++count) {
+				V v(it.kmer().c_str(), it.rollingHash());
+				tagSet.insert(v);
+			}
+			while (opt::verbose && count >= checkpoint) {
+				cerr << "Loaded " << checkpoint << " k-mers\n";
+				checkpoint += step;
+			}
+		}
+		if (opt::verbose)
+			cerr << "Loaded " << count << " k-mers in total\n";
+	}
+
+	if (opt::verbose)
+		cerr << "Loading Bloom filter from `" << bloomPath << "'..." << endl;
+
+	HashAgnosticCascadingBloom bloom(bloomPath);
+	assert(opt::k == bloom.getKmerSize());
+
+	Graph g(bloom);
+	V root(opt::root.c_str(), RollingHash(opt::root.c_str(),
+		bloom.getHashNum(), bloom.getKmerSize()));
+
+	RollingBloomDBGVisitor<Graph> visitor(root, opt::depth, tagSet, opt::tag, cout);
+	breadthFirstSearch(root, g, true, visitor);
+
+	return 0;
+}
+
 int memberOf(int argc, char ** argv){
 	// Initalise bloom and get globals
 	Konnector::BloomFilter bloom;
@@ -1103,6 +1234,9 @@ int main(int argc, char** argv)
 	}
 	else if (command == "compare") {
 		return compare(argc, argv);
+	}
+	else if (command == "graph") {
+		return graph(argc, argv);
 	}
 	else if (command == "kmers" || command == "getKmers") {
 		return memberOf(argc, argv);

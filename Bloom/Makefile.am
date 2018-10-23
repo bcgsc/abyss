@@ -17,4 +17,5 @@ abyss_bloom_SOURCES = bloom.cc \
 	BloomFilterWindow.h \
 	ConcurrentBloomFilter.h \
 	CascadingBloomFilter.h \
-	CascadingBloomFilterWindow.h
+	CascadingBloomFilterWindow.h \
+	RollingBloomDBGVisitor.h
