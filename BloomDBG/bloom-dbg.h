@@ -638,7 +638,7 @@ namespace BloomDBG {
 		ContigType contigType = getContigType(contigPath, dbg);
 		assert(contigType != CT_LINEAR);
 
-		if (contigPath.size() == 1)
+		if (contigPath.size() <= 2)
 			return;
 
 		/* longest branch of Bloom filter positives */
