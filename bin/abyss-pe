@@ -342,7 +342,7 @@ SCAFFOLD_DE_OPTIONS?=$(DISTANCEEST_OPTIONS)
 $(foreach i,$(mp),$(eval $i_l?=$L))
 $(foreach i,$(mp),$(eval $i_s?=$(SCAFFOLD_DE_S)))
 $(foreach i,$(mp),$(eval $i_n?=$(SCAFFOLD_DE_N)))
-override scaffold_deopt=$v $(dbopt) --dot --mean -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
+override scaffold_deopt=$v $(dbopt) --dot --median -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
 scopt += $v $(dbopt) $(SS) -k$k
 ifdef G
 scopt += -G$G

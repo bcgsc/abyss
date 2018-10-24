@@ -15,7 +15,7 @@ class PMF
   public:
 	/** Construct a PMF from a histogram. */
 	PMF(const Histogram& h)
-		: m_dist(h.maximum() + 1), m_mean(h.mean()), m_stdDev(h.sd())
+		: m_dist(h.maximum() + 1), m_mean(h.mean()), m_stdDev(h.sd()), m_median(h.median())
 	{
 		unsigned count = h.size();
 		m_minp = (double)1 / count;
@@ -44,6 +44,9 @@ class PMF
 		return m_dist.size() - 1;
 	}
 
+	/** Return the median of this distribution. */
+	int median() const { return m_median; }
+
 	/** Return the mean of this distribution. */
 	double mean() const { return m_mean; }
 
@@ -60,6 +63,7 @@ class PMF
 	double m_mean;
 	double m_stdDev;
 	double m_minp;
+	int m_median;
 };
 
 namespace std {
