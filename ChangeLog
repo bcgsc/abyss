@@ -1,3 +1,30 @@
+2018-10-24  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.1.2
+	* Improved scaffold N50 on human by ~10% by
+	implementing a new `DistanceEst --median`
+	option (thanks to @lcoombe!)
+	* Added a `--max-cost` option to `konnector` and
+	`abyss-sealer`. This address a long-standing issue
+	with indeterminately long running times, particularly
+	for low values of `k`.
+
+	abyss-pe:
+	* Use the new `DistanceEst --median` option as the
+	default for the scaffolding stage
+
+	Dockerfile:
+	* Fix OpenMPI setup
+
+	DistanceEst:
+	* Added `--median` option
+
+	konnector:
+	* Added `--max-cost` option to bound running time
+
+	sealer:
+	* Added `--max-cost` option to bound running time
+
 2018-09-11  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.1.1
