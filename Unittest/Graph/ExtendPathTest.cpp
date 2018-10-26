@@ -104,10 +104,10 @@ TEST(extendPath, longestBranch)
 	add_edge(3, 4, g);
 	add_edge(5, 3, g);
 
-	ASSERT_EQ(1u, longestBranch(0, FORWARD, g));
-	ASSERT_EQ(3u, longestBranch(1, FORWARD, g));
-	ASSERT_EQ(1u, longestBranch(3, REVERSE, g));
-	ASSERT_EQ(3u, longestBranch(4, REVERSE, g));
+	ASSERT_EQ(1u, longestBranch(0, FORWARD, g).first);
+	ASSERT_EQ(3u, longestBranch(1, FORWARD, g).first);
+	ASSERT_EQ(1u, longestBranch(3, REVERSE, g).first);
+	ASSERT_EQ(3u, longestBranch(4, REVERSE, g).first);
 }
 
 TEST(extendPath, noExtension)
@@ -277,18 +277,17 @@ TEST(extendPath, withTrimming)
 	/**
 	 * Note: In situations where there are
 	 * multiple branches shorter than the trim
-	 * length, we chose the longest one.  (And
-	 * if the branches are of equal length we
-	 * choose one arbitrarily.)
-	 *
-	 * This is the desired behaviour to deal
-	 * with coverage gaps in the de Bruijn
-	 * graph, which can make a legimitate branch
-	 * indistinguishable from short branches
-	 * due to read errors / Bloom filter false
-	 * positives.
+	 * length, we first check for a unique
+	 * branch that is longer than the false positive
+	 * trim length (`fpTrim`). If there are multiple branches
+	 * longer than the false positive trim length,
+	 * they are all considered sequencing error branches
+	 * and are all trimmed.  If all branches are shorter
+	 * than the false positive trim length, we choose the
+	 * longest branch, provided that the choice is
+	 * unambiguous (i.e. no ties).
 	 */
-	ASSERT_EQ(4u, path2.size());
+	ASSERT_EQ(3u, path2.size());
 	ASSERT_EQ(0u, path2.at(0));
 	ASSERT_EQ(1u, path2.at(1));
 	ASSERT_EQ(3u, path2.at(2));

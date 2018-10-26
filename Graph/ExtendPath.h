@@ -345,53 +345,40 @@ successor(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	InEdgeIt iei, iei_end;
     OutEdgeIt oei, oei_end;
 
-	unsigned degree;
-	if (dir == FORWARD) {
-		degree = out_degree(u, g);
-		if (degree == 1)
-			return std::make_pair(
-				target(*out_edges(u, g).first, g), SE_EXTENDED);
-	} else {
-		degree = in_degree(u, g);
-		if (degree == 1)
-			return std::make_pair(
-				source(*in_edges(u, g).first, g), SE_EXTENDED);
-	}
-
-	if (degree == 0)
-		return std::make_pair(u, SE_DEAD_END);
-
 	V v;
-	unsigned trueBranches = 0;
-	if (dir == FORWARD) {
-		for (boost::tie(oei, oei_end) = out_edges(u, g); oei != oei_end; ++oei) {
-			if (trueBranch(*oei, FORWARD, g, trim, fpTrim)) {
-				v = target(*oei, g);
-				++trueBranches;
-				if (trueBranches >= 2)
-					break;
+	for (unsigned i = 0; true; i = (i == 0) ? 1 : std::min(trim, 2*i))
+	{
+		unsigned trueBranches = 0;
+
+		if (dir == FORWARD) {
+			for (boost::tie(oei, oei_end) = out_edges(u, g); oei != oei_end; ++oei) {
+				if (trueBranch(*oei, FORWARD, g, i, fpTrim)) {
+					v = target(*oei, g);
+					++trueBranches;
+					if (trueBranches >= 2)
+						break;
+				}
+			}
+		} else {
+			assert(dir == REVERSE);
+			for (boost::tie(iei, iei_end) = in_edges(u, g); iei != iei_end; ++iei) {
+				if (trueBranch(*iei, REVERSE, g, i, fpTrim)) {
+					v = source(*iei, g);
+					++trueBranches;
+					if (trueBranches >= 2)
+						break;
+				}
 			}
 		}
-	} else {
-		assert(dir == REVERSE);
-		for (boost::tie(iei, iei_end) = in_edges(u, g); iei != iei_end; ++iei) {
-			if (trueBranch(*iei, REVERSE, g, trim, fpTrim)) {
-				v = source(*iei, g);
-				++trueBranches;
-				if (trueBranches >= 2)
-					break;
-			}
-		}
+
+		if (trueBranches == 0)
+			return std::make_pair(v, SE_DEAD_END);
+		else if (trueBranches == 1)
+			return std::make_pair(v, SE_EXTENDED);
+		else if (i == trim)
+			return std::make_pair(v, SE_BRANCHING_POINT);
 	}
 
-	if (trueBranches == 1)
-		return std::make_pair(v, SE_EXTENDED);
-
-	if (trueBranches >= 2)
-		return std::make_pair(v, SE_BRANCHING_POINT);
-
-	v = longestBranch(u, dir, g);
-	return std::make_pair(v, SE_EXTENDED);
 }
 
 /**
@@ -467,11 +454,18 @@ extendPath(Path<typename boost::graph_traits<Graph>::vertex_descriptor>& path,
 		 * we are on tip if the previous path vertex does not match
 		 * the expected predecessor `t`.
 		 */
-		if (result == SE_EXTENDED && path.size() > 1) {
-			const V& prev = (dir == FORWARD) ?
-				*(path.rbegin() + 1) : *(path.begin() + 1);
-			if (prev != t)
+		if (path.size() > 1) {
+			if (result == SE_DEAD_END) {
+				/* no predecessors or all predecessors were tips */
 				return SE_BRANCHING_POINT;
+			} else {
+				/* check if we are on a tip */
+				assert(result == SE_EXTENDED);
+				const V& prev = (dir == FORWARD) ?
+					*(path.rbegin() + 1) : *(path.begin() + 1);
+				if (prev != t)
+					return SE_BRANCHING_POINT;
+			}
 		}
 
 	}
@@ -570,7 +564,8 @@ static inline size_t depth(
  * @return the vertex at the head of the longest branch
  */
 template <typename Graph>
-inline static typename boost::graph_traits<Graph>::vertex_descriptor
+inline static
+std::pair<typename boost::graph_traits<Graph>::vertex_descriptor, bool>
 longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	Direction dir, const Graph& g)
 {
@@ -582,6 +577,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	InEdgeIter iei, iei_end;
 	size_t maxDepth = 0;
 	unsigned degree = 0;
+	bool tie = false;
 	/* note: had to initialize to prevent compiler warnings */
 	V longestBranch = u;
 	if (dir == FORWARD) {
@@ -593,6 +589,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			if (d > maxDepth) {
 				maxDepth = d;
 				longestBranch = v;
+				tie = false;
 			} else if (d == maxDepth && v < longestBranch) {
 				/*
 				 * make an arbitrary choice among branches
@@ -600,6 +597,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 				 * operator (operator<).
 				 */
 				longestBranch = v;
+				tie = true;
 			}
 		}
 	} else {
@@ -612,6 +610,7 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 			if (d > maxDepth) {
 				maxDepth = d;
 				longestBranch = v;
+				tie = false;
 			} else if (d == maxDepth && v < longestBranch) {
 				/*
 				 * make an arbitrary choice among branches
@@ -619,11 +618,12 @@ longestBranch(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 				 * operator (operator<).
 				 */
 				longestBranch = v;
+				tie = true;
 			}
 		}
 	}
 	assert(degree > 0);
-	return longestBranch;
+	return std::make_pair(longestBranch, tie);
 }
 
 /**
