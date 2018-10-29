@@ -23,12 +23,15 @@ public:
 	typedef typename DepthMap::const_iterator DepthMapConstIt;
 	typedef typename DepthMap::iterator DepthMapIt;
 
+	typedef std::vector<std::pair<std::string, unordered_set<VertexT> > >
+		KmerProperties;
+	typedef typename KmerProperties::const_iterator KmerPropertiesIt;
+
 	/** Constructor */
 	RollingBloomDBGVisitor(const VertexT& root, unsigned maxDepth,
-		const unordered_set<VertexT>& tagSet, const std::string& tag,
-		std::ostream& out)
-		: m_root(root), m_maxDepth(maxDepth), m_tagSet(tagSet), m_tag(tag),
-		m_out(out)
+		const KmerProperties& kmerProperties, std::ostream& out)
+		: m_root(root), m_maxDepth(maxDepth),
+		m_kmerProperties(kmerProperties), m_out(out)
 	{
 		m_depthMap[root] = 0;
 
@@ -89,11 +92,12 @@ public:
 
 	    m_out << "depth=" << depth;
 
-		if (m_tagSet.find(v) != m_tagSet.end()) {
-			m_out << ",tag=" << m_tag << "];\n";
-		} else {
-			m_out << "];\n";
+		for (KmerPropertiesIt it = m_kmerProperties.begin();
+			it != m_kmerProperties.end(); ++it) {
+			if (it->second.find(v) != it->second.end())
+				m_out << "," << it->first;
 		}
+		m_out << "];\n";
 
 		return BFS_SUCCESS;
 	}
@@ -145,8 +149,7 @@ protected:
 
 	const VertexT& m_root;
 	const unsigned m_maxDepth;
-	const unordered_set<VertexT>& m_tagSet;
-	const std::string m_tag;
+	const KmerProperties& m_kmerProperties;
 	std::ostream& m_out;
 };
 

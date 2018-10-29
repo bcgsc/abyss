@@ -108,8 +108,8 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -d, --depth=N              depth of neighbouring from --root [k]\n"
 "  -R, --root=KMER            root k-mer from graph traversal [required]\n"
-"  -T, --tag=TAG:FASTA        assign tag=TAG to nodes (k-mers) that are present\n"
-"                             in the given FASTA\n"
+"  -a, --node-attr=STR:FILE   assign a node attribute (e.g. 'color=blue')\n"
+"                             k-mers in the given FASTA\n"
 "\n"
 " Options for `" PROGRAM " kmers':\n"
 "\n"
@@ -124,6 +124,13 @@ static const char USAGE_MESSAGE[] =
 
 enum BloomFilterType { BT_KONNECTOR, BT_ROLLING_HASH, BT_UNKNOWN };
 enum OutputFormat { BED, FASTA, RAW };
+
+/* types related to --node-attr option */
+
+typedef string KmerProperty;
+typedef string FastaPath;
+typedef vector<pair<KmerProperty, FastaPath> > KmerProperties;
+typedef typename KmerProperties::iterator KmerPropertiesIt;
 
 namespace opt {
 
@@ -167,11 +174,11 @@ namespace opt {
 	BloomFilterType bloomType = BT_KONNECTOR;
 
 	/**
-	 * Assign tag=tag to k-mer nodes that are contained in the associated
-	 * FASTA file
+	 * For the "graph" command: assign node attribute
+	 * (e.g. "color=blue") to k-mers contained in the
+	 * associated FASTA file
 	 */
-	string tag;
-	string tagFasta;
+	KmerProperties kmerProperties;
 
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
@@ -197,7 +204,7 @@ namespace opt {
 	OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "b:B:d:h:H:j:k:l:L:m:n:q:rR:vt:T:w:";
+static const char shortopts[] = "a:b:B:d:h:H:j:k:l:L:m:n:q:rR:vt:w:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
@@ -220,7 +227,7 @@ static const struct option longopts[] = {
 	{ "trim-quality", required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
-	{ "tag", required_argument, NULL, 'T' },
+	{ "node-attr", required_argument, NULL, 'a' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
@@ -886,23 +893,22 @@ int graph(int argc, char** argv)
 		switch (c) {
 		  case '?':
 			dieWithUsageError();
-		  case 'd':
-			arg >> opt::depth; break;
-		  case 'R':
-			arg >> opt::root; break;
-		  case 'T':
+		  case 'a':
 			{
 				string s;
 				arg >> s;
 				size_t pos = s.find(":");
-				if (pos < s.length()) {
-					opt::tag = s.substr(0, pos);
-					opt::tagFasta = s.substr(pos + 1);
-				}
-				if (opt::tag.empty() || opt::tagFasta.empty())
+				if (pos < s.length())
+					opt::kmerProperties.push_back(make_pair(
+						s.substr(0, pos), s.substr(pos + 1)));
+				else
 					arg.setstate(ios::failbit);
-				break;
 			}
+			break;
+		  case 'd':
+			arg >> opt::depth; break;
+		  case 'R':
+			arg >> opt::root; break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -933,22 +939,26 @@ int graph(int argc, char** argv)
 	string bloomPath(argv[optind]);
 	optind++;
 
-	unordered_set<V> tagSet;
-	if (!opt::tag.empty() && !opt::tagFasta.empty()) {
+	vector<pair<string, unordered_set<V> > > kmerProperties;
+	for (KmerPropertiesIt it = opt::kmerProperties.begin();
+		it != opt::kmerProperties.end(); ++it) {
+
 		if (opt::verbose)
-			cerr << "Loading k-mers from `" << opt::tagFasta << "', to be "
-				<< "annotated with tag='" << opt::tag << "'\n";
+			cerr << "Loading k-mers from `" << it->second << "', to be "
+				<< "annotated with '" << it->first << "'\n";
+
+		kmerProperties.push_back(make_pair(it->first, unordered_set<V>()));
 
 		size_t count = 0;
 		size_t checkpoint = 0;
 		const size_t step = 10000;
 
-		FastaReader in(opt::tagFasta.c_str(), FastaReader::FOLD_CASE);
+		FastaReader in(it->second.c_str(), FastaReader::FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
 			for (RollingHashIterator it(rec.seq, 1, opt::k);
 				 it != RollingHashIterator::end(); ++it, ++count) {
 				V v(it.kmer().c_str(), it.rollingHash());
-				tagSet.insert(v);
+				kmerProperties.back().second.insert(v);
 			}
 			while (opt::verbose && count >= checkpoint) {
 				cerr << "Loaded " << checkpoint << " k-mers\n";
@@ -969,7 +979,7 @@ int graph(int argc, char** argv)
 	V root(opt::root.c_str(), RollingHash(opt::root.c_str(),
 		bloom.getHashNum(), bloom.getKmerSize()));
 
-	RollingBloomDBGVisitor<Graph> visitor(root, opt::depth, tagSet, opt::tag, cout);
+	RollingBloomDBGVisitor<Graph> visitor(root, opt::depth, kmerProperties, cout);
 	breadthFirstSearch(root, g, true, visitor);
 
 	return 0;
