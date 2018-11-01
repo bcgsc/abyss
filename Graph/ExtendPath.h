@@ -44,79 +44,42 @@ struct ExtendPathParams
 /**
  * The result of attempting to extend a path.
  */
-enum PathExtensionResult {
-	/** path could not be extended because of a dead end */
-	DEAD_END,
-	/** path could not be extended because of a branching point */
-	BRANCHING_POINT,
-	/** path could not be extended because of a cycle */
-	CYCLE,
-	/** path could not be extended because of caller-specified length limit */
-	LENGTH_LIMIT,
-	/** path was extended up to a dead end */
-	EXTENDED_TO_DEAD_END,
-	/** path was extended up to a branching point */
-	EXTENDED_TO_BRANCHING_POINT,
-	/** path was extended up to a cycle */
-	EXTENDED_TO_CYCLE,
-	/** path was extended up to caller-specified length limit */
-	EXTENDED_TO_LENGTH_LIMIT
+enum PathExtensionResultCode {
+	/** stopped path extension at a vertex with multiple incoming branches */
+	ER_AMBI_IN,
+	/** stopped path extension at a vertex with multiple outgoing branches */
+    ER_AMBI_OUT,
+	/** stopped path extension at a vertex with no outgoing branches */
+	ER_DEAD_END,
+	/** stopped path extension after completing a cycle */
+	ER_CYCLE,
+	/** stopped path extension at caller-specified length limit */
+	ER_LENGTH_LIMIT,
 };
 
 /**
  * Translate path extension result code to a string.
  */
-static inline const char* pathExtensionResultStr(PathExtensionResult result)
+static inline const char* pathExtensionResultStr(PathExtensionResultCode result)
 {
 	switch(result) {
-	case DEAD_END:
+	case ER_AMBI_IN:
+		return "AMBI_IN";
+	case ER_AMBI_OUT:
+		return "AMBI_OUT";
+	case ER_DEAD_END:
 		return "DEAD_END";
-	case BRANCHING_POINT:
-		return "BRANCHING_POINT";
-	case CYCLE:
+	case ER_CYCLE:
 		return "CYCLE";
-	case LENGTH_LIMIT:
+	case ER_LENGTH_LIMIT:
 		return "LENGTH_LIMIT";
-	case EXTENDED_TO_DEAD_END:
-		return "EXTENDED_TO_DEAD_END";
-	case EXTENDED_TO_BRANCHING_POINT:
-		return "EXTENDED_TO_BRANCHING_POINT";
-	case EXTENDED_TO_CYCLE:
-		return "EXTENDED_TO_CYCLE";
-	case EXTENDED_TO_LENGTH_LIMIT:
-		return "EXTENDED_TO_LENGTH_LIMIT";
 	default:
 		assert(false);
 	}
 }
 
-/**
- * Return true if the path extension result code indicates
- * that the path was successfully extended by one or more nodes.
- */
-static inline bool pathExtended(PathExtensionResult result)
-{
-	switch(result) {
-	case DEAD_END:
-	case BRANCHING_POINT:
-	case CYCLE:
-	case LENGTH_LIMIT:
-		return false;
-	default:
-		return true;
-	}
-	assert(false);
-}
-
-/**
- * The result of attempting to extend a path
- * by a single neighbouring vertex.
- */
-enum SingleExtensionResult {
-	SE_DEAD_END,
-	SE_BRANCHING_POINT,
-	SE_EXTENDED
-};
+/** length of path extension (in vertices) and reason for stopping */
+typedef std::pair<unsigned, PathExtensionResultCode> PathExtensionResult;
 
 /**
  * Return true if there is a path of at least depthLimit vertices
@@ -334,7 +297,7 @@ trueBranches(const typename boost::graph_traits<BidirectionalGraph>::vertex_desc
  */
 template <class Graph>
 static inline std::pair<typename boost::graph_traits<Graph>::vertex_descriptor,
-	SingleExtensionResult>
+	PathExtensionResultCode>
 successor(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
 {
@@ -345,7 +308,8 @@ successor(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	InEdgeIt iei, iei_end;
     OutEdgeIt oei, oei_end;
 
-	V v;
+	/* assign u to suppress uninitialized warning */
+	V v = u;
 	for (unsigned i = 0; true; i = (i == 0) ? 1 : std::min(trim, 2*i))
 	{
 		unsigned trueBranches = 0;
@@ -372,11 +336,11 @@ successor(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 		}
 
 		if (trueBranches == 0)
-			return std::make_pair(v, SE_DEAD_END);
+			return std::make_pair(v, ER_DEAD_END);
 		else if (trueBranches == 1)
-			return std::make_pair(v, SE_EXTENDED);
+			return std::make_pair(v, ER_LENGTH_LIMIT);
 		else if (i == trim)
-			return std::make_pair(v, SE_BRANCHING_POINT);
+			return std::make_pair(v, ER_AMBI_OUT);
 	}
 
 }
@@ -390,7 +354,7 @@ static inline bool
 ambiguous(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim)
 {
-	return successor(u, dir, g, trim, fpTrim).second == SE_BRANCHING_POINT;
+	return successor(u, dir, g, trim, fpTrim).second == ER_AMBI_OUT;
 }
 
 /**
@@ -409,12 +373,11 @@ ambiguous(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
 	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
 
 	V v;
-	SingleExtensionResult result;
+	PathExtensionResultCode result;
 
 	boost::tie(v, result) = successor(u, dir, g, trim, fpTrim);
 
-	return result == SE_BRANCHING_POINT
-		|| (result == SE_EXTENDED && v != expected);
+	return result == ER_AMBI_OUT || (result == ER_LENGTH_LIMIT && v != expected);
 }
 
 /**
@@ -422,8 +385,9 @@ ambiguous(const typename boost::graph_traits<Graph>::vertex_descriptor& u,
  * in the direction of extension.
  */
 template <class Graph>
-static inline SingleExtensionResult
-extendPath(Path<typename boost::graph_traits<Graph>::vertex_descriptor>& path,
+static inline PathExtensionResultCode
+extendPathBySingleVertex(
+	Path<typename boost::graph_traits<Graph>::vertex_descriptor>& path,
 	Direction dir, const Graph& g, unsigned trim, unsigned fpTrim,
 	bool lookBehind)
 {
@@ -432,50 +396,50 @@ extendPath(Path<typename boost::graph_traits<Graph>::vertex_descriptor>& path,
 	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
 
 	V t, v;
-	SingleExtensionResult result;
+	PathExtensionResultCode result;
 
 	const V& head = (dir == FORWARD) ? path.back() : path.front();
-
-	boost::tie(v, result) = successor(head, dir, g, trim, fpTrim);
-	if (result != SE_EXTENDED)
-		return result;
 
 	if (lookBehind) {
 
 		Direction otherDir = (dir == FORWARD) ? REVERSE : FORWARD;
 		boost::tie(t, result) = successor(head, otherDir, g, trim, fpTrim);
 
-		if (result == SE_BRANCHING_POINT)
-			return result;
+		if (result == ER_AMBI_OUT)
+			return ER_AMBI_IN;
 
 		/*
 		 * Tricky: If our path was seeded on a tip, we want to stop the
-		 * extension when we reach a branching point. We can detect that
-		 * we are on tip if the previous path vertex does not match
-		 * the expected predecessor `t`.
+		 * extension when we reconnect to the graph. We can detect that
+		 * we are on tip if we reach a branching point where the predecessor
+		 * vertex in the path does not match the expected predecessor `t`.
 		 */
 		if (path.size() > 1) {
-			if (result == SE_DEAD_END) {
+			if (result == ER_DEAD_END) {
 				/* no predecessors or all predecessors were tips */
-				return SE_BRANCHING_POINT;
+				return ER_AMBI_IN;
 			} else {
 				/* check if we are on a tip */
-				assert(result == SE_EXTENDED);
+				assert(result == ER_LENGTH_LIMIT);
 				const V& prev = (dir == FORWARD) ?
 					*(path.rbegin() + 1) : *(path.begin() + 1);
 				if (prev != t)
-					return SE_BRANCHING_POINT;
+					return ER_AMBI_IN;
 			}
 		}
 
 	}
+
+	boost::tie(v, result) = successor(head, dir, g, trim, fpTrim);
+	if (result != ER_LENGTH_LIMIT)
+		return result;
 
 	if (dir == FORWARD)
 		path.push_back(v);
 	else
 		path.push_front(v);
 
-	return SE_EXTENDED;
+	return ER_LENGTH_LIMIT;
 }
 
 /**
@@ -653,63 +617,47 @@ static inline PathExtensionResult extendPath(
 
 	assert(path.size() > 0);
 	size_t origPathLen = path.size();
-
-	if (path.size() != NO_LIMIT && path.size() >= params.maxLen)
-		return LENGTH_LIMIT;
-
-	SingleExtensionResult result = SE_EXTENDED;
-	bool cycle = false;
+	PathExtensionResultCode result = ER_DEAD_END;
 	bool lookBehind = params.lookBehindStartVertex;
 
 	assert(!path.empty());
-	while (result == SE_EXTENDED && path.size() < params.maxLen)
+	while (path.size() < params.maxLen)
 	{
-		result = extendPath(path, dir, g, params.trimLen, params.fpTrim,
-			lookBehind);
+		result = extendPathBySingleVertex(path, dir, g,
+			params.trimLen, params.fpTrim, lookBehind);
 
-		if (result == SE_EXTENDED) {
-			const V& head = (dir == FORWARD) ? path.back() : path.front();
-			bool inserted;
-			boost::tie(boost::tuples::ignore, inserted) = visited.insert(head);
-			if (!inserted) {
-				cycle = true;
-				if (dir == FORWARD)
-					path.pop_back();
-				else
-					path.pop_front();
-				break;
-			}
+		if (result != ER_LENGTH_LIMIT)
+			break;
+
+		const V& head = (dir == FORWARD) ? path.back() : path.front();
+		bool inserted;
+		boost::tie(boost::tuples::ignore, inserted) = visited.insert(head);
+		if (!inserted) {
+			result = ER_CYCLE;
+			if (dir == FORWARD)
+				path.pop_back();
+			else
+				path.pop_front();
+			break;
 		}
 
 		/* override `lookBehindStartVertex` after first extension */
 		lookBehind = params.lookBehind;
 	}
 
-	if (path.size() > origPathLen) {
-		if (cycle) {
-			return EXTENDED_TO_CYCLE;
-		} else if (result == SE_DEAD_END) {
-			return EXTENDED_TO_DEAD_END;
-		} else if (result == SE_BRANCHING_POINT) {
-			return EXTENDED_TO_BRANCHING_POINT;
-		} else {
-			assert(result == SE_EXTENDED &&
-				path.size() == params.maxLen);
-			return EXTENDED_TO_LENGTH_LIMIT;
-		}
-	} else {
-		assert(path.size() == origPathLen);
-		if (cycle) {
-			return CYCLE;
-		} else if (result == SE_DEAD_END) {
-			return DEAD_END;
-		} else if (result == SE_BRANCHING_POINT) {
-			return BRANCHING_POINT;
-		} else {
-			assert(origPathLen >= params.maxLen);
-			return LENGTH_LIMIT;
-		}
-	}
+	if (params.maxLen != NO_LIMIT && path.size() == params.maxLen)
+		result = ER_LENGTH_LIMIT;
+
+	assert(path.size() >= origPathLen);
+	unsigned extension = path.size() - origPathLen;
+
+	/*
+	 * Sanity check: If no length limit was imposed, we must have stopped
+	 * the extension for some other reason (e.g. dead end)
+	 */
+	assert(params.maxLen != NO_LIMIT || result != ER_LENGTH_LIMIT);
+
+	return std::make_pair(extension, result);
 }
 
 /**

@@ -1095,23 +1095,26 @@ int calcLeftTrim(const Sequence& seq, unsigned k, const Konnector::BloomFilter& 
 		if (!bloom[kmer])
 			continue;
 
-		SingleExtensionResult leftResult, rightResult;
+		PathExtensionResultCode leftResult, rightResult;
 		boost::tie(boost::tuples::ignore, leftResult)
 			= successor(kmer, REVERSE, g, minBranchLen, fpTrim);
 		boost::tie(boost::tuples::ignore, rightResult)
 			= successor(kmer, FORWARD, g, minBranchLen, fpTrim);
 
 		if (firstKmerMatch) {
-			bool leftTip = leftResult == SE_DEAD_END
-				&& rightResult == SE_EXTENDED;
-			bool rightTip = leftResult == SE_EXTENDED
-				&& rightResult == SE_DEAD_END;
+			bool leftTip = leftResult == ER_DEAD_END
+				&& rightResult == ER_LENGTH_LIMIT;
+			bool rightTip = leftResult == ER_LENGTH_LIMIT
+				&& rightResult == ER_DEAD_END;
 			if (!leftTip && !rightTip)
 				break;
-		} else if (leftResult == SE_BRANCHING_POINT
-			|| rightResult == SE_BRANCHING_POINT) {
-			// end of linear path
-			break;
+		} else {
+			bool leftFork = leftResult == ER_AMBI_IN
+				|| leftResult == ER_AMBI_OUT;
+			bool rightFork = rightResult == ER_AMBI_IN
+				|| rightResult == ER_AMBI_OUT;
+			if (leftFork || rightFork)
+				break;
 		}
 
 		firstKmerMatch = false;

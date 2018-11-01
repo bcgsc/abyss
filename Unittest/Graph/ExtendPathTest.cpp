@@ -349,7 +349,8 @@ TEST(extendPath, cycles)
 	expectedPathForward.push_back(2);
 
 	result = extendPath(pathForward, FORWARD, g);
-	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(2u, result.first);
+	EXPECT_EQ(ER_CYCLE, result.second);
 	EXPECT_EQ(expectedPathForward, pathForward);
 
 	Path<Vertex> pathReverse;
@@ -361,7 +362,8 @@ TEST(extendPath, cycles)
 	expectedPathReverse.push_back(0);
 
 	result = extendPath(pathReverse, REVERSE, g);
-	EXPECT_EQ(EXTENDED_TO_CYCLE, result);
+	EXPECT_EQ(2u, result.first);
+	EXPECT_EQ(ER_CYCLE, result.second);
 	EXPECT_EQ(expectedPathReverse, pathReverse);
 
 	/*
@@ -388,7 +390,8 @@ TEST(extendPath, cycles)
 	 * note: expected result is EXTENDED_TO_BRANCHING_POINT
 	 * because vertex 1 has 2 incoming edges
 	 */
-	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
+	EXPECT_EQ(1u, result.first);
+	EXPECT_EQ(ER_AMBI_IN, result.second);
 	EXPECT_EQ(expectedPath2, path2);
 
 	/*
@@ -415,7 +418,8 @@ TEST(extendPath, cycles)
 	 * note: expected result is EXTENDED_TO_BRANCHING_POINT
 	 * because vertex 1 has 2 incoming edges
 	 */
-	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
+	EXPECT_EQ(1u, result.first);
+	EXPECT_EQ(ER_AMBI_IN, result.second);
 	EXPECT_EQ(expectedPath3, path3);
 }
 
@@ -444,6 +448,7 @@ TEST(extendPath, cyclesAndBranches)
 	expectedPath.push_back(1);
 
 	result = extendPath(path, FORWARD, g);
-	EXPECT_EQ(EXTENDED_TO_BRANCHING_POINT, result);
+	EXPECT_EQ(1u, result.first);
+	EXPECT_EQ(ER_AMBI_IN, result.second);
 	EXPECT_EQ(expectedPath, path);
 }

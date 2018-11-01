@@ -172,18 +172,10 @@ namespace BloomDBG {
 		SeedType seedType;
 		/** Starting sequence prior to extensions */
 		Sequence seed;
-		/** TRUE if leftwards sequence extension was attempted */
-		bool extendedLeft;
-		/** True if rightwards sequence extension was attempted */
-		bool extendedRight;
 		/** Result code for attempted left sequence extension (e.g. DEAD END) */
 		PathExtensionResult leftExtensionResult;
 		/** Result code for attempted left sequence extension (e.g. DEAD END) */
 		PathExtensionResult rightExtensionResult;
-		/** length of left extension (bp) */
-		unsigned leftExtension;
-		/** length of right extension (bp) */
-		unsigned rightExtension;
 
 		/**
 		 * True if the extended sequence was excluded from the output contigs
@@ -195,10 +187,8 @@ namespace BloomDBG {
 		ContigRecord() :
 			contigID(std::numeric_limits<size_t>::max()),
 			readID(),
-			extendedLeft(false),
-			extendedRight(false),
-			leftExtensionResult(DEAD_END),
-			rightExtensionResult(DEAD_END),
+			leftExtensionResult(std::make_pair(0, ER_DEAD_END)),
+			rightExtensionResult(std::make_pair(0, ER_DEAD_END)),
 			redundant(false)
 			{}
 
@@ -230,15 +220,15 @@ namespace BloomDBG {
 				<< o.redundant << '\t'
 				<< o.readID << '\t';
 
-			if (o.extendedLeft)
-				out << pathExtensionResultStr(o.leftExtensionResult) << '\t'
-					<< o.leftExtension << '\t';
+			if (o.leftExtensionResult.first > 0)
+				out << pathExtensionResultStr(o.leftExtensionResult.second) << '\t'
+					<< o.leftExtensionResult.first << '\t';
 			else
 				out << "NA" << '\t' << "NA" << '\t';
 
-			if (o.extendedRight)
-				out << pathExtensionResultStr(o.rightExtensionResult) << '\t'
-					<< o.rightExtension << '\t';
+			if (o.rightExtensionResult.first > 0)
+				out << pathExtensionResultStr(o.rightExtensionResult.second) << '\t'
+					<< o.rightExtensionResult.first << '\t';
 			else
 				out << "NA" << '\t' << "NA" << '\t';
 
@@ -743,6 +733,23 @@ namespace BloomDBG {
 		assert(!contigPath.empty());
 	}
 
+	bool isTip(unsigned length, PathExtensionResultCode leftResult,
+		PathExtensionResultCode rightResult, unsigned trim)
+	{
+		if (length > trim)
+			return false;
+
+		if (leftResult == ER_DEAD_END &&
+			(rightResult == ER_DEAD_END || rightResult == ER_AMBI_IN))
+			return true;
+
+		if (rightResult == ER_DEAD_END &&
+			(leftResult == ER_DEAD_END || leftResult == ER_AMBI_IN))
+			return true;
+
+		return false;
+	}
+
 	/**
 	 * Decide if a read should be extended and if so extend it into a contig.
 	 */
@@ -817,37 +824,29 @@ namespace BloomDBG {
 			contigRec.readID = rec.id;
 			contigRec.seedType = ST_READ;
 			contigRec.seed = it->kmer().c_str();
-			contigRec.extendedLeft = true;
-			contigRec.extendedRight = true;
 
 			Path<Vertex> contigPath;
 			contigPath.push_back(*it);
 
 			contigRec.leftExtensionResult
 				= extendPath(contigPath, REVERSE, dbg, extendParams);
-			contigRec.leftExtension = contigPath.size() - 1;
 
 			contigRec.rightExtensionResult
 				= extendPath(contigPath, FORWARD, dbg, extendParams);
-			contigRec.rightExtension = contigPath.size()
-				- contigRec.leftExtension - 1;
 
-			/* check if the contig is a tip */
-			bool isTip = (contigRec.leftExtensionResult == DEAD_END
-				|| contigRec.leftExtensionResult == EXTENDED_TO_DEAD_END
-				|| contigRec.rightExtensionResult == DEAD_END
-				|| contigRec.rightExtensionResult == EXTENDED_TO_DEAD_END)
-				&& contigPath.size() <= params.trim;
+			PathExtensionResultCode leftResult
+				= contigRec.leftExtensionResult.second;
+			PathExtensionResultCode rightResult
+				= contigRec.rightExtensionResult.second;
 
-			if (!isTip) {
-
+			if (!isTip(contigPath.size(), leftResult, rightResult, params.trim))
+			{
 				/* selectively trim branch k-mers from contig ends */
 				trimBranchKmers(contigPath, dbg, params.trim);
 
 				/* output contig to FASTA file */
 				outputContig(contigPath, contigRec, dbg, assembledKmerSet,
 					contigEndKmers, params, counters, streams);
-
 			}
 
 			/* mark contig k-mers as visited */

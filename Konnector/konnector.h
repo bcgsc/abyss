@@ -686,7 +686,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 	Kmer startKmer(kmerStr);
 	Path<Kmer> path;
 	path.push_back(startKmer);
-	PathExtensionResult pathResult = LENGTH_LIMIT;
+	PathExtensionResult pathResult = std::make_pair(0, ER_DEAD_END);
 
 	/* track visited kmers to avoid traversing cycles in an infinite loop */
 
@@ -733,7 +733,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		for (Path<Kmer>::iterator it = path.begin();
 			it != path.end(); ++it) {
 			if (visited.containsKmer(*it)) {
-				pathResult = EXTENDED_TO_CYCLE;
+				pathResult.second = ER_CYCLE;
 				path.erase(it, path.end());
 				break;
 			}
@@ -743,11 +743,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		/*
 		 * graft path extension onto original input sequence
 		 */
-		if (path.size() > 0 &&
-			(pathResult == EXTENDED_TO_DEAD_END ||
-			pathResult == EXTENDED_TO_BRANCHING_POINT ||
-			pathResult == EXTENDED_TO_CYCLE ||
-			pathResult == EXTENDED_TO_LENGTH_LIMIT))
+		if (path.size() > 0 && pathResult.first > 0)
 		{
 			std::string pathSeq = pathToSeq(path);
 			if (preserveSeq)
@@ -762,9 +758,8 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		 * extend through simple bubbles
 		 */
 		done = true;
-		if (popBubbles && seq.length() < maxLen &&
-			(pathResult == BRANCHING_POINT ||
-			pathResult == EXTENDED_TO_BRANCHING_POINT)) {
+		if (popBubbles && seq.length() < maxLen
+			&& pathResult.second == ER_AMBI_OUT) {
 			startKmerPos = startKmerPos + path.size() - 1;
 			assert(startKmerPos < seq.length() - k + 1);
 			if (extendSeqThroughBubble(seq, FORWARD, startKmerPos,
@@ -785,7 +780,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 					}
 					Kmer kmer(kmerStr);
 					if (visited.containsKmer(kmer)) {
-						pathResult = EXTENDED_TO_CYCLE;
+						pathResult.second = ER_CYCLE;
 						seq.erase(i);
 						break;
 					}
@@ -793,7 +788,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 				}
 
 				/* set up for another round of extension */
-				if (pathResult != EXTENDED_TO_CYCLE && seq.length() < maxLen) {
+				if (pathResult.second != ER_CYCLE && seq.length() < maxLen) {
 					done = false;
 					startKmerPos = seq.length() - k;
 					path.clear();
@@ -808,40 +803,40 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 	ExtendSeqResult result;
 
-	switch (pathResult)
+	switch (pathResult.second)
 	{
-	case EXTENDED_TO_DEAD_END:
-		if (seq.length() > origSeqLen)
+	case ER_DEAD_END:
+		if (seq.length() == k)
+			result = ES_DEAD_END;
+		else if (seq.length() > origSeqLen)
 			result = ES_EXTENDED_TO_DEAD_END;
 		else
 			result = ES_INTERNAL_DEAD_END;
 		break;
-	case EXTENDED_TO_BRANCHING_POINT:
-		if (seq.length() > origSeqLen)
+	case ER_AMBI_IN:
+	case ER_AMBI_OUT:
+		if (seq.length() == k)
+			result = ES_BRANCHING_POINT;
+		else if (seq.length() > origSeqLen)
 			result = ES_EXTENDED_TO_BRANCHING_POINT;
 		else
 			result = ES_INTERNAL_BRANCHING_POINT;
 		break;
-	case EXTENDED_TO_CYCLE:
-		if (seq.length() > origSeqLen)
+	case ER_CYCLE:
+		if (seq.length() == k)
+			result = ES_CYCLE;
+		else if (seq.length() > origSeqLen)
 			result = ES_EXTENDED_TO_CYCLE;
 		else
 			result = ES_INTERNAL_CYCLE;
 		break;
-	case DEAD_END:
-		result = ES_DEAD_END;
-		break;
-	case BRANCHING_POINT:
-		result = ES_BRANCHING_POINT;
-		break;
-	case CYCLE:
-		result = ES_CYCLE;
-		break;
-	case LENGTH_LIMIT:
-		result = ES_LENGTH_LIMIT;
-		break;
-	case EXTENDED_TO_LENGTH_LIMIT:
-		result = ES_EXTENDED_TO_LENGTH_LIMIT;
+	case ER_LENGTH_LIMIT:
+		if (seq.length() == origSeqLen) {
+			result = ES_LENGTH_LIMIT;
+		} else  {
+			assert(seq.length() > origSeqLen);
+			result = ES_EXTENDED_TO_LENGTH_LIMIT;
+		}
 		break;
 	default:
 		/* all other cases should be handled above */
