@@ -786,7 +786,7 @@ arcs_z?=500
 # Align paired-end reads to the draft genome and do not sort.
 %.lr.sortn.sam.gz: %.fa
 	$(gtime) $(align) $(lrmapopt) $(lr_reads) $< \
-	| abyss-fixmate --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
+	| abyss-fixmate-ssq --all --qname $v -l$(lr_l) $(FIXMATE_OPTIONS) \
 	| $(gzip) >$@
 
 # Create a graph of linked contigs using ARCS.
