@@ -130,7 +130,7 @@ enum OutputFormat { BED, FASTA, RAW };
 typedef string KmerProperty;
 typedef string FastaPath;
 typedef vector<pair<KmerProperty, FastaPath> > KmerProperties;
-typedef typename KmerProperties::iterator KmerPropertiesIt;
+typedef KmerProperties::iterator KmerPropertiesIt;
 
 namespace opt {
 
@@ -934,7 +934,7 @@ int graph(int argc, char** argv)
 	}
 
 	typedef RollingBloomDBG<HashAgnosticCascadingBloom> Graph;
-	typedef typename boost::graph_traits<Graph>::vertex_descriptor V;
+	typedef boost::graph_traits<Graph>::vertex_descriptor V;
 
 	string bloomPath(argv[optind]);
 	optind++;
