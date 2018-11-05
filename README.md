@@ -13,7 +13,7 @@ Contents
 	* [Install ABySS on Debian or Ubuntu](#install-abyss-on-debian-or-ubuntu)
 	* [Install ABySS on Mac OS X](#install-abyss-on-mac-os-x)
 * [Dependencies](#dependencies)
-* [Compiling ABySS from GiHub](#compiling-abyss-from-github)
+* [Compiling ABySS from GitHub](#compiling-abyss-from-github)
 * [Compiling ABySS from source](#compiling-abyss-from-source)
 * [Assembling a paired-end library](#assembling-a-paired-end-library)
 * [Assembling multiple libraries](#assembling-multiple-libraries)
