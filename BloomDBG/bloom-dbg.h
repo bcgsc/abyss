@@ -845,7 +845,7 @@ namespace BloomDBG {
 				trimBranchKmers(contigPath, dbg, params.trim);
 
 				/* output contig to FASTA file */
-				outputContig(contigPath, contigRec, dbg, assembledKmerSet,
+				outputContig(contigPath, contigRec, assembledKmerSet,
 					contigEndKmers, params, counters, streams);
 			}
 
