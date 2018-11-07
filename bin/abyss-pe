@@ -230,7 +230,7 @@ abyssopt += $(dbopt) $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 endif
 
 # AdjList parameters
-m?=50
+m?=0
 alopt += $v $(dbopt) $(SS) -k$k -m$m
 ifndef B
 ifdef K
