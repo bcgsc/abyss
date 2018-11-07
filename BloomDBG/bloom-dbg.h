@@ -1011,7 +1011,7 @@ namespace BloomDBG {
 						printProgressMessage(counters);
 
 					if (!params.readLogPath.empty()) {
-#pragma omp critical
+#pragma omp critical(readLog)
 						streams.readLogOut << result;
 					}
 
