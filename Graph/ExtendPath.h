@@ -160,11 +160,14 @@ static inline bool lookAhead(
 }
 
 /**
- * Return true if the given edge represents the start of a "true branch".
- * Roughly speaking, a path is a true branch if it has length >= trim
- * or terminates in a branching node, where a branching node is (recursively)
- * defined to be a node with either >= 2 incoming true branches or >= outgoing
- * true branches.
+ * Return true if the given edge represents the beginning of a "true branch".
+ *
+ * A path is a true branch if it has length >= `trim` or terminates in a
+ * branching node, where a branching node is (recursively) defined to be
+ * a node with either >= 2 incoming true branches or >= 2 outgoing true branches.
+ *
+ * This method is similar to `lookAhead`, but it additionally changes traversal
+ * direction when a dead-end is encountered.
  */
 template <class Graph>
 static inline bool trueBranch(
@@ -195,6 +198,12 @@ static inline bool trueBranch(
 			if (trueBranch(*oei, depth+1, FORWARD, g, trim, fpTrim, visited))
 				return true;
 		}
+		/*
+		 * Note: The test for depth/lookAhead >= fpTrim before changing
+		 * traversal direction is needed to deal with an X-shaped
+		 * graph pattern that is frequently created by Bloom false positives.
+		 * See the test for `trueBranch` in `ExtendPathTest.h` for an example.
+		 */
 		if (depth >= fpTrim || lookAhead(v, FORWARD, fpTrim, g)) {
 			for (boost::tie(iei, iei_end) = in_edges(v, g);
 				iei != iei_end; ++iei) {
@@ -211,6 +220,12 @@ static inline bool trueBranch(
 			if (trueBranch(*iei, depth+1, REVERSE, g, trim, fpTrim, visited))
 				return true;
 		}
+		/*
+		 * Note: The test for depth/lookAhead >= fpTrim before changing
+		 * traversal direction is needed to deal with an X-shaped
+		 * graph pattern that is frequently created by Bloom false positives.
+		 * See the test for `trueBranch` in `ExtendPathTest.h` for an example.
+		 */
 		if (depth >= fpTrim || lookAhead(v, REVERSE, fpTrim, g)) {
 			for (boost::tie(oei, oei_end) = out_edges(v, g);
 				 oei != oei_end; ++oei) {
