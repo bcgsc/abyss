@@ -6,6 +6,7 @@
 #include "BloomDBG/AssemblyParams.h"
 #include "BloomDBG/AssemblyCounters.h"
 #include "BloomDBG/RollingHashIterator.h"
+#include "Common/Hash.h"
 #include "Common/Uncompress.h"
 #include "Common/IOUtil.h"
 #include "Common/Sequence.h"
@@ -37,12 +38,14 @@
 #if HAVE_GOOGLE_SPARSE_HASH_MAP
 
 #include <google/sparse_hash_set>
-typedef google::sparse_hash_set<RollingBloomDBGVertex> KmerHash;
+typedef google::sparse_hash_set<RollingBloomDBGVertex,
+	hash<RollingBloomDBGVertex> > KmerHash;
 
 #else
 
 #include "Common/UnorderedSet.h"
-typedef unordered_set<RollingBloomDBGVertex> KmerHash;
+typedef unordered_set<RollingBloomDBGVertex,
+	hash<RollingBloomDBGVertex> > KmerHash;
 
 #endif
 
