@@ -314,27 +314,23 @@ namespace BloomDBG {
 	};
 
 	/** Print an intermediate progress message during assembly */
-	void printProgressMessage(AssemblyCounters counters)
+	void readsProgressMessage(AssemblyCounters counters)
 	{
-#pragma omp critical(cerr)
 		std::cerr
 			<< "Processed " << counters.readsProcessed << " reads"
-			<< ", [solid: " << counters.solidReads
+			<< ", solid reads: " << counters.solidReads
 			<< " (" << std::setprecision(3) << (float)100
-		    * counters.solidReads / counters.readsProcessed << "%)"
-			<< ", all k-mers visited: " << counters.allKmersVisited
+			* counters.solidReads / counters.readsProcessed << "%)"
+			<< ", visited reads: " << counters.visitedReads
 			<< " (" << std::setprecision(3) << (float)100
-		    * counters.allKmersVisited / counters.readsProcessed << "%)"
-			<< ", all branch k-mers visited: " << counters.allBranchKmersVisited
-			<< " (" << std::setprecision(3) << (float)100
-		    * counters.allBranchKmersVisited / counters.readsProcessed << "%)"
-			<< ", non-branching: " << counters.nonBranchingReads
-			<< " (" << std::setprecision(3) << (float)100
-		    * counters.nonBranchingReads / counters.readsProcessed << "%)"
-			<< ", non-branching contigs: " << counters.nonBranchingContigs
-			<< " (" << std::setprecision(3) << (float)100
-			* counters.nonBranchingContigs / counters.readsProcessed << "%)"
-			<< "], assembled " << counters.basesAssembled << " bp in "
+			* counters.visitedReads / counters.readsProcessed << "%)"
+			<< std::endl;
+	}
+
+	/** Print an intermediate progress message during assembly */
+	void basesProgressMessage(AssemblyCounters counters)
+	{
+		std::cerr << "Assembled " << counters.basesAssembled << " bp in "
 			<< counters.contigID + 1 << " contigs"
 			<< std::endl;
 	}
@@ -793,7 +789,7 @@ namespace BloomDBG {
 		/* skip reads in previously assembled regions */
 		if (allKmersInBloom(seq, assembledKmerSet)) {
 #pragma omp atomic
-			counters.allKmersVisited++;
+			counters.visitedReads++;
 			return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
 		}
 
@@ -955,8 +951,6 @@ namespace BloomDBG {
 
 		/* per-thread I/O buffer (size is in bases) */
 		const size_t SEQ_BUFFER_SIZE = 1000000;
-		/* controls frequency of progress messages */
-		const unsigned PROGRESS_STEP = 1000;
 
 		if (params.verbose)
 			std::cerr << "Trimming branches " << params.trim
@@ -969,6 +963,18 @@ namespace BloomDBG {
 		contigEndKmers.rehash((size_t)pow(2,28));
 
 		KmerHash visitedBranchKmers;
+
+		/*
+		 * Print a progress message whenever `READS_PROGRESS_STEP`
+		 * reads have been processed or `BASES_PROGRESS_STEP`
+		 * bases have been assembled. The purpose of using
+		 * two measures of progess is to show steady updates
+		 * throughout the assembly process.
+		 */
+
+		const size_t READS_PROGRESS_STEP = 100000;
+		const size_t BASES_PROGRESS_STEP = 1000000;
+		size_t basesProgressLine = BASES_PROGRESS_STEP;
 
 		while (true)
 		{
@@ -1005,10 +1011,23 @@ namespace BloomDBG {
 							contigEndKmers, visitedBranchKmers,
 							params, counters, streams);
 
-#pragma omp atomic
-					counters.readsProcessed++;
-					if (params.verbose && counters.readsProcessed % PROGRESS_STEP == 0)
-						printProgressMessage(counters);
+#pragma omp critical(readsProgress)
+					{
+						++counters.readsProcessed;
+						if (params.verbose && counters.readsProcessed
+							% READS_PROGRESS_STEP == 0)
+							readsProgressMessage(counters);
+					}
+
+					if (params.verbose)
+#pragma omp critical(basesProgress)
+					{
+						if (counters.basesAssembled >= basesProgressLine) {
+							basesProgressMessage(counters);
+							while (counters.basesAssembled >= basesProgressLine)
+								basesProgressLine += BASES_PROGRESS_STEP;
+						}
+					}
 
 					if (!params.readLogPath.empty()) {
 #pragma omp critical(readLog)
@@ -1034,7 +1053,8 @@ namespace BloomDBG {
 		assert(in.eof());
 
 		if (params.verbose) {
-			printProgressMessage(counters);
+			readsProgressMessage(counters);
+			basesProgressMessage(counters);
 			std::cerr << "Assembly complete" << std::endl;
 		}
 

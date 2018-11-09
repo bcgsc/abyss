@@ -16,18 +16,17 @@ namespace BloomDBG {
 	{
 		/** reads consisting entirely of solid k-mers */
 		size_t solidReads;
-		size_t allKmersVisited;
-		size_t allBranchKmersVisited;
-		size_t nonBranchingReads;
-		size_t nonBranchingContigs;
+		/**
+		 * reads consisting entirely of k-mers already
+		 * included in output contigs
+		 */
+		size_t visitedReads;
 		size_t readsProcessed;
 		size_t basesAssembled;
 		size_t contigID;
 
-		AssemblyCounters() : solidReads(0), allKmersVisited(0),
-			allBranchKmersVisited(0), nonBranchingReads(0),
-			nonBranchingContigs(0), readsProcessed(0),
-			basesAssembled(0), contigID(0) {}
+		AssemblyCounters() : solidReads(0), visitedReads(0),
+			readsProcessed(0), basesAssembled(0), contigID(0) {}
 
 		/** serialize counters as a TSV table */
 		friend std::ostream& operator<<(std::ostream& out,
