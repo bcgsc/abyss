@@ -1,3 +1,21 @@
+2018-11-09  Ben Vandervalk <benv@bcgsc.ca>
+
+	* Release version 2.1.4
+	* Major improvements to Bloom filter assembly contiguity and
+	correctness. Bloom filter assemblies now have equivalent scaffold
+	contiguity and better correctness than MPI assemblies of the same
+	data, while still requiring less than 1/10th of the memory. On
+	human, Bloom filter assembly times are still a few hours longer
+	than MPI assemblies (e.g. 17 hours vs. 13 hours, using 48
+	threads).
+
+	abyss-pe:
+	* Change default value of `m` from 50 => 0, which has the effect
+	of disallowing sequence overlaps < k-1 bp. QUAST tests on E. coli /
+	C. elegans / H. sapiens showed that both contiguity and
+	correctness were improved by allowing only overlaps of k-1 bp
+	between sequence ends.
+
 2018-11-05  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.1.3
