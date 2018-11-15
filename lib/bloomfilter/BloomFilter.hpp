@@ -143,11 +143,11 @@ public:
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 */
-	void insert(vector<uint64_t> const &precomputed) {
+	void insert(vector<size_t> const &precomputed) {
 
 		//iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed.at(i) % m_size;
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed.at(i) % m_size;
 			__sync_or_and_fetch(&m_filter[normalizedValue / bitsPerChar],
 					bitMask[normalizedValue % bitsPerChar]);
 		}
@@ -156,11 +156,11 @@ public:
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 */
-	void insert(const uint64_t precomputed[]) {
+	void insert(const size_t precomputed[]) {
 
 		//iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed[i] % m_size;
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
 			__sync_or_and_fetch(&m_filter[normalizedValue / bitsPerChar],
 				bitMask[normalizedValue % bitsPerChar]);
 		}
@@ -170,11 +170,11 @@ public:
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 * Returns if already inserted
 	 */
-	bool insertAndCheck(const uint64_t precomputed[]) {
+	bool insertAndCheck(const size_t precomputed[]) {
 		//iterates through hashed values adding it to the filter
 		bool found = true;
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed[i] % m_size;
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
 			found &= __sync_fetch_and_or(
 					&m_filter[normalizedValue / bitsPerChar],
 					bitMask[normalizedValue % bitsPerChar])
@@ -187,11 +187,11 @@ public:
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 * Returns if already inserted
 	 */
-	bool insertAndCheck(vector<uint64_t> const &precomputed) {
+	bool insertAndCheck(vector<size_t> const &precomputed) {
 		//iterates through hashed values adding it to the filter
 		bool found = true;
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed.at(i) % m_size;
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed.at(i) % m_size;
 			found &= __sync_fetch_and_or(
 					&m_filter[normalizedValue / bitsPerChar],
 					bitMask[normalizedValue % bitsPerChar])
@@ -203,9 +203,9 @@ public:
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 */
-	bool contains(vector<uint64_t> const &precomputed) const {
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed.at(i) % m_size;
+	bool contains(vector<size_t> const &precomputed) const {
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed.at(i) % m_size;
 			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
 			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
 				return false;
@@ -217,9 +217,9 @@ public:
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 */
-	bool contains(const uint64_t precomputed[]) const {
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed[i] % m_size;
+	bool contains(const size_t precomputed[]) const {
+		for (size_t i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
 			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
 			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
 				return false;
@@ -230,7 +230,7 @@ public:
 
 	void writeHeader(std::ostream& out) const {
 		FileHeader header;
-		memcpy(header.magic, "BlOOMFXX", 8);
+		strncpy(header.magic, "BlOOMFXX", 8);
 		char magic[9];
 		strncpy(magic, header.magic, 8);
 		magic[8] = '\0';
@@ -277,8 +277,8 @@ public:
 		assert(myFile);
 	}
 
-	uint64_t getPop() const {
-		uint64_t i, popBF = 0;
+	size_t getPop() const {
+		size_t i, popBF = 0;
 //#pragma omp parallel for reduction(+:popBF)
 		for (i = 0; i < (m_size + 7) / 8; i++)
 			popBF = popBF + popCnt(m_filter[i]);
@@ -300,7 +300,7 @@ public:
 	double getRedudancyFPR() {
 		assert(m_nEntry > 0);
 		double total = log(calcFPR_numInserted(1));
-		for (uint64_t i = 2; i < m_nEntry; ++i) {
+		for (size_t i = 2; i < m_nEntry; ++i) {
 			total = log(exp(total) + calcFPR_numInserted(i));
 		}
 		return exp(total) / m_nEntry;
@@ -337,7 +337,7 @@ public:
 		m_tEntry = value;
 	}
 
-	uint64_t getFilterSize() const {
+	size_t getFilterSize() const {
 		return m_size;
 	}
 
