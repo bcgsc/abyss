@@ -75,8 +75,9 @@ TEST_F(HashGraphTest, vertex_iterator)
 	for(; vi != vi_end; vi++, count++) {
 		// check that current vertex is different from
 		// previous vertex
-		if (vi != vi_begin)
+		if (vi != vi_begin) {
 			EXPECT_TRUE(*vi != v);
+		}
 		vertex_descriptor v = *vi;
 		EXPECT_TRUE(vertexSet.find(v) != vertexSet.end());
 	}

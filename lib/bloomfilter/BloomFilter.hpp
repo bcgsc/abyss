@@ -230,7 +230,7 @@ public:
 
 	void writeHeader(std::ostream& out) const {
 		FileHeader header;
-		strncpy(header.magic, "BlOOMFXX", 8);
+		memcpy(header.magic, "BlOOMFXX", 8);
 		char magic[9];
 		strncpy(magic, header.magic, 8);
 		magic[8] = '\0';
