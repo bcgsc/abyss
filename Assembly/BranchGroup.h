@@ -210,9 +210,4 @@ isAmbiguous(const SequenceCollectionHash& g) const
 		BranchGroupStatus m_status;
 };
 
-namespace std {
-	template <>
-	inline void swap(BranchGroup&, BranchGroup&) NOEXCEPT { assert(false); }
-}
-
 #endif
