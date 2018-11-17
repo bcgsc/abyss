@@ -1,16 +1,106 @@
 version: 2
+
+aliases:
+  - &docker_image ubuntu:bionic
+  - &install_common |
+      apt-get update -qq
+      apt-get install -qq software-properties-common
+      add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      apt-get update -qq
+      apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc gdb valgrind
+
 jobs:
-  build:
+
+  linux_clang6:
     docker:
-      - image: ubuntu:bionic
+      - image: *docker_image
     steps:
+      - run: *install_common
       - run: |
-          apt-get update -qq
-          apt-get install -qq autoconf automake clang g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc gdb valgrind
+          apt-get install -qq clang-6.0
       - checkout
       - run: |
           ./autogen.sh
-          ./configure CC=clang CXX=clang++ --with-mpi=/usr/lib/openmpi
+          ./configure CC=clang-6.0 CXX=clang++-6.0 --with-mpi=/usr/lib/openmpi
       - run: make -j
       - run: make -j check
       - run: make -j distcheck
+
+  linux_gcc5:
+    docker:
+      - image: *docker_image
+    steps:
+      - run: *install_common
+      - run: |
+          apt-get install -qq gcc-5 g++-5
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
+      - run: make -j
+      - run: make -j check
+      - run: make -j distcheck
+
+  linux_gcc6:
+    docker:
+      - image: *docker_image
+    steps:
+      - run: *install_common
+      - run: |
+          apt-get install -qq gcc-6 g++-6
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure CC=gcc-6 CXX=g++-6 --with-mpi=/usr/lib/openmpi
+      - run: make -j
+      - run: make -j check
+      - run: make -j distcheck
+
+  linux_gcc7:
+    docker:
+      - image: *docker_image
+    steps:
+      - run: *install_common
+      - run: |
+          apt-get install -qq gcc-7 g++-7
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure CC=gcc-7 CXX=g++-7 --with-mpi=/usr/lib/openmpi
+      - run: make -j
+      - run: make -j check
+      - run: make -j distcheck
+
+  linux_gcc8:
+    docker:
+      - image: *docker_image
+    steps:
+      - run: *install_common
+      - run: |
+          apt-get install -qq gcc-8 g++-8
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi
+      - run: make -j
+      - run: make -j check
+      - run: make -j distcheck
+
+workflows:
+  version: 2
+  # test compiler versions in priority order and abort on first failure
+  abyss_builds:
+    jobs:
+      - linux_gcc8
+      - linux_gcc7:
+          requires:
+            - linux_gcc8
+      - linux_gcc6:
+          requires:
+            - linux_gcc7
+      - linux_gcc5:
+          requires:
+            - linux_gcc6
+      - linux_clang6:
+          requires:
+            - linux_gcc5
