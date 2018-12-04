@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ $# -lt 2 ]; then
+	echo "Usage: $(basename $0) <STACK_SIZE> <COMMAND>" >&2
+	echo "Run COMMAND in a shell with a maximum stack size of" >&2
+	echo "at least STACK_SIZE in kilobytes." >&2
+	exit 1
+fi
+min_stack=$1; shift
+
+# Note: A max stack size of "unlimited" may not actually
+# be unlimited. For example, on Linux, using "unlimited"
+# results in a max stack size of 2 MB, which
+# is less than the default max stack size of 8 MB.
+# How confusing!
+
+stack=$(ulimit -s)
+if [ "$stack" = "unlimited" ] || [ "$stack" -lt "$min_stack" ]; then
+	ulimit -s $min_stack
+fi
+stack=$(ulimit -s)
+
+echo "Running with max stack size of $stack KB: $*" >&2
+exec /bin/sh -c "$*"
+

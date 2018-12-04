@@ -17,8 +17,10 @@ dist_bin_SCRIPTS = \
 	abyss-samtoafg \
 	abyss-tabtomd \
 	abyss-bloom-dist.mk \
-	abyss-dida
+	abyss-dida \
+	abyss-stack-size \
 	$(nompi)
+
 dist_noinst_SCRIPTS = \
 	abyss-adjtodot.pl \
 	abyss-cstont \
