@@ -1,3 +1,12 @@
+2018-12-04  Sauparna Palchowdhury <spchowdhury@bcgsc.ca>
+
+	* Release version 2.1.5
+	* Compiler fixes and increse stack size limits to avoid stack overflows.
+
+	abyss-pe:
+	* Add 'ulimit' statements to the Makefile to increse a thread's
+	stack size to 64MB.
+
 2018-11-09  Ben Vandervalk <benv@bcgsc.ca>
 
 	* Release version 2.1.4
