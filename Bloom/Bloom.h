@@ -190,17 +190,6 @@ namespace Bloom {
 		return header;
 	}
 
-	//TODO: Bloom filter calculation methods
-	//static double calcApproxFPR(size_t numBucket, size_t numEntr,
-	//		unsigned numHash) const;
-	//static double calcRedunancyFPR(size_t numBucket, size_t numEntr,
-	//		unsigned numHash) const;
-	//static size_t calcOptimalSize(size_t numEle, double fpr) const;
-	//static size_t calcOptimalSize(size_t numEle, double fpr,
-	//		unsigned numHash) const;
-	//static unsigned calcOptimalNumHash(double fpr);
-	//static unsigned calcOptimalNumHash(size_t numBucket, size_t numEle);
-
 };
 
 #endif /* BLOOM_H_ */
