@@ -22,8 +22,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=clang-6.0 CXX=clang++-6.0 --with-mpi=/usr/lib/openmpi
-      - run: make -j
-      - run: make -j check
       - run: make -j distcheck
 
   linux_gcc5:
@@ -37,8 +35,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
-      - run: make -j16
-      - run: make -j16 check
       - run: make -j16 distcheck
 
   linux_gcc6:
@@ -52,8 +48,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-6 CXX=g++-6 --with-mpi=/usr/lib/openmpi
-      - run: make -j
-      - run: make -j check
       - run: make -j distcheck
 
   linux_gcc7:
@@ -67,8 +61,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-7 CXX=g++-7 --with-mpi=/usr/lib/openmpi
-      - run: make -j
-      - run: make -j check
       - run: make -j distcheck
 
   linux_gcc8:
@@ -82,8 +74,6 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi
-      - run: make -j
-      - run: make -j check
       - run: make -j distcheck
 
 workflows:
