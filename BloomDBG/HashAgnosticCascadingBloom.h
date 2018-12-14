@@ -74,6 +74,12 @@ class HashAgnosticCascadingBloom
 		return m_data.back()->getFilterSize();
 	}
 
+	/** Return the size of the bit array. */
+	size_t getFilterSize() const
+	{
+		return size();
+	}
+
 	/** Return the number of elements with count >= levels. */
 	size_t popcount() const
 	{

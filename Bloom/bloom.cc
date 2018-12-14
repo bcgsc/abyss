@@ -12,6 +12,7 @@
 #include "Graph/ExtendPath.h"
 #include "Konnector/DBGBloom.h"
 #include "DataLayer/Options.h"
+#include "DataLayer/FastaConcat.h"
 #include "DataLayer/FastaReader.h"
 #include "Common/StringUtil.h"
 #include "Bloom/Bloom.h"
@@ -56,8 +57,8 @@ static const char USAGE_MESSAGE[] =
 "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
 "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
 "Usage 6: " PROGRAM " graph [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
-"Usage 7: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
-"Usage 8: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
+"Usage 8: " PROGRAM " kmers [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE>\n"
+"Usage 9: " PROGRAM " trim [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE> <READS_FILE> [READS_FILE_2]... > trimmed.fq\n"
 "\n"
 "Build and manipulate Bloom filter files.\n"
 "\n"
@@ -108,8 +109,11 @@ static const char USAGE_MESSAGE[] =
 "\n"
 "  -d, --depth=N              depth of neighbouring from --root [k]\n"
 "  -R, --root=KMER            root k-mer from graph traversal [required]\n"
-"  -a, --node-attr=STR:FILE   assign a node attribute (e.g. 'color=blue')\n"
-"                             k-mers in the given FASTA\n"
+"  -f, --root-fasta=FILE      get root k-mers from FASTA file\n"
+"  -a, --fasta-attr=STR:FILE, assign a node attribute (e.g. 'color=blue')\n"
+"      --node-attr=STR:FILE   to k-mers in the given FASTA\n"
+"  -A, --bloom-attr=STR:FILE  assign a node attribute (e.g. 'color=blue')\n"
+"                             to k-mers in the given Bloom filter\n"
 "\n"
 " Options for `" PROGRAM " kmers':\n"
 "\n"
@@ -125,11 +129,11 @@ static const char USAGE_MESSAGE[] =
 enum BloomFilterType { BT_KONNECTOR, BT_ROLLING_HASH, BT_UNKNOWN };
 enum OutputFormat { BED, FASTA, RAW };
 
-/* types related to --node-attr option */
+/* types related to --fasta-attr/--bloom-attr options */
 
 typedef string KmerProperty;
-typedef string FastaPath;
-typedef vector<pair<KmerProperty, FastaPath> > KmerProperties;
+typedef string FilePath;
+typedef vector<pair<KmerProperty, FilePath> > KmerProperties;
 typedef KmerProperties::iterator KmerPropertiesIt;
 
 namespace opt {
@@ -178,7 +182,14 @@ namespace opt {
 	 * (e.g. "color=blue") to k-mers contained in the
 	 * associated FASTA file
 	 */
-	KmerProperties kmerProperties;
+	KmerProperties fastaProperties;
+
+	/**
+	 * For the "graph" command: assign node attribute
+	 * (e.g. "color=blue") to k-mers contained in the
+	 * associated Bloom filter
+	 */
+	KmerProperties bloomProperties;
 
 	/** Index of bloom filter window.
 	  ("M" for -w option) */
@@ -198,13 +209,16 @@ namespace opt {
 	 */
 	bool inverse = false;
 
-	/** Root node (k-mer) for `graph` subcommand */
-	string root;
+	/** Root nodes (k-mer) for `graph` subcommand */
+	vector<string> roots;
+
+	/** FASTA files containing root k-mers for `graph` subcommand */
+	vector<FilePath> rootFastas;
 
 	OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "a:b:B:d:h:H:j:k:l:L:m:n:q:rR:vt:w:";
+static const char shortopts[] = "a:A:b:B:d:f:h:H:j:k:l:L:m:n:q:rR:vt:w:";
 
 enum { OPT_HELP = 1, OPT_VERSION, OPT_BED, OPT_FASTA, OPT_RAW };
 
@@ -227,7 +241,9 @@ static const struct option longopts[] = {
 	{ "trim-quality", required_argument, NULL, 'q' },
 	{ "standard-quality", no_argument, &opt::qualityOffset, 33 },
 	{ "illumina-quality", no_argument, &opt::qualityOffset, 64 },
+	{ "fasta-attr", required_argument, NULL, 'a' },
 	{ "node-attr", required_argument, NULL, 'a' },
+	{ "bloom-attr", required_argument, NULL, 'A' },
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
@@ -235,6 +251,7 @@ static const struct option longopts[] = {
 	{ "method", required_argument, NULL, 'm' },
 	{ "inverse", required_argument, NULL, 'r' },
 	{ "root", required_argument, NULL, 'R' },
+	{ "root-fasta", required_argument, NULL, 'f' },
 	{ "bed", no_argument, NULL, OPT_BED },
 	{ "fasta", no_argument, NULL, OPT_FASTA },
 	{ "raw", no_argument, NULL, OPT_RAW },
@@ -415,6 +432,17 @@ void printHashAgnosticCascadingBloomStats(ostream& os, BF& bloom)
 			<< "\tBloom filter FPR: " << setprecision(3)
 			<< 100 * bloom.getBloomFilter(i).getFPR() << "%\n";
 	}
+}
+
+template <typename BF>
+void printRollingBloomStats(ostream& os, BF& bloom)
+{
+	os << "Bloom size (bits): "
+		<< bloom.getFilterSize() << "\n"
+		<< "Bloom popcount (bits): "
+		<< bloom.getPop() << "\n"
+		<< "Bloom filter FPR: " << setprecision(3)
+		<< 100 * bloom.getFPR() << "%\n";
 }
 
 /**
@@ -880,6 +908,10 @@ int compare(int argc, char ** argv){
   return 1;
 }
 
+/**
+ * Given a Bloom filter, generate a Bloom filter de Bruijn graph in
+ * GraphViz format.
+ */
 int graph(int argc, char** argv)
 {
 	parseGlobalOpts(argc, argv);
@@ -899,16 +931,40 @@ int graph(int argc, char** argv)
 				arg >> s;
 				size_t pos = s.find(":");
 				if (pos < s.length())
-					opt::kmerProperties.push_back(make_pair(
+					opt::fastaProperties.push_back(make_pair(
 						s.substr(0, pos), s.substr(pos + 1)));
+				else
+					arg.setstate(ios::failbit);
+			}
+			break;
+		  case 'A':
+			{
+				string s;
+				arg >> s;
+				size_t pos = s.find(":");
+				if (pos < s.length())
+					opt::bloomProperties.push_back(make_pair(
+							s.substr(0, pos), s.substr(pos + 1)));
 				else
 					arg.setstate(ios::failbit);
 			}
 			break;
 		  case 'd':
 			arg >> opt::depth; break;
+		  case 'f':
+			{
+				string path;
+				arg >> path;
+				opt::rootFastas.push_back(path);
+				break;
+			}
 		  case 'R':
-			arg >> opt::root; break;
+			{
+				string kmer;
+				arg >> kmer;
+				opt::roots.push_back(kmer);
+				break;
+			}
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-"
@@ -917,14 +973,8 @@ int graph(int argc, char** argv)
 		}
 	}
 
-	if (opt::root.empty()) {
-		cerr << PROGRAM ": missing required option --root <KMER>\n";
-		dieWithUsageError();
-	}
-
-	if (opt::root.size() != opt::k) {
-		cerr << PROGRAM ": --root arg must be a k-mer of length "
-			<< opt::k << "\n";
+	if (opt::roots.empty() && opt::rootFastas.empty()) {
+		cerr << PROGRAM ": must specify either --root or --root-fasta\n";
 		dieWithUsageError();
 	}
 
@@ -939,15 +989,26 @@ int graph(int argc, char** argv)
 	string bloomPath(argv[optind]);
 	optind++;
 
-	vector<pair<string, unordered_set<V> > > kmerProperties;
-	for (KmerPropertiesIt it = opt::kmerProperties.begin();
-		it != opt::kmerProperties.end(); ++it) {
+	if (opt::verbose)
+		cerr << "Loading main Bloom filter from `" << bloomPath
+			<< "'..." << endl;
+
+	HashAgnosticCascadingBloom bloom(bloomPath);
+	assert(opt::k == bloom.getKmerSize());
+
+	Graph g(bloom);
+
+	/* implement --fasta-attr option */
+
+	vector<pair<string, unordered_set<V> > > fastaProperties;
+	for (KmerPropertiesIt it = opt::fastaProperties.begin();
+		it != opt::fastaProperties.end(); ++it) {
 
 		if (opt::verbose)
 			cerr << "Loading k-mers from `" << it->second << "', to be "
 				<< "annotated with '" << it->first << "'\n";
 
-		kmerProperties.push_back(make_pair(it->first, unordered_set<V>()));
+		fastaProperties.push_back(make_pair(it->first, unordered_set<V>()));
 
 		size_t count = 0;
 		size_t checkpoint = 0;
@@ -955,10 +1016,11 @@ int graph(int argc, char** argv)
 
 		FastaReader in(it->second.c_str(), FastaReader::FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			for (RollingHashIterator it(rec.seq, 1, opt::k);
+			for (RollingHashIterator it(rec.seq, bloom.getHashNum(), bloom.getKmerSize());
 				 it != RollingHashIterator::end(); ++it, ++count) {
 				V v(it.kmer().c_str(), it.rollingHash());
-				kmerProperties.back().second.insert(v);
+				if (vertex_exists(v, g))
+					fastaProperties.back().second.insert(v);
 			}
 			while (opt::verbose && count >= checkpoint) {
 				cerr << "Loaded " << checkpoint << " k-mers\n";
@@ -969,18 +1031,66 @@ int graph(int argc, char** argv)
 			cerr << "Loaded " << count << " k-mers in total\n";
 	}
 
-	if (opt::verbose)
-		cerr << "Loading Bloom filter from `" << bloomPath << "'..." << endl;
+	/* implement --bloom-attr option */
 
-	HashAgnosticCascadingBloom bloom(bloomPath);
-	assert(opt::k == bloom.getKmerSize());
+	typedef vector<pair<string, BloomFilter*> > BloomProperties;
+	BloomProperties bloomProperties;
 
-	Graph g(bloom);
-	V root(opt::root.c_str(), RollingHash(opt::root.c_str(),
-		bloom.getHashNum(), bloom.getKmerSize()));
+	for (KmerPropertiesIt it = opt::bloomProperties.begin();
+		it != opt::bloomProperties.end(); ++it) {
 
-	RollingBloomDBGVisitor<Graph> visitor(root, opt::depth, kmerProperties, cout);
-	breadthFirstSearch(root, g, true, visitor);
+		if (opt::verbose)
+			cerr << "Loading Bloom filter from `" << it->second << "', to be "
+				<< "annotated with '" << it->first << "'\n";
+
+		bloomProperties.push_back(make_pair(it->first,
+				new BloomFilter(it->second)));
+
+		if (opt::verbose)
+			printRollingBloomStats(cerr, *bloomProperties.back().second);
+	}
+
+	/* implement -R/--root option */
+
+	unordered_set<V> roots;
+	typedef typename std::vector<string>::const_iterator KmerIt;
+	for (KmerIt it = opt::roots.begin(); it != opt::roots.end(); ++it) {
+		assert(it->size() == opt::k);
+		V v(it->c_str(), RollingHash(it->c_str(),
+			bloom.getHashNum(), bloom.getKmerSize()));
+		if (vertex_exists(v, g))
+			roots.insert(v);
+	}
+
+	/* implement -f/--root-fasta option */
+
+	typedef typename std::vector<FilePath>::const_iterator PathIt;
+	for (PathIt pathIt = opt::rootFastas.begin();
+		pathIt != opt::rootFastas.end(); ++pathIt) {
+		FastaReader in(pathIt->c_str(), FastaReader::FOLD_CASE);
+		for (FastaRecord rec; in >> rec;) {
+			for (RollingHashIterator it(rec.seq, bloom.getHashNum(), bloom.getKmerSize());
+				 it != RollingHashIterator::end(); ++it) {
+				V v(it.kmer().c_str(), it.rollingHash());
+				if (vertex_exists(v, g))
+					roots.insert(v);
+			}
+		}
+	}
+
+	/* run breadth-first search and output GraphViz */
+
+	RollingBloomDBGVisitor<Graph> visitor(roots, opt::depth,
+		fastaProperties, bloomProperties, cout);
+	breadthFirstSearchMulti(roots, g, true, visitor);
+
+	/* clean-up */
+
+	typedef typename BloomProperties::iterator BloomPropertiesIt;
+	for (BloomPropertiesIt it = bloomProperties.begin();
+		it != bloomProperties.end(); ++it) {
+		delete it->second;
+	}
 
 	return 0;
 }

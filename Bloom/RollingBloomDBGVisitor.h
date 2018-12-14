@@ -1,6 +1,7 @@
 #ifndef _ROLLING_BLOOM_DBG_VISITOR_H_
 #define _ROLLING_BLOOM_DBG_VISITOR_H_ 1
 
+#include "lib/bloomfilter/BloomFilter.hpp"
 #include "Common/UnorderedMap.h"
 #include "Graph/BreadthFirstSearch.h"
 
@@ -27,16 +28,24 @@ public:
 		KmerProperties;
 	typedef typename KmerProperties::const_iterator KmerPropertiesIt;
 
+	typedef std::vector<std::pair<std::string, BloomFilter*> > BloomProperties;
+	typedef typename BloomProperties::const_iterator BloomPropertiesIt;
+
 	/** Constructor */
-	RollingBloomDBGVisitor(const VertexT& root, unsigned maxDepth,
-		const KmerProperties& kmerProperties, std::ostream& out)
-		: m_root(root), m_maxDepth(maxDepth),
-		m_kmerProperties(kmerProperties), m_out(out)
+	template <typename VertexSetT>
+	RollingBloomDBGVisitor(const VertexSetT& roots, unsigned maxDepth,
+		const KmerProperties& kmerProperties, const BloomProperties& bloomProperties,
+		std::ostream& out)
+		:  m_maxDepth(maxDepth), m_kmerProperties(kmerProperties),
+		m_bloomProperties(bloomProperties), m_out(out)
 	{
-		m_depthMap[root] = 0;
+		typedef typename VertexSetT::const_iterator RootIt;
+
+		for (RootIt it = roots.begin(); it != roots.end(); ++it)
+			m_depthMap[*it] = 0;
 
 		/* start directed graph (GraphViz) */
-		m_out << "digraph " << root.kmer().c_str() << " {\n";
+		m_out << "digraph " << " {\n";
 	}
 
 	/** Called when graph search completes */
@@ -97,6 +106,16 @@ public:
 			if (it->second.find(v) != it->second.end())
 				m_out << "," << it->first;
 		}
+
+		size_t hashes[MAX_HASHES];
+		v.rollingHash().getHashes(hashes);
+
+		for (BloomPropertiesIt it = m_bloomProperties.begin();
+			 it != m_bloomProperties.end(); ++it) {
+			if (it->second->contains(hashes))
+				m_out << "," << it->first;
+		}
+
 		m_out << "];\n";
 
 		return BFS_SUCCESS;
@@ -147,9 +166,9 @@ protected:
 	VertexT m_currentVertex;
 	DepthMap m_depthMap;
 
-	const VertexT& m_root;
 	const unsigned m_maxDepth;
 	const KmerProperties& m_kmerProperties;
+	const BloomProperties& m_bloomProperties;
 	std::ostream& m_out;
 };
 

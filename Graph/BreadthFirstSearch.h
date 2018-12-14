@@ -228,6 +228,15 @@ void breadthFirstSearchMulti(
 	breadthFirstSearchImpl(startVertices, g, false, colorMap, visitor);
 }
 
+template <class Graph, class VertexSet, class Visitor>
+	void breadthFirstSearchMulti(
+	const VertexSet& startVertices,
+	const Graph& g, bool undirected, Visitor& visitor)
+{
+	DefaultColorMap<Graph> colorMap;
+	breadthFirstSearchImpl(startVertices, g, undirected, colorMap, visitor);
+}
+
 template <class IncidenceGraph, class BFSVisitor, class ColorMap>
 	void breadthFirstSearch(const IncidenceGraph& g,
 	typename graph_traits<IncidenceGraph>::vertex_descriptor root,
