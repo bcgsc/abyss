@@ -364,25 +364,30 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	 * Note 2: BloomFilter class requires size to be a multiple of 64.
 	 */
 
-	const size_t bitsPerByte = 8;
-	size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
-	    params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
+	//const size_t bitsPerByte = 8;
+	//size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
+	//	params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
+	//size_t bloomFilterSize = BloomDBG::roundUpToMultiple(params.bloomSize * bitsPerByte / sizeof(uint8_t),
+	//(size_t)64);
+	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize, (size_t)64);
 
-	HashAgnosticCascadingBloom cascadingBloom(
-	    bloomLevelSize, params.numHashes, params.minCov, params.k);
+	//HashAgnosticCascadingBloom cascadingBloom(
+	//	bloomLevelSize, params.numHashes, params.minCov, params.k);
+	CountBloomFilter<uint8_t> cbf(counters, params.numHashes, params.k, params.minCov);
 
-	BloomDBG::loadBloomFilter(argc, argv, cascadingBloom, params.verbose);
+	//BloomDBG::loadBloomFilter(argc, argv, cascadingBloom, params.verbose);
+	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
 
 	if (params.verbose)
-		printCascadingBloomStats(cascadingBloom, cerr);
+		printCascadingBloomStats(cbf, cerr);
 
 	/* second pass through FASTA files for assembling */
-
-	BloomDBG::assemble(argc - optind, argv + optind, cascadingBloom, params, out);
+	//BloomDBG::assemble(argc - optind, argv + optind,
+	//	cascadingBloom, params, out);
+	BloomDBG::assemble(argc - optind, argv + optind, cbf, params, out);
 
 	/* write supplementary files (e.g. GraphViz) */
-
-	writeAuxiliaryFiles(argc - optind, argv + optind, cascadingBloom, params);
+	writeAuxiliaryFiles(argc - optind, argv + optind, cbf, params);
 }
 
 /**
