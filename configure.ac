@@ -1,7 +1,12 @@
 AC_PREREQ(2.62)
 AC_INIT(ABySS, 2.1.5, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
+
+AC_CONFIG_MACRO_DIR([m4])
 m4_include(m4/m4_ax_pthread.m4)
+m4_include([m4/ax_cxx_compile_stdcxx.m4])
+AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/abyss.cc])
 AC_CONFIG_HEADER([config.h])
