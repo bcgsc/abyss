@@ -28,6 +28,8 @@
 using namespace std;
 
 #define PROGRAM "abyss-bloom-dbg"
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 static const char VERSION_MESSAGE[] =
 	PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -57,7 +59,7 @@ static const char USAGE_MESSAGE[] =
 "      --trim-masked            trim masked bases from the ends of reads\n"
 "      --no-trim-masked         do not trim masked bases from the ends\n"
 "                               of reads [default]\n"
-"  -k, --kmer=N                 the size of a k-mer [required]\n"
+"  -k, --kmer=N                 the size of a k-mer [required] (maximum = " STR(MAX_KMER) ")\n"
 "      --kc=N                   use a cascading Bloom filter with N levels,\n"
 "                               instead of a counting Bloom filter [2]\n"
 "  -o, --out=FILE               write the contigs to FILE [STDOUT]\n"
@@ -468,6 +470,12 @@ int main(int argc, char** argv)
 
 	if (params.bloomPath.empty() && params.k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
+		die = true;
+	}
+
+	if (params.k > MAX_KMER) {
+		cerr << PROGRAM ": option argument exceeds maximum -- 'k'\n"
+			 << "This version was compiled for a maximum k-mer size = " << MAX_KMER << '\n';
 		die = true;
 	}
 
