@@ -362,13 +362,7 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	 * Note 2: BloomFilter class requires size to be a multiple of 64.
 	 */
 
-	//const size_t bitsPerByte = 8;
-	//size_t bloomLevelSize = BloomDBG::roundUpToMultiple(
-	//	params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
-	//size_t bloomFilterSize = BloomDBG::roundUpToMultiple(params.bloomSize * bitsPerByte / sizeof(uint8_t),
-	//(size_t)64);
-
-	// Divide the requested memory in bytes by the byte size of each counter to determine the number of counters, and then round up
+	// Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
 	// that count to the next multiple of 64.
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
 
