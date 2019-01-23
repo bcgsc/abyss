@@ -369,7 +369,10 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	//	params.bloomSize * bitsPerByte / (params.minCov + 1), (size_t)64);
 	//size_t bloomFilterSize = BloomDBG::roundUpToMultiple(params.bloomSize * bitsPerByte / sizeof(uint8_t),
 	//(size_t)64);
-	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize, (size_t)64);
+
+	// Divide the requested memory in bytes by the byte size of each counter to determine the number of counters, and then round it up
+	// to the next multiple of 64.
+	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
 
 	//HashAgnosticCascadingBloom cascadingBloom(
 	//	bloomLevelSize, params.numHashes, params.minCov, params.k);
