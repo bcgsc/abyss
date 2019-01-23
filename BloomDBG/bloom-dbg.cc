@@ -172,16 +172,14 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-void
-printCascadingBloomStats(HashAgnosticCascadingBloom& bloom, ostream& os)
+template <typename T>
+void printCountBloomStats(T& bloom, ostream& os)
 {
-	for (unsigned i = 0; i < bloom.levels(); i++) {
-		os << "Stats for Bloom filter level " << i + 1 << ":\n"
-		   << "\tBloom size (bits): " << bloom.getBloomFilter(i).getFilterSize() << "\n"
-		   << "\tBloom popcount (bits): " << bloom.getBloomFilter(i).getPop() << "\n"
-		   << "\tBloom filter FPR: " << setprecision(3) << 100 * bloom.getBloomFilter(i).getFPR()
-		   << "%\n";
-	}
+	os << "Counting Bloom filter stats:"
+	<< "\n\t#counters = " << bloom.size()
+	<< "\n\t#size     = " << bloom.sizeInBytes() << "B"
+	<< "\n\tpopcount  = " << bloom.popCount()
+	<< "\n\tFPR       = " << setprecision(3) << 100.f * bloom.FPR() << "%\n";
 }
 
 /** Create optional auxiliary output files */
@@ -311,7 +309,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
 
-	printCascadingBloomStats(bloom, cerr);
+	printCountBloomStats(bloom, cerr);
 
 	/* override command line options with values from Bloom file */
 
@@ -370,8 +368,8 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	//size_t bloomFilterSize = BloomDBG::roundUpToMultiple(params.bloomSize * bitsPerByte / sizeof(uint8_t),
 	//(size_t)64);
 
-	// Divide the requested memory in bytes by the byte size of each counter to determine the number of counters, and then round it up
-	// to the next multiple of 64.
+	// Divide the requested memory in bytes by the byte size of each counter to determine the number of counters, and then round up
+	// that count to the next multiple of 64.
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
 
 	//HashAgnosticCascadingBloom cascadingBloom(
@@ -382,7 +380,7 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
 
 	if (params.verbose)
-		printCascadingBloomStats(cbf, cerr);
+		printCountBloomStats(cbf, cerr);
 
 	/* second pass through FASTA files for assembling */
 	//BloomDBG::assemble(argc - optind, argv + optind,
