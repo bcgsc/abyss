@@ -177,7 +177,7 @@ void printCountBloomStats(T& bloom, ostream& os)
 {
 	os << "Counting Bloom filter stats:"
 	<< "\n\t#counters = " << bloom.size()
-	<< "\n\t#size     = " << bloom.sizeInBytes() << "B"
+	<< "\n\t#size (B) = " << bloom.sizeInBytes()
 	<< "\n\tpopcount  = " << bloom.popCount()
 	<< "\n\tFPR       = " << setprecision(3) << 100.f * bloom.FPR() << "%\n";
 }
@@ -239,10 +239,10 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
 	initGlobals(params);
 
 	/* empty Bloom filter de Bruijn graph */
-	HashAgnosticCascadingBloom solidKmerSet;
+	CountBloomFilter<uint8_t> solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
-	BloomFilter visitedKmerSet;
+	CountBloomFilter<uint8_t> visitedKmerSet;
 
 	/* counters for progress messages */
 	BloomDBG::AssemblyCounters counters;
@@ -304,7 +304,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 
 	/* load the Bloom filter from file */
 
-	HashAgnosticCascadingBloom bloom(params.bloomPath);
+	CountBloomFilter<uint8_t> bloom(params.bloomPath);
 
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
@@ -339,10 +339,10 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 }
 
 /**
- * Load the reads into a cascading Bloom filter and do the assembly.
+ * Load the reads into a counting Bloom filter and do the assembly.
  */
-void
-cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out)
+void countBloomAssembly(int argc, char** argv,
+	const BloomDBG::AssemblyParams& params, ostream& out)
 {
 	/* init global vars for k-mer size and spaced seed pattern */
 
@@ -352,33 +352,17 @@ cascadingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& pa
 	if (params.verbose)
 		cerr << params;
 
-	/*
-	 * Build/load cascading Bloom filetr.
-	 *
-	 * Note 1: We use (params.minCov + 1) here because we use an additional
-	 * Bloom filter in BloomDBG::assemble() to track the set of
-	 * assembled k-mers.
-	 *
-	 * Note 2: BloomFilter class requires size to be a multiple of 64.
-	 */
-
+	// Initialize a counting Bloom filter:
 	// Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
 	// that count to the next multiple of 64.
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
-
-	//HashAgnosticCascadingBloom cascadingBloom(
-	//	bloomLevelSize, params.numHashes, params.minCov, params.k);
 	CountBloomFilter<uint8_t> cbf(counters, params.numHashes, params.k, params.minCov);
-
-	//BloomDBG::loadBloomFilter(argc, argv, cascadingBloom, params.verbose);
 	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
 
 	if (params.verbose)
 		printCountBloomStats(cbf, cerr);
 
 	/* second pass through FASTA files for assembling */
-	//BloomDBG::assemble(argc - optind, argv + optind,
-	//	cascadingBloom, params, out);
 	BloomDBG::assemble(argc - optind, argv + optind, cbf, params, out);
 
 	/* write supplementary files (e.g. GraphViz) */
@@ -552,7 +536,7 @@ main(int argc, char** argv)
 	else if (!params.bloomPath.empty())
 		prebuiltBloomAssembly(argc, argv, params, out);
 	else
-		cascadingBloomAssembly(argc, argv, params, out);
+		countBloomAssembly(argc, argv, params, out);
 
 	/* cleanup */
 	if (!params.outputPath.empty())
