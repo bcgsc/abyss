@@ -188,7 +188,8 @@ static Seq load(const uint8_t *src)
 	Seq seq;
 #if MAX_KMER > 96
 # if WORDS_BIGENDIAN
-	const size_t *s = reinterpret_cast<const size_t*>(src);
+	size_t s[Kmer::NUM_BYTES / sizeof(size_t)];
+	memcpy(s, src, Kmer::NUM_BYTES);
 	size_t *d = reinterpret_cast<size_t*>(&seq + 1);
 	copy(s, s + Kmer::NUM_BYTES/sizeof(size_t), reverse_iterator<size_t*>(d));
 # else
@@ -235,9 +236,10 @@ static void storeReverse(uint8_t *dest, const Seq seq)
 #if MAX_KMER > 96
 # if WORDS_BIGENDIAN
 	const size_t *s = reinterpret_cast<const size_t*>(&seq);
-	size_t *d = reinterpret_cast<size_t*>(dest);
+	size_t d[Kmer::NUM_BYTES / sizeof(size_t)];
 	copy(s, s + Kmer::NUM_BYTES/sizeof(size_t),
 			reverse_iterator<size_t*>(d +  Kmer::NUM_BYTES/sizeof(size_t)));
+	memcpy(dest, d, Kmer::NUM_BYTES);
 	reverse(dest, dest + Kmer::NUM_BYTES);
 # else
 	memcpy(dest, &seq, Kmer::NUM_BYTES);
