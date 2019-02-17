@@ -7,8 +7,14 @@
 #include <unistd.h> // for sbrk
 
 #if __MACH__
-# include <mach/mach.h> // for mach_task_self
-# include <mach/task.h> // for task_info
+# ifdef __APPLE__
+#  include <mach/mach.h> // for mach_task_self
+#  include <mach/task.h> // for task_info
+# else
+extern "C" {
+#  include <mach/mach.h> // for mach_task_self and task_info
+}
+# endif
 #endif
 
 /** Return the number of bytes used by the data and stack segments.
