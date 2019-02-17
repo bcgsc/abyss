@@ -178,7 +178,7 @@ bool isReadNamePair(const std::string& name1, const std::string& name2)
 	return false;
 }
 
-static inline size_t SIToBytes(std::istringstream& iss)
+static inline unsigned long long SIToBytes(std::istringstream& iss)
 {
 	double size;
 	std::string units;
@@ -194,7 +194,7 @@ static inline size_t SIToBytes(std::istringstream& iss)
 		// no units given; clear fail flag
 		// and assume bytes
 		iss.clear(std::ios::eofbit);
-		return (size_t)ceil(size);
+		return (unsigned long long)ceil(size);
 	}
 
 	if (units.size() > 1) {
