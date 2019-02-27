@@ -90,7 +90,7 @@ struct parameters
 	 *
 	 *****************************/
 
-	// wether overlap weights are calculated or not
+	// whether overlap weights are calculated or not
 	int DO_OVERLAP; // = 0;
 
 	// minimum diag length

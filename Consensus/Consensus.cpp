@@ -453,7 +453,7 @@ static void consensus(const string& outPath, const string& pileupPath)
 		} else if (opt::verbose > 0) {
 			cerr << "warning: Contig " << it->first
 				<< " was not supported by a complete read "
-				"and was ommited.\n";
+				"and was omitted.\n";
 		}
 	}
 }

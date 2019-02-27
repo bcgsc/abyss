@@ -300,7 +300,7 @@ void wrong_input()
 	printf("  -n\tmaximum number of consecutive positions for window containing\n     \tlow scoring positions \n \t\t[DEFAULT PROTEIN: 4]\n\t\t[DEFAULT DNA: 4]\n");
 	printf("  -g\tglobal minimum fragment length for stop criterion \n \t\t[DEFAULT PROTEIN: 40] \n\t\t[DEFAULT DNA: 40]\n");
 	printf("  -m\tminimal allowed average score in frag window containing low \n     \tscoring positions \n \t\t[DEFAULT PROTEIN: 4.0]\n\t\t[DEFAULT DNA: 0.25]\n");
-	printf("  -o\twether overlap weights are calculated or not [DEFAULT 0]\n");
+	printf("  -o\twhether overlap weights are calculated or not [DEFAULT 0]\n");
 	printf("  -f\tminimum fragment length [DEFAULT 1]\n");
 	printf("  -r\tthreshold weight to consider the fragment at all [DEFAULT 0.0]\n");
 	printf("  -u\t[DEFAULT 0]\n");
