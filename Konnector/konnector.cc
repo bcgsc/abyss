@@ -128,7 +128,7 @@ static const char USAGE_MESSAGE[] =
 "                               use 'nolimit' for no limit [nolimit]\n"
 "\n"
 "  Note: --max-branches was not effective for truncating expensive searches,\n"
-"  and has been superceded by the --max-cost option.\n"
+"  and has been superseded by the --max-cost option.\n"
 "\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
@@ -864,7 +864,7 @@ static void connectPair(const Graph& g,
 
 	updateCounters(params, result);
 
-	/* ouput merged / unmerged reads */
+	/* output merged / unmerged reads */
 
 	if (result.pathResult == FOUND_PATH &&
 		!exceedsMismatchThresholds(params, result)) {

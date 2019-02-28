@@ -806,7 +806,7 @@ static void generatePathsThroughEstimates(const Graph& g,
 			<< g_minNumPairsUsed << ".\n";
 		if (g_minNumPairs < g_minNumPairsUsed)
 			cout << "Consider increasing the number of pairs "
-				"threshold paramter, n, to " << g_minNumPairsUsed
+				"threshold parameter, n, to " << g_minNumPairsUsed
 				<< ".\n";
 	}
 
