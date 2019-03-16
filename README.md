@@ -339,12 +339,12 @@ is functionally similar to a large k-mer spanning the breadth of the k-mer
 pair, but uses less memory because the sequence in the gap is not stored.
 To assemble using paired de Bruijn graph mode, specify both individual
 k-mer size (`K`) and k-mer pair span (`k`). For example, to assemble E.
-coli with a individual k-mer size of 16 and a k-mer pair span of 64:
+coli with a individual k-mer size of 16 and a k-mer pair span of 96:
 
-	abyss-pe name=ecoli K=16 k=64 in='reads1.fa reads2.fa'
+	abyss-pe name=ecoli K=16 k=96 in='reads1.fa reads2.fa'
 
 In this example, the size of the intervening gap between k-mer pairs is
-32 bp (64 - 2\*16). Note that the `k` parameter takes on a new meaning
+64 bp (96 - 2\*16). Note that the `k` parameter takes on a new meaning
 in paired de Bruijn graph mode. `k` indicates kmer pair span in
 paired de Bruijn graph mode (when `K` is set), whereas `k` indicates
 k-mer size in standard de Bruijn graph mode (when `K` is not set).
