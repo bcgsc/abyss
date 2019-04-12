@@ -5,10 +5,9 @@
 #include "Sense.h"
 #include "Sequence.h"
 #include "Common/Hash.h"
-#include <cassert>
 #include <cstring> // for memcpy
+#include <iostream>
 #include <stdint.h>
-#include <ostream>
 
 /** A k-mer. */
 class Kmer
@@ -46,7 +45,12 @@ class Kmer
 	 */
 	static void setLength(unsigned length)
 	{
-		assert(length <= MAX_KMER);
+		if (length > MAX_KMER) {
+			std::cerr << "Error: k is " << length
+				<< " and must be no more than " << MAX_KMER
+				<< ". You can recompile ABySS to increase this limit.\n";
+			exit(EXIT_FAILURE);
+		}
 		s_length = length;
 		s_bytes = (length + 3) / 4;
 	}

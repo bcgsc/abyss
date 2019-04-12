@@ -66,7 +66,7 @@ static const char USAGE_MESSAGE[] =
 "\n"
 " Global options:\n"
 "\n"
-"  -k, --kmer=N               the size of a k-mer [required] (maximum = " STR(MAX_KMER) ")\n" 
+"  -k, --kmer=N               the size of a k-mer [<=" STR(MAX_KMER) "]\n"
 "  -v, --verbose              display verbose output\n"
 "      --help                 display this help and exit\n"
 "      --version              output version information and exit\n"
@@ -311,12 +311,6 @@ void parseGlobalOpts(int argc, char** argv)
 
 	if (opt::k == 0) {
 		cerr << PROGRAM ": missing mandatory option `-k'\n";
-		dieWithUsageError();
-	}
-
-	if (opt::k > MAX_KMER) {
-		cerr << PROGRAM ": option argument exceeds maximum -- 'k'\n"
-			 << "This version was compiled for a maximum k-mer size = " << MAX_KMER << '\n';
 		dieWithUsageError();
 	}
 
