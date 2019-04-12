@@ -6,6 +6,12 @@ reads and large genomes.
 
 Please [cite our papers](#citation).
 
+News
+====
+
+Looking for a worthy & fun challenge? Join our team of developers! We are currently looking for a C++ programmer to work on ABySS.
+Contact the project lead: [Inanc Birol](mailto:ibirol@bcgsc.ca?subject=[ABySS developer position]) 
+
 Contents
 ========
 
