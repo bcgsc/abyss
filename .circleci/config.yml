@@ -88,19 +88,10 @@ jobs:
 
 workflows:
   version: 2
-  # test compiler versions in priority order and abort on first failure
   abyss_builds:
     jobs:
       - linux_gcc8
-      - linux_gcc7:
-          requires:
-            - linux_gcc8
-      - linux_gcc6:
-          requires:
-            - linux_gcc7
-      - linux_gcc5:
-          requires:
-            - linux_gcc6
-      - linux_clang6:
-          requires:
-            - linux_gcc5
+      - linux_gcc7
+      - linux_gcc6
+      - linux_gcc5
+      - linux_clang6
