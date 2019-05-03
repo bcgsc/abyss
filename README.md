@@ -8,8 +8,11 @@ Please [cite our papers](#citation).
 
 News
 ====
+3 May 2019
 
-Looking for a fun & worthy challenge? Join our team of developers! We are currently looking for C++ bioinformatics programmers.
+Looking for a fun & worthy challenge? Think you can contribute code to this project? 
+Join our team of developers! We are currently looking for C++ bioinformatics programmers.
+Inquire for staff, graduate student, and postdoctoral positions. 
 [Contact the project lead (Inanc Birol)](mailto:ibirol@bcgsc.ca?Subject=ABySS%20developer%20position) 
 
 Contents
