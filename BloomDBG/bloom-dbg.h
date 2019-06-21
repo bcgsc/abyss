@@ -21,7 +21,7 @@
 #include "Graph/BreadthFirstSearch.h"
 #include "Graph/ExtendPath.h"
 #include "Graph/Path.h"
-#include "lib/bloomfilter/CountBloomFilter.hpp"
+#include "lib/bloomfilter/CountingBloomFilter.hpp"
 #include "lib/bloomfilter/BloomFilter.hpp"
 
 #include <cmath>
