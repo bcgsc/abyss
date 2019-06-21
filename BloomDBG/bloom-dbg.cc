@@ -10,7 +10,7 @@
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/Options.h"
-#include "lib/bloomfilter/BloomFilter.hpp"
+#include "lib/bloomfilter/CountingBloomFilter.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -61,8 +61,8 @@ static const char USAGE_MESSAGE[] =
     "                               of reads [default]\n"
     "  -k, --kmer=N                 the size of a k-mer [<=" STR(
         MAX_KMER) "]\n"
-                  "      --kc=N                   use a cascading Bloom filter with N levels,\n"
-                  "                               instead of a counting Bloom filter [2]\n"
+                  "      --kc=N                   ignore k-mers having a count >= N,\n"
+                  "                               using a counting Bloom filter [2]\n"
                   "  -o, --out=FILE               write the contigs to FILE [STDOUT]\n"
                   "  -q, --trim-quality=N         trim bases from the ends of reads whose\n"
                   "                               quality is less than the threshold\n"
@@ -173,13 +173,16 @@ static const struct option longopts[] = {
 };
 
 template <typename T>
-void printCountBloomStats(T& bloom, ostream& os)
+void printCountingBloomStats(T& bloom, ostream& os)
 {
 	os << "Counting Bloom filter stats:"
-	<< "\n\t#counters = " << bloom.size()
-	<< "\n\t#size (B) = " << bloom.sizeInBytes()
-	<< "\n\tpopcount  = " << bloom.popCount()
-	<< "\n\tFPR       = " << setprecision(3) << 100.f * bloom.FPR() << "%\n";
+	<< "\n\t#counters               = " << bloom.size()
+	<< "\n\t#size (B)               = " << bloom.sizeInBytes()
+	//<< "\n\tpopcount                = " << bloom.popCount()
+	<< "\n\tthreshold               = " << bloom.threshold()
+	<< "\n\tpopcount                = " << bloom.popCount_threshold()
+	//<< "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.FPR() << "%"
+	<< "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.FPR_post_threshold() << "%" << "\n";
 }
 
 /** Create optional auxiliary output files */
@@ -239,10 +242,10 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
 	initGlobals(params);
 
 	/* empty Bloom filter de Bruijn graph */
-	CountBloomFilter<uint8_t> solidKmerSet;
+	CountingBloomFilter<uint8_t> solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
-	CountBloomFilter<uint8_t> visitedKmerSet;
+	CountingBloomFilter<uint8_t> visitedKmerSet;
 
 	/* counters for progress messages */
 	BloomDBG::AssemblyCounters counters;
@@ -304,12 +307,12 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 
 	/* load the Bloom filter from file */
 
-	CountBloomFilter<uint8_t> bloom(params.bloomPath);
+	CountingBloomFilter<uint8_t> bloom(params.bloomPath);
 
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
 
-	printCountBloomStats(bloom, cerr);
+	printCountingBloomStats(bloom, cerr);
 
 	/* override command line options with values from Bloom file */
 
@@ -341,7 +344,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 /**
  * Load the reads into a counting Bloom filter and do the assembly.
  */
-void countBloomAssembly(int argc, char** argv,
+void countingBloomAssembly(int argc, char** argv,
 	const BloomDBG::AssemblyParams& params, ostream& out)
 {
 	/* init global vars for k-mer size and spaced seed pattern */
@@ -356,11 +359,11 @@ void countBloomAssembly(int argc, char** argv,
 	// Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
 	// that count to the next multiple of 64.
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
-	CountBloomFilter<uint8_t> cbf(counters, params.numHashes, params.k, params.minCov);
+	CountingBloomFilter<uint8_t> cbf(counters, params.numHashes, params.k, params.minCov);
 	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
 
 	if (params.verbose)
-		printCountBloomStats(cbf, cerr);
+		printCountingBloomStats(cbf, cerr);
 
 	/* second pass through FASTA files for assembling */
 	BloomDBG::assemble(argc - optind, argv + optind, cbf, params, out);
@@ -536,7 +539,7 @@ main(int argc, char** argv)
 	else if (!params.bloomPath.empty())
 		prebuiltBloomAssembly(argc, argv, params, out);
 	else
-		countBloomAssembly(argc, argv, params, out);
+		countingBloomAssembly(argc, argv, params, out);
 
 	/* cleanup */
 	if (!params.outputPath.empty())
