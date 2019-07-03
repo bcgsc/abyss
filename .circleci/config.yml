@@ -35,7 +35,7 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
-      - run: make -j12 distcheck
+      - run: make -j16 distcheck
 
   linux_gcc6:
     docker:
