@@ -308,7 +308,6 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 		cerr << "Loading prebuilt Bloom filter from `" << params.bloomPath << "'" << endl;
 
 	/* load the Bloom filter from file */
-        cerr << "start loading" <<endl;
 	BloomFilterType bloom(params.bloomPath, params.minCov);
 
 	if (params.verbose)
