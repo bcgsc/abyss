@@ -25,6 +25,8 @@
 #include <omp.h>
 #endif
 
+typedef CountingBloomFilter<uint8_t>  BloomFilterType;
+
 using namespace std;
 
 #define PROGRAM "abyss-bloom-dbg"
@@ -277,10 +279,10 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
 	initGlobals(params);
 
 	/* empty Bloom filter de Bruijn graph */
-	CountingBloomFilter<uint8_t> solidKmerSet;
+	BloomFilterType solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
-	CountingBloomFilter<uint8_t> visitedKmerSet;
+	BloomFilterType visitedKmerSet;
 
 	/* counters for progress messages */
 	BloomDBG::AssemblyCounters counters;
@@ -342,7 +344,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 
 	/* load the Bloom filter from file */
         cerr << "start loading" <<endl;
-	CountingBloomFilter<uint8_t> bloom(params.bloomPath, params.minCov);
+	BloomFilterType bloom(params.bloomPath, params.minCov);
 
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
@@ -393,9 +395,10 @@ void countingBloomAssembly(int argc, char** argv,
 	/* Initialize a counting Bloom filter:
 	   Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
 	   that count to the next multiple of 64.*/
+
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
 
-	CountingBloomFilter<uint8_t> cbf(counters, params.numHashes, params.k, params.minCov);
+	BloomFilterType cbf(counters, params.numHashes, params.k, params.minCov);
 
 	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
 
