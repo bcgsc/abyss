@@ -19,5 +19,6 @@ abyss_bloom_SOURCES = bloom.cc \
 	CascadingBloomFilter.h \
 	CascadingBloomFilterWindow.h \
 	RollingBloomDBGVisitor.h \
+	$(top_srcdir)/BloomDBG/HashAgnosticCascadingBloom.h \
 	$(top_srcdir)/lib/bloomfilter/BloomFilter.hpp
 
