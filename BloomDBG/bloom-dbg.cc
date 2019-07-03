@@ -216,8 +216,8 @@ void printCountingBloomStats(T& bloom, ostream& os)
 	<< "\n\t#counters               = " << bloom.size()
 	<< "\n\t#size (B)               = " << bloom.sizeInBytes()
 	<< "\n\tthreshold               = " << bloom.threshold()
-	<< "\n\tpopcount                = " << bloom.popCount_threshold()
-	<< "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.FPR_post_threshold() << "%" << "\n";
+	<< "\n\tpopcount                = " << bloom.filtered_popcount()
+	<< "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.filtered_FPR() << "%" << "\n";
 }
 
 /** Create optional auxiliary output files */
