@@ -176,43 +176,6 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-static inline ostream* openOutputStream(const string& path)
-{
-	if (path == "-")
-		return &cout;
-	return new ofstream(path.c_str());
-}
-
-static inline void closeOutputStream(ostream* out, const string& path)
-{
-	if (path == "-")
-		return;
-	ofstream* ofs = static_cast<ofstream*>(out);
-	ofs->close();
-	delete ofs;
-}
-
-
-template <typename BF>
-void writeBloom(BF& bf, string& outputPath)
-{
-	if (opt::verbose) {
-		cerr << "Writing bloom filter to `"
-			<< outputPath << "'...\n";
-	}
-
-	ostream* out = openOutputStream(outputPath);
-
-	assert_good(*out, outputPath);
-	*out << bf;
-	out->flush();
-	assert_good(*out, outputPath);
-
-	closeOutputStream(out, outputPath);
-}
-
-
-
 template <typename T>
 void printCountingBloomStats(T& bloom, ostream& os)
 {
@@ -400,18 +363,18 @@ void countingBloomAssembly(int argc, char** argv,
 
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
 
-	BloomFilterType cbf(counters, params.numHashes, params.k, params.minCov);
+	BloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
 
-	BloomDBG::loadBloomFilter(argc, argv, cbf, params.verbose);
+	BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
 
 	if (params.verbose)
-		printCountingBloomStats(cbf, cerr);
+		printCountingBloomStats(bloom, cerr);
 
 	/* second pass through FASTA files for assembling */
-	BloomDBG::assemble(argc - optind, argv + optind, cbf, params, out);
+	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out);
 
 	/* write supplementary files (e.g. GraphViz) */
-	writeAuxiliaryFiles(argc - optind, argv + optind, cbf, params);
+	writeAuxiliaryFiles(argc - optind, argv + optind, bloom, params);
 }
 
 /**
