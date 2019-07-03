@@ -18,4 +18,6 @@ abyss_bloom_SOURCES = bloom.cc \
 	ConcurrentBloomFilter.h \
 	CascadingBloomFilter.h \
 	CascadingBloomFilterWindow.h \
-	RollingBloomDBGVisitor.h
+	RollingBloomDBGVisitor.h \
+	$(top_srcdir)/lib/bloomfilter/BloomFilter.hpp
+
