@@ -25,7 +25,9 @@
 #include <omp.h>
 #endif
 
-typedef CountingBloomFilter<uint8_t>  BloomFilterType;
+typedef uint8_t BloomCounterType;
+typedef CountingBloomFilter<BloomCounterType>  BloomFilterType;
+
 
 using namespace std;
 
@@ -396,7 +398,7 @@ void countingBloomAssembly(int argc, char** argv,
 	   Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
 	   that count to the next multiple of 64.*/
 
-	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(uint8_t), (size_t)64);
+	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
 
 	BloomFilterType cbf(counters, params.numHashes, params.k, params.minCov);
 
