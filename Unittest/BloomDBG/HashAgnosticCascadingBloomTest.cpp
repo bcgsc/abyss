@@ -1,5 +1,5 @@
-#include "BloomDBG/HashAgnosticCascadingBloom.h"
 #include "BloomDBG/RollingHashIterator.h"
+#include "Bloom/HashAgnosticCascadingBloom.h"
 
 #include <gtest/gtest.h>
 
