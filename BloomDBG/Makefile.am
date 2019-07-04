@@ -18,7 +18,6 @@ abyss_bloom_dbg_SOURCES = \
 	bloom-dbg.h \
 	BloomIO.h \
 	Checkpoint.h \
-	HashAgnosticCascadingBloom.h \
 	LightweightKmer.h \
 	MaskedKmer.h \
 	RollingBloomDBG.h \
