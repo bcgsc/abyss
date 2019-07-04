@@ -876,7 +876,7 @@ processRead(
 			std::ostream& out)
 	{
 		/* k-mers in previously assembled contigs */
-		BloomFilter assembledKmerSet(solidKmerSet.size(), 
+		BloomFilter assembledKmerSet(solidKmerSet.size(),
 			solidKmerSet.getHashNum(), solidKmerSet.getKmerSize());
 
 		/* counters for progress messages */
