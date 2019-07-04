@@ -35,7 +35,7 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
-      - run: make -j8 distcheck
+      - run: make -j12 distcheck
 
   linux_gcc6:
     docker:
@@ -48,7 +48,7 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-6 CXX=g++-6 --with-mpi=/usr/lib/openmpi
-      - run: make -j8 distcheck
+      - run: make -j12 distcheck
 
   linux_gcc7:
     docker:
@@ -61,7 +61,7 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-7 CXX=g++-7 --with-mpi=/usr/lib/openmpi
-      - run: make -j8 distcheck
+      - run: make -j12 distcheck
 
   linux_gcc8:
     docker:
@@ -74,7 +74,7 @@ jobs:
       - run: |
           ./autogen.sh
           ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi
-      - run: make -j8 distcheck
+      - run: make -j12 distcheck
 
   clang-format:
     docker:
