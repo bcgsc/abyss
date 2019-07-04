@@ -3,7 +3,6 @@
 #include "BloomDBG/AssemblyCounters.h"
 #include "BloomDBG/AssemblyParams.h"
 #include "BloomDBG/Checkpoint.h"
-#include "BloomDBG/HashAgnosticCascadingBloom.h"
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/SpacedSeed.h"
 #include "BloomDBG/bloom-dbg.h"
