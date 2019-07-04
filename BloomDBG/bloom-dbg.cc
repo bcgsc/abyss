@@ -27,7 +27,6 @@
 typedef uint8_t BloomCounterType;
 typedef CountingBloomFilter<BloomCounterType>  BloomFilterType;
 
-
 using namespace std;
 
 #define PROGRAM "abyss-bloom-dbg"
