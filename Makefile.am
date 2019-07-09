@@ -31,8 +31,6 @@ SUBDIRS = \
 	Graph \
 	DataLayer \
 	DataBase \
-	lib/bloomfilter \
-	lib/nthash \
 	FMIndex \
 	Assembly \
 	dialign \
@@ -62,6 +60,9 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
+	lib/bloomfilter \
+	lib/nthash \
+	vendor/cpptoml/include/ \
 	$(GTest) \
 	$(UnitTest)
 
