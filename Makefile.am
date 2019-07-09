@@ -18,7 +18,11 @@ if HAVE_PANDOC
 dist_doc_DATA += README.html
 endif
 
-EXTRA_DIST=autogen.sh doxygen.conf
+EXTRA_DIST=autogen.sh doxygen.conf \
+	lib/bloomfilter/BloomFilter.hpp \
+	lib/bloomfilter/CountingBloomFilter.hpp \
+	lib/nthash/nthash.hpp \
+	vendor/cpptoml/include/cpptoml.h
 
 SUBDIRS = \
 	bin \
@@ -27,6 +31,8 @@ SUBDIRS = \
 	Graph \
 	DataLayer \
 	DataBase \
+	lib/bloomfilter \
+	lib/nthash \
 	FMIndex \
 	Assembly \
 	dialign \
@@ -56,8 +62,6 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
-	lib/bloomfilter \
-	lib/nthash \
 	$(GTest) \
 	$(UnitTest)
 
