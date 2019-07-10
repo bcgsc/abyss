@@ -724,7 +724,7 @@ build(int argc, char** argv)
 		omp_set_num_threads(opt::threads);
 #endif
 
-	// bloom filter size in bits
+	// bloom filter size in bits and bytes
 	size_t bits = opt::bloomSize * 8;
 	size_t bytes = opt::bloomSize;
 
