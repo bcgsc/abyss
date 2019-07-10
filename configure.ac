@@ -316,6 +316,7 @@ AC_CONFIG_FILES([
 	DataBase/Makefile
 	lib/bloomfilter/Makefile
 	lib/nthash/Makefile
+	vendor/cpptoml/include/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
