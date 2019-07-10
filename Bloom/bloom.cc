@@ -7,9 +7,9 @@
 #include "Bloom/BloomFilterWindow.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/CascadingBloomFilterWindow.h"
-#include "Bloom/HashAgnosticCascadingBloom.h"
 #include "Bloom/RollingBloomDBGVisitor.h"
 #include "BloomDBG/BloomIO.h"
+#include "Bloom/HashAgnosticCascadingBloom.h"
 #include "BloomDBG/RollingBloomDBG.h"
 #include "BloomDBG/RollingHashIterator.h"
 #include "Common/BitUtil.h"
@@ -26,6 +26,7 @@
 #include "Konnector/DBGBloom.h"
 #include "config.h"
 #include "lib/bloomfilter/BloomFilter.hpp"
+#include "lib/bloomfilter/CountingBloomFilter.hpp"
 
 #include <cmath>
 #include <cstdlib>
@@ -42,8 +43,6 @@
 using namespace std;
 
 #define PROGRAM "abyss-bloom"
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 
 static const char VERSION_MESSAGE[] =
     PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
@@ -139,6 +138,7 @@ enum BloomFilterType
 {
 	BT_KONNECTOR,
 	BT_ROLLING_HASH,
+	BT_COUNTING,
 	BT_UNKNOWN
 };
 enum OutputFormat
@@ -473,6 +473,7 @@ printRollingBloomStats(ostream& os, BF& bloom)
 	   << "Bloom filter FPR: " << setprecision(3) << 100 * bloom.getFPR() << "%\n";
 }
 
+
 /**
  * Convert string argument from `-t' option to an equivalent
  * BloomFilterType value.
@@ -494,7 +495,8 @@ bloomTypeToStr(const BloomFilterType type)
 	assert(type != BT_UNKNOWN);
 	if (type == BT_KONNECTOR) {
 		return string("konnector");
-	} else {
+	} 
+	else {
 		assert(type == BT_ROLLING_HASH);
 		return string("rolling-hash");
 	}
@@ -584,7 +586,7 @@ buildRollingHashBloom(size_t bits, string outputPath, int argc, char** argv)
 }
 
 /**
- * Build Bloom filter file of type 'konnector' or 'rolling-hash', as
+ * Build Bloom filter file of type 'konnector', 'rolling-hash' or 'counting', as
  * per `-t` option.
  */
 int
@@ -666,7 +668,7 @@ build(int argc, char** argv)
 
 	if (opt::bloomType == BT_UNKNOWN) {
 		cerr << PROGRAM ": unrecognized argument to `-t' "
-		     << "(should be 'konnector' or 'rolling-hash')\n";
+		     << "(should be 'konnector', 'rolling-hash' or 'counting')\n";
 		dieWithUsageError();
 	}
 
@@ -701,15 +703,21 @@ build(int argc, char** argv)
 	optind++;
 
 	if (opt::verbose) {
-		cerr << "Building a Bloom filter of type '" << bloomTypeToStr(opt::bloomType) << "' with "
-		     << opt::levels << " level(s), " << opt::numHashes
-		     << " hash function(s), and a total size of " << opt::bloomSize << " bytes" << endl;
+		cerr << "Building a Bloom filter of type '"
+		     << bloomTypeToStr(opt::bloomType) << "' with ";
+		if (opt::bloomType != BT_COUNTING){
+			cerr << opt::levels << " level(s), ";
+		}
+		cerr << opt::numHashes << " hash function(s), and a total size of "
+		     << opt::bloomSize << " bytes" << endl;
 	}
+
 
 	assert(opt::bloomType != BT_UNKNOWN);
 	if (opt::bloomType == BT_KONNECTOR) {
 		buildKonnectorBloom(bits, outputPath, argc, argv);
-	} else {
+	} 
+        else{
 		assert(opt::bloomType == BT_ROLLING_HASH);
 		buildRollingHashBloom(bits, outputPath, argc, argv);
 	}
@@ -726,21 +734,27 @@ combine(int argc, char** argv, BitwiseOp readOp)
 		cerr << PROGRAM ": missing arguments\n";
 		dieWithUsageError();
 	}
-
+        cerr << argv[optind] << endl;
 	string outputPath(argv[optind]);
 	optind++;
-
+        cerr << argv[optind] << endl;
+	cerr << "checkpoint0" << endl;
 	Konnector::BloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
+                cerr << "checkpoint1" << endl;
 		string path(argv[i]);
 		if (opt::verbose)
 			std::cerr << "Loading bloom filter from `" << path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
+                cerr << "checkpoint2" << endl;
 		BitwiseOp op = (i > optind) ? readOp : BITWISE_OVERWRITE;
+                cerr << "checkpoint3" << endl;
 		bloom.read(*in, op);
+                cerr << "checkpoint4" << endl;
 		assert_good(*in, path);
+                cerr << "checkpoint5" << endl;
 		closeInputStream(in, path);
 	}
 
