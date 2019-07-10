@@ -713,6 +713,13 @@ build(int argc, char** argv)
 		opt::numHashes = 1;
 	}
 
+	if (opt::bloomType == BT_COUNTING && (opt::levels != 1)) {
+		cerr << PROGRAM ": warning: -l option has no effect"
+			" when using `-t counting'\n";
+	}
+
+
+
 #if _OPENMP
 	if (opt::threads > 0)
 		omp_set_num_threads(opt::threads);
