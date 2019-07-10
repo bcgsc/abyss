@@ -43,6 +43,8 @@
 using namespace std;
 
 #define PROGRAM "abyss-bloom"
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 static const char VERSION_MESSAGE[] =
     PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
