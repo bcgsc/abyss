@@ -359,14 +359,15 @@ void countingBloomAssembly(int argc, char** argv,
 	   that count to the next multiple of 64.*/
 
 	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
+	
 	BloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
-	bloom.writeFilter("/dev/full");
-    BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
+	
+	BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
 	if (params.verbose)
 		printCountingBloomStats(bloom, cerr);
 
 	/* second pass through FASTA files for assembling */
-	
+
 	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out);
 
 	/* write supplementary files (e.g. GraphViz) */
