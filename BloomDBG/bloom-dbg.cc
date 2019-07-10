@@ -366,9 +366,11 @@ void countingBloomAssembly(int argc, char** argv,
 		printCountingBloomStats(bloom, cerr);
 
 	/* second pass through FASTA files for assembling */
+	
 	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out);
 
 	/* write supplementary files (e.g. GraphViz) */
+
 	writeAuxiliaryFiles(argc - optind, argv + optind, bloom, params);
 }
 
