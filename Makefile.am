@@ -18,7 +18,7 @@ if HAVE_PANDOC
 dist_doc_DATA += README.html
 endif
 
-EXTRA_DIST=autogen.sh doxygen.conf 
+EXTRA_DIST=autogen.sh doxygen.conf
 
 SUBDIRS = \
 	bin \
