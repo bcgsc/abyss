@@ -485,6 +485,8 @@ strToBloomType(const std::string& str)
 		return BT_KONNECTOR;
 	else if (str == "rolling-hash")
 		return BT_ROLLING_HASH;
+	else if (str == "counting")
+		return BT_COUNTING;
 	else
 		return BT_UNKNOWN;
 }
@@ -496,9 +498,12 @@ bloomTypeToStr(const BloomFilterType type)
 	if (type == BT_KONNECTOR) {
 		return string("konnector");
 	} 
-	else {
-		assert(type == BT_ROLLING_HASH);
+	else if (type == BT_ROLLING_HASH) {
 		return string("rolling-hash");
+	}
+	else {
+		assert(type == BT_COUNTING);
+		return string("counting");
 	}
 }
 
