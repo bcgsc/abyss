@@ -18,11 +18,7 @@ if HAVE_PANDOC
 dist_doc_DATA += README.html
 endif
 
-EXTRA_DIST=autogen.sh doxygen.conf \
-	lib/bloomfilter/BloomFilter.hpp \
-	lib/bloomfilter/CountingBloomFilter.hpp \
-	lib/nthash/nthash.hpp \
-	vendor/cpptoml/include/cpptoml.h
+EXTRA_DIST=autogen.sh doxygen.conf 
 
 SUBDIRS = \
 	bin \
@@ -62,7 +58,7 @@ SUBDIRS = \
 	AdjList \
 	lib/bloomfilter \
 	lib/nthash \
-	vendor/cpptoml/include/ \
+	vendor/cpptoml/include \
 	$(GTest) \
 	$(UnitTest)
 
