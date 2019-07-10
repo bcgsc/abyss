@@ -779,27 +779,21 @@ combine(int argc, char** argv, BitwiseOp readOp)
 		cerr << PROGRAM ": missing arguments\n";
 		dieWithUsageError();
 	}
-        cerr << argv[optind] << endl;
+
 	string outputPath(argv[optind]);
 	optind++;
-        cerr << argv[optind] << endl;
-	cerr << "checkpoint0" << endl;
+
 	Konnector::BloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
-                cerr << "checkpoint1" << endl;
 		string path(argv[i]);
 		if (opt::verbose)
 			std::cerr << "Loading bloom filter from `" << path << "'...\n";
 		istream* in = openInputStream(path);
 		assert_good(*in, path);
-                cerr << "checkpoint2" << endl;
 		BitwiseOp op = (i > optind) ? readOp : BITWISE_OVERWRITE;
-                cerr << "checkpoint3" << endl;
 		bloom.read(*in, op);
-                cerr << "checkpoint4" << endl;
 		assert_good(*in, path);
-                cerr << "checkpoint5" << endl;
 		closeInputStream(in, path);
 	}
 
