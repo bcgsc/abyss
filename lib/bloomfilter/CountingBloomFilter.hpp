@@ -5,9 +5,12 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
-#include <ostream>
+#include <iostream>
 #include <limits>
 #include <vector>
+
+#include "cpptoml/include/cpptoml.h"
+#include "IOUtil.h"
 
 // Forward declaraions.
 template<typename T>
@@ -22,8 +25,7 @@ template<typename T>
 class CountingBloomFilter
 {
   public:
-	CountingBloomFilter()
-	{}
+	CountingBloomFilter() {}
 	CountingBloomFilter(size_t sz, unsigned hashNum, unsigned kmerSize, unsigned countThreshold)
 	  : m_filter(new T[sz])
 	  , m_size(sz)
@@ -67,7 +69,7 @@ class CountingBloomFilter
 	size_t filtered_popcount() const;
 	double FPR() const;
 	double filtered_FPR() const;
-	void readHeader(FILE* file);
+	void readHeader(std::istream& file);
 	void readFilter(const std::string& path);
 	void writeHeader(std::ostream& out) const;
 	void writeFilter(const std::string& path) const;
@@ -81,7 +83,6 @@ class CountingBloomFilter
 	//                        (m_size * sizeof(T)).
 	// m_hashNum            : Number of hash functions.
 	// m_kmerSize           : Size of a k-mer.
-	// BloomFilter_VERSION  : Size of a k-mer.
 	// m_countThreshold     : A count greater or equal to this threshold
 	//                        establishes existence of an element in the filter.
 	// m_bitsPerCounter     : Number of bits per counter.
@@ -92,29 +93,9 @@ class CountingBloomFilter
 	size_t m_sizeInBytes = 0;
 	unsigned m_hashNum = 0;
 	unsigned m_kmerSize = 0;
-	static const uint32_t BloomFilter_VERSION = 2;
 	unsigned m_countThreshold = 0;
 	unsigned m_bitsPerCounter = 8;
-	static constexpr const char* MAGIC_HEADER_STRING = "BTLBloom";
-	static const unsigned MAGIC_LENGTH = strlen(MAGIC_HEADER_STRING);
-	// Serialization interface
-	// When modifying the header, never remove any fields.
-	// Always append to the end of the struct.
-	// If there are unused fields, you may rename them,
-	// but never change the type or delete the field.
-	struct FileHeader
-	{
-		char magic[MAGIC_LENGTH];
-		uint32_t hlen;
-		uint64_t size;
-		uint32_t nhash;
-		uint32_t kmer;
-		double dFPR = 0;     // unused
-		uint64_t nEntry = 0; // unused
-		uint64_t tEntry = 0; // unused
-		uint32_t version;
-		uint32_t bitsPerCounter;
-	};
+	static constexpr const char* MAGIC_HEADER_STRING = "BTLCountingBloomFilter_v1";
 };
 
 // Method definitions
@@ -272,61 +253,72 @@ template<typename T>
 void
 CountingBloomFilter<T>::readFilter(const std::string& path)
 {
-	FILE* file;
-	if ((file = fopen(path.c_str(), "rb")) == nullptr) {
+	std::ifstream file(path);
+	if (!file) {
 		std::cerr << "ERROR: Failed to open file: " << path << "\n";
 		exit(EXIT_FAILURE);
 	}
 	readHeader(file);
-	struct stat buf;
-	if (fstat(fileno(file), &buf) != 0) {
-		std::cerr << "ERROR: Failed to open file: " << path << "\n";
-		exit(EXIT_FAILURE);
-	}
-	size_t arraySizeOnDisk = buf.st_size - sizeof(struct FileHeader);
-	if (arraySizeOnDisk != m_sizeInBytes) {
-		std::cerr << "ERROR: File size of " << path << " (" << arraySizeOnDisk << " bytes), "
-		          << "does not match size read from its header (" << m_sizeInBytes << " bytes).\n";
-		exit(EXIT_FAILURE);
-	}
-
-	size_t nread = fread(m_filter, arraySizeOnDisk, 1, file);
-	if (nread != 1 && fclose(file) != 0) {
+	char* filter = new char[m_sizeInBytes]; 
+	file.read(filter, m_sizeInBytes);
+	m_filter = reinterpret_cast<T*>(filter);
+	if (!file) {
 		std::cerr << "ERROR: The byte array could not be read from the file: " << path << "\n";
 		exit(EXIT_FAILURE);
 	}
+	file.close();
 }
 
 template<typename T>
 void
-CountingBloomFilter<T>::readHeader(FILE* file)
+CountingBloomFilter<T>::readHeader(std::istream& file)
 {
-	FileHeader header;
-	if (fread(&header, sizeof(struct FileHeader), 1, file) != 1) {
-		std::cerr << "Failed to read header\n";
+	std::string magic_header(MAGIC_HEADER_STRING);
+	(magic_header.insert(0, "[")).append("]");
+	std::string line;
+	std::getline(file, line);
+	if (line.compare(magic_header) != 0) {
+		std::cerr << "ERROR: magic string does not match (likely version mismatch)\n"
+		          << "Your magic string:                " << line << "\n"
+		          << "CountingBloomFilter magic string: " << magic_header << std::endl;
 		exit(EXIT_FAILURE);
 	}
-	if (header.hlen != sizeof(FileHeader)) {
-		std::cerr << "Bloom Filter header length: " << header.hlen
-		          << " does not match expected length: " << sizeof(FileHeader)
-		          << " (likely version mismatch)" << std::endl;
-		exit(EXIT_FAILURE);
+
+	/* Read bloom filter line by line until it sees "[HeaderEnd]"
+	   which is used to mark the end of the header section and
+	   assigns the header to a char array*/
+	std::string headerEnd = "[HeaderEnd]";
+	char* toml_buffer = new char[0];
+	while (std::getline(file, line)) {
+		if (line == headerEnd) {
+			int currPos = file.tellg();
+			delete[] toml_buffer;
+			toml_buffer = new char[currPos];
+			file.seekg(0, file.beg);
+			file.read(toml_buffer, currPos);
+			file.seekg(currPos, file.beg);
+			break;
+		}
 	}
-	if (memcmp(header.magic, MAGIC_HEADER_STRING, MAGIC_LENGTH) != 0) {
-		std::cerr << "Bloom Filter type does not match" << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	if (header.version != BloomFilter_VERSION) {
-		std::cerr << "Bloom Filter version does not match: " << header.version
-		          << " expected: " << BloomFilter_VERSION << std::endl;
-		exit(EXIT_FAILURE);
-	}
-	m_size = header.size;
-	m_hashNum = header.nhash;
-	m_kmerSize = header.kmer;
+
+	// Send the char array to a stringstream for the cpptoml parser to parse
+	std::istringstream toml_stream(toml_buffer);
+	delete[] toml_buffer;
+	cpptoml::parser toml_parser{ toml_stream };
+	auto header_config = toml_parser.parse();
+
+	// Obtain header values from toml parser and assign them to class members
+	std::string magic(MAGIC_HEADER_STRING);
+	auto bloomFilterTable = header_config->get_table(magic);
+	auto toml_size = bloomFilterTable->get_as<size_t>("BloomFilterSize");
+	auto toml_kmerSize = bloomFilterTable->get_as<unsigned>("KmerSize");
+	auto toml_bitsPerCounter = bloomFilterTable->get_as<unsigned>("BitsPerCounter");
+	auto toml_hashNum = bloomFilterTable->get_as<unsigned>("HashNum");
+	m_size = *toml_size;
+	m_hashNum = *toml_hashNum;
+	m_kmerSize = *toml_kmerSize;
 	m_sizeInBytes = m_size * sizeof(T);
-	m_filter = new T[m_size]();
-	m_bitsPerCounter = header.bitsPerCounter;
+	m_bitsPerCounter = *toml_bitsPerCounter;
 }
 
 template<typename T>
@@ -337,36 +329,50 @@ CountingBloomFilter<T>::writeFilter(const std::string& path) const
 	std::cerr << "Writing a " << m_sizeInBytes << " byte filter to a file on disk.\n";
 	ofs << *this;
 	ofs.close();
-	assert(ofs);
+	assert_good(ofs, path);
 }
 
 template<typename T>
 void
 CountingBloomFilter<T>::writeHeader(std::ostream& out) const
 {
-	FileHeader header;
-	memcpy(header.magic, MAGIC_HEADER_STRING, MAGIC_LENGTH);
-	header.hlen = sizeof(struct FileHeader);
-	header.size = m_size;
-	header.nhash = m_hashNum;
-	header.kmer = m_kmerSize;
-	header.version = BloomFilter_VERSION;
-	header.bitsPerCounter = m_bitsPerCounter;
-	out.write(reinterpret_cast<char*>(&header), sizeof(struct FileHeader));
+	/* Initialize cpptoml root table
+	   Note: Tables and fields are unordered
+	   Ordering of table is maintained by directing the table
+	   to the output stream immediately after completion  */
+	std::shared_ptr<cpptoml::table> root = cpptoml::make_table();
+
+	/* Initialize bloom filter section and insert fields
+	   and output to ostream */
+	auto header = cpptoml::make_table();
+	header->insert("BitsPerCounter", m_bitsPerCounter);
+	header->insert("KmerSize", m_kmerSize);
+	header->insert("HashNum", m_hashNum);
+	header->insert("BloomFilterSize", m_size);
+	std::string magic(MAGIC_HEADER_STRING);
+	root->insert(magic, header);
+	out << *root;
+
+	/* Initalize new cpptoml root table and HeaderEnd section,
+	   and output to ostream */
+	root = cpptoml::make_table();
+	auto ender = cpptoml::make_table();
+	root->insert(std::string("HeaderEnd"), ender);
+	out << (*root);
 	assert(out);
 }
 
-// Serialize the bloom filter to a C++ stream */
+// Serialize the bloom filter to a C++ stream
 template<typename T>
 std::ostream&
-operator<<(std::ostream& os, const CountingBloomFilter<T>& cbf)
+operator<<(std::ostream& out, const CountingBloomFilter<T>& bloom)
 {
-	assert(os);
-	cbf.writeHeader(os);
-	assert(os);
-	os.write(reinterpret_cast<char*>(cbf.m_filter), cbf.m_sizeInBytes);
-	assert(os);
-	return os;
+	assert(out);
+	bloom.writeHeader(out);
+	assert(out);
+	out.write(reinterpret_cast<char*>(bloom.m_filter), bloom.m_sizeInBytes);
+	assert(out);
+	return out;
 }
 
 #endif // COUNTINGBLOOM_H
