@@ -473,6 +473,18 @@ printRollingBloomStats(ostream& os, BF& bloom)
 	   << "Bloom filter FPR: " << setprecision(3) << 100 * bloom.getFPR() << "%\n";
 }
 
+template <typename BF>
+void printCountingBloomStats(ostream& os, BF& bloom)
+{
+	os << "Stats for Bloom filter level " << ":\n"
+		<< "\tBloom size (bytes): "
+		<< bloom.sizeInBytes() << "\n"
+		<< "\tBloom pre-threshold popcount: "
+		<< bloom.popCount() << "\n"
+		<< "\tBloom filter pre-threshold FPR: " << setprecision(3)
+		<< 100 * bloom.FPR() << "%\n";
+}
+
 
 /**
  * Convert string argument from `-t' option to an equivalent
@@ -590,6 +602,24 @@ buildRollingHashBloom(size_t bits, string outputPath, int argc, char** argv)
 	writeBloom(cascadingBloom, outputPath);
 }
 
+/** Build a Counting Bloom filter (used by `abyss-bloom-dbg`) */
+static inline void buildCountingBloom(size_t bytes, string outputPath,
+	int argc, char** argv)
+{
+
+	/* use cascading Bloom filter to remove error k-mers */
+    CountingBloomFilter<uint8_t> countingBloom(bytes, opt::numHashes, opt::k, 0);
+
+	/* load reads into Bloom filter */
+	for (int i = optind; i < argc; ++i)
+		BloomDBG::loadFile(countingBloom, argv[i], opt::verbose);
+
+	if (opt::verbose)
+		printCountingBloomStats(cerr, countingBloom);
+
+	writeBloom(countingBloom, outputPath);
+}
+
 /**
  * Build Bloom filter file of type 'konnector', 'rolling-hash' or 'counting', as
  * per `-t` option.
@@ -690,6 +720,7 @@ build(int argc, char** argv)
 
 	// bloom filter size in bits
 	size_t bits = opt::bloomSize * 8;
+	size_t bytes = opt::bloomSize;
 
 	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
 		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
@@ -722,9 +753,12 @@ build(int argc, char** argv)
 	if (opt::bloomType == BT_KONNECTOR) {
 		buildKonnectorBloom(bits, outputPath, argc, argv);
 	} 
-        else{
-		assert(opt::bloomType == BT_ROLLING_HASH);
+        else if (opt::bloomType == BT_ROLLING_HASH) {
 		buildRollingHashBloom(bits, outputPath, argc, argv);
+	}
+        else{
+		assert(opt::bloomType == BT_COUNTING);
+		buildCountingBloom(bytes, outputPath, argc, argv);
 	}
 
 	return 0;
