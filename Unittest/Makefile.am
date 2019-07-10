@@ -190,7 +190,7 @@ endif # PAIRED_DBG
 
 check_PROGRAMS += BloomDBG_BloomDBG
 BloomDBG_BloomDBG_SOURCES = BloomDBG/BloomDBGTest.cpp
-BloomDBG_BloomDBG_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
+BloomDBG_BloomDBG_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common -I$(top_srcdir)/vendor
 BloomDBG_BloomDBG_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 BloomDBG_BloomDBG_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
