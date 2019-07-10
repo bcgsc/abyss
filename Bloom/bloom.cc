@@ -487,7 +487,6 @@ void printCountingBloomStats(ostream& os, BF& bloom)
 		<< 100 * bloom.FPR() << "%\n";
 }
 
-
 /**
  * Convert string argument from `-t' option to an equivalent
  * BloomFilterType value.
@@ -719,8 +718,6 @@ build(int argc, char** argv)
 		cerr << PROGRAM ": warning: -l option has no effect"
 			" when using `-t counting'\n";
 	}
-
-
 
 #if _OPENMP
 	if (opt::threads > 0)
