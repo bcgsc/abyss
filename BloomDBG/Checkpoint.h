@@ -177,7 +177,7 @@ resumeFromCheckpoint(
 	if (params.verbose)
 		std::cerr << '\t' << "Reading Bloom filter de Bruijn graph from `" << dbgPath << "'"
 		          << std::endl;
-	dbg.loadFilter(dbgPath);
+	dbg.readFilter(dbgPath);
 
 	/* load visited k-mers Bloom filter */
 
@@ -185,7 +185,7 @@ resumeFromCheckpoint(
 	if (params.verbose)
 		std::cerr << '\t' << "Reading reading visited k-mers Bloom from `" << visitedPath << "'"
 		          << std::endl;
-	visitedKmerSet.loadFilter(visitedPath);
+	visitedKmerSet.readFilter(visitedPath);
 
 	/* load index for next input read */
 
