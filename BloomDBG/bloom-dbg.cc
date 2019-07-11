@@ -25,7 +25,7 @@
 #endif
 
 typedef uint8_t BloomCounterType;
-typedef CountingBloomFilter<BloomCounterType>  BloomFilterType;
+typedef CountingBloomFilter<BloomCounterType> BloomFilterType;
 
 using namespace std;
 
@@ -174,15 +174,17 @@ static const struct option longopts[] = {
 	{ NULL, 0, NULL, 0 }
 };
 
-template <typename T>
-void printCountingBloomStats(T& bloom, ostream& os)
+template<typename T>
+void
+printCountingBloomStats(T& bloom, ostream& os)
 {
 	os << "Counting Bloom filter stats:"
-	<< "\n\t#counters               = " << bloom.size()
-	<< "\n\t#size (B)               = " << bloom.sizeInBytes()
-	<< "\n\tthreshold               = " << bloom.threshold()
-	<< "\n\tpopcount                = " << bloom.filtered_popcount()
-	<< "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.filtered_FPR() << "%" << "\n";
+	   << "\n\t#counters               = " << bloom.size()
+	   << "\n\t#size (B)               = " << bloom.sizeInBytes()
+	   << "\n\tthreshold               = " << bloom.threshold()
+	   << "\n\tpopcount                = " << bloom.filtered_popcount()
+	   << "\n\tFPR                     = " << setprecision(3) << 100.f * bloom.filtered_FPR() << "%"
+	   << "\n";
 }
 
 /** Create optional auxiliary output files */
@@ -343,8 +345,8 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 /**
  * Load the reads into a counting Bloom filter and do the assembly.
  */
-void countingBloomAssembly(int argc, char** argv,
-	const BloomDBG::AssemblyParams& params, ostream& out)
+void
+countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out)
 {
 	/* init global vars for k-mer size and spaced seed pattern */
 
@@ -355,13 +357,14 @@ void countingBloomAssembly(int argc, char** argv,
 		cerr << params;
 
 	/* Initialize a counting Bloom filter:
-	   Divide the requested memory in bytes by the byte-size of each counter to determine the number of counters, and then round up
-	   that count to the next multiple of 64.*/
+	   Divide the requested memory in bytes by the byte-size of each counter to determine the number
+	   of counters, and then round up that count to the next multiple of 64.*/
 
-	size_t counters = BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
-	
+	size_t counters =
+	    BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
+
 	BloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
-	
+
 	BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
 	if (params.verbose)
 		printCountingBloomStats(bloom, cerr);
