@@ -3,7 +3,7 @@ bin_PROGRAMS = abyss-bloom-dbg
 abyss_bloom_dbg_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common \
 	-I$(top_srcdir)/DataLayer \
-	-I$(top_srcdir)/vendor 
+	-I$(top_srcdir)/vendor
 
 abyss_bloom_dbg_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 

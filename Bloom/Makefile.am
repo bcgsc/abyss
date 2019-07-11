@@ -20,5 +20,4 @@ abyss_bloom_SOURCES = bloom.cc \
 	CascadingBloomFilter.h \
 	CascadingBloomFilterWindow.h \
 	RollingBloomDBGVisitor.h \
-	HashAgnosticCascadingBloom.h 
-
+	HashAgnosticCascadingBloom.h
