@@ -475,16 +475,15 @@ printRollingBloomStats(ostream& os, BF& bloom)
 	   << "Bloom filter FPR: " << setprecision(3) << 100 * bloom.getFPR() << "%\n";
 }
 
-template <typename BF>
-void printCountingBloomStats(ostream& os, BF& bloom)
+template<typename BF>
+void
+printCountingBloomStats(ostream& os, BF& bloom)
 {
-	os << "Stats for Bloom filter level " << ":\n"
-		<< "\tBloom size (bytes): "
-		<< bloom.sizeInBytes() << "\n"
-		<< "\tBloom pre-threshold popcount: "
-		<< bloom.popCount() << "\n"
-		<< "\tBloom filter pre-threshold FPR: " << setprecision(3)
-		<< 100 * bloom.FPR() << "%\n";
+	os << "Stats for Bloom filter level "
+	   << ":\n"
+	   << "\tBloom size (bytes): " << bloom.sizeInBytes() << "\n"
+	   << "\tBloom pre-threshold popcount: " << bloom.popCount() << "\n"
+	   << "\tBloom filter pre-threshold FPR: " << setprecision(3) << 100 * bloom.FPR() << "%\n";
 }
 
 /**
@@ -510,11 +509,9 @@ bloomTypeToStr(const BloomFilterType type)
 	assert(type != BT_UNKNOWN);
 	if (type == BT_KONNECTOR) {
 		return string("konnector");
-	} 
-	else if (type == BT_ROLLING_HASH) {
+	} else if (type == BT_ROLLING_HASH) {
 		return string("rolling-hash");
-	}
-	else {
+	} else {
 		assert(type == BT_COUNTING);
 		return string("counting");
 	}
@@ -583,7 +580,7 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 	}
 }
 
-/** Build a rolling-hash based Bloom filter (used by `abyss-bloom-dbg`) */
+/** Build a rolling-hash based Bloom filter (used by pre 2.2.0 `abyss-bloom-dbg`) */
 static inline void
 buildRollingHashBloom(size_t bits, string outputPath, int argc, char** argv)
 {
@@ -604,12 +601,12 @@ buildRollingHashBloom(size_t bits, string outputPath, int argc, char** argv)
 }
 
 /** Build a Counting Bloom filter (used by `abyss-bloom-dbg`) */
-static inline void buildCountingBloom(size_t bytes, string outputPath,
-	int argc, char** argv)
+static inline void
+buildCountingBloom(size_t bytes, string outputPath, int argc, char** argv)
 {
 
 	/* use cascading Bloom filter to remove error k-mers */
-    CountingBloomFilter<uint8_t> countingBloom(bytes, opt::numHashes, opt::k, 0);
+	CountingBloomFilter<uint8_t> countingBloom(bytes, opt::numHashes, opt::k, 0);
 
 	/* load reads into Bloom filter */
 	for (int i = optind; i < argc; ++i)
@@ -716,7 +713,7 @@ build(int argc, char** argv)
 
 	if (opt::bloomType == BT_COUNTING && (opt::levels != 1)) {
 		cerr << PROGRAM ": warning: -l option has no effect"
-			" when using `-t counting'\n";
+		                " when using `-t counting'\n";
 	}
 
 #if _OPENMP
@@ -745,24 +742,20 @@ build(int argc, char** argv)
 	optind++;
 
 	if (opt::verbose) {
-		cerr << "Building a Bloom filter of type '"
-		     << bloomTypeToStr(opt::bloomType) << "' with ";
-		if (opt::bloomType != BT_COUNTING){
+		cerr << "Building a Bloom filter of type '" << bloomTypeToStr(opt::bloomType) << "' with ";
+		if (opt::bloomType != BT_COUNTING) {
 			cerr << opt::levels << " level(s), ";
 		}
-		cerr << opt::numHashes << " hash function(s), and a total size of "
-		     << opt::bloomSize << " bytes" << endl;
+		cerr << opt::numHashes << " hash function(s), and a total size of " << opt::bloomSize
+		     << " bytes" << endl;
 	}
-
 
 	assert(opt::bloomType != BT_UNKNOWN);
 	if (opt::bloomType == BT_KONNECTOR) {
 		buildKonnectorBloom(bits, outputPath, argc, argv);
-	} 
-        else if (opt::bloomType == BT_ROLLING_HASH) {
+	} else if (opt::bloomType == BT_ROLLING_HASH) {
 		buildRollingHashBloom(bits, outputPath, argc, argv);
-	}
-        else{
+	} else {
 		assert(opt::bloomType == BT_COUNTING);
 		buildCountingBloom(bytes, outputPath, argc, argv);
 	}
