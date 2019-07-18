@@ -1,9 +1,10 @@
 #ifndef _ROLLING_BLOOM_DBG_VISITOR_H_
 #define _ROLLING_BLOOM_DBG_VISITOR_H_ 1
 
-#include "lib/bloomfilter/BloomFilter.hpp"
 #include "Common/UnorderedMap.h"
+#include "Common/UnorderedSet.h"
 #include "Graph/BreadthFirstSearch.h"
+#include "lib/bloomfilter/BloomFilter.hpp"
 
 #include <iostream>
 
@@ -12,11 +13,10 @@
  * a bounded breadth first traversal. An instance of this class may be passed
  * as an argument to the `breadthFirstSearch` function.
  */
-template <typename GraphT>
+template<typename GraphT>
 class RollingBloomDBGVisitor : public DefaultBFSVisitor<GraphT>
 {
-public:
-
+  public:
 	typedef typename boost::graph_traits<GraphT>::vertex_descriptor VertexT;
 	typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeT;
 
@@ -24,20 +24,24 @@ public:
 	typedef typename DepthMap::const_iterator DepthMapConstIt;
 	typedef typename DepthMap::iterator DepthMapIt;
 
-	typedef std::vector<std::pair<std::string, unordered_set<VertexT> > >
-		KmerProperties;
+	typedef std::vector<std::pair<std::string, unordered_set<VertexT>>> KmerProperties;
 	typedef typename KmerProperties::const_iterator KmerPropertiesIt;
 
-	typedef std::vector<std::pair<std::string, BloomFilter*> > BloomProperties;
+	typedef std::vector<std::pair<std::string, BloomFilter*>> BloomProperties;
 	typedef typename BloomProperties::const_iterator BloomPropertiesIt;
 
 	/** Constructor */
-	template <typename VertexSetT>
-	RollingBloomDBGVisitor(const VertexSetT& roots, unsigned maxDepth,
-		const KmerProperties& kmerProperties, const BloomProperties& bloomProperties,
-		std::ostream& out)
-		:  m_maxDepth(maxDepth), m_kmerProperties(kmerProperties),
-		m_bloomProperties(bloomProperties), m_out(out)
+	template<typename VertexSetT>
+	RollingBloomDBGVisitor(
+	    const VertexSetT& roots,
+	    unsigned maxDepth,
+	    const KmerProperties& kmerProperties,
+	    const BloomProperties& bloomProperties,
+	    std::ostream& out)
+	  : m_maxDepth(maxDepth)
+	  , m_kmerProperties(kmerProperties)
+	  , m_bloomProperties(bloomProperties)
+	  , m_out(out)
 	{
 		typedef typename VertexSetT::const_iterator RootIt;
 
@@ -45,7 +49,8 @@ public:
 			m_depthMap[*it] = 0;
 
 		/* start directed graph (GraphViz) */
-		m_out << "digraph " << " {\n";
+		m_out << "digraph "
+		      << " {\n";
 	}
 
 	/** Called when graph search completes */
@@ -73,8 +78,7 @@ public:
 
 		DepthMapIt childIt;
 		bool inserted;
-		boost::tie(childIt, inserted) = m_depthMap.insert(
-			std::make_pair(child, parentDepth + 1));
+		boost::tie(childIt, inserted) = m_depthMap.insert(std::make_pair(child, parentDepth + 1));
 		assert(inserted);
 
 		/*
@@ -99,10 +103,9 @@ public:
 		assert(depthIt != m_depthMap.end());
 		unsigned depth = depthIt->second;
 
-	    m_out << "depth=" << depth;
+		m_out << "depth=" << depth;
 
-		for (KmerPropertiesIt it = m_kmerProperties.begin();
-			it != m_kmerProperties.end(); ++it) {
+		for (KmerPropertiesIt it = m_kmerProperties.begin(); it != m_kmerProperties.end(); ++it) {
 			if (it->second.find(v) != it->second.end())
 				m_out << "," << it->first;
 		}
@@ -110,8 +113,8 @@ public:
 		size_t hashes[MAX_HASHES];
 		v.rollingHash().getHashes(hashes);
 
-		for (BloomPropertiesIt it = m_bloomProperties.begin();
-			 it != m_bloomProperties.end(); ++it) {
+		for (BloomPropertiesIt it = m_bloomProperties.begin(); it != m_bloomProperties.end();
+		     ++it) {
 			if (it->second->contains(hashes))
 				m_out << "," << it->first;
 		}
@@ -145,8 +148,7 @@ public:
 	/** Return if the current edge is a forward edge */
 	bool isForwardEdge(const EdgeT& e, const GraphT& g)
 	{
-		assert(source(e, g) == m_currentVertex
-			|| target(e, g) == m_currentVertex);
+		assert(source(e, g) == m_currentVertex || target(e, g) == m_currentVertex);
 		return source(e, g) == m_currentVertex;
 	}
 
@@ -157,12 +159,10 @@ public:
 		const VertexT& v = target(e, g);
 
 		/* declare edge (GraphViz) */
-		m_out << '\t' << u.kmer().c_str() << " -> "
-			<< v.kmer().c_str() << ";\n";
+		m_out << '\t' << u.kmer().c_str() << " -> " << v.kmer().c_str() << ";\n";
 	}
 
-protected:
-
+  protected:
 	VertexT m_currentVertex;
 	DepthMap m_depthMap;
 
@@ -171,6 +171,5 @@ protected:
 	const BloomProperties& m_bloomProperties;
 	std::ostream& m_out;
 };
-
 
 #endif
