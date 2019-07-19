@@ -218,6 +218,19 @@ BloomDBG_HashAgnosticCascadingBloom_LDADD = \
 	$(top_builddir)/Common/libcommon.a \
 	$(LDADD)
 
+check_PROGRAMS += BloomDBG_CountingBloomFilter
+BloomDBG_CountingBloomFilter_SOURCES = \
+	BloomDBG/CountingBloomFilterTest.cpp
+BloomDBG_CountingBloomFilter_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir)/Common \
+	-I$(top_srcdir)/vendor
+BloomDBG_CountingBloomFilter_CXXFLAGS = $(AM_CXXFLAGS) \
+	$(OPENMP_CXXFLAGS)
+BloomDBG_CountingBloomFilter_LDADD = \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
 check_PROGRAMS += BloomDBG_RollingBloomDBG
 BloomDBG_RollingBloomDBG_SOURCES = BloomDBG/RollingBloomDBGTest.cpp
 BloomDBG_RollingBloomDBG_CXXFLAGS = $(AM_CXXFLAGS) \
