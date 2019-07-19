@@ -1,0 +1,9 @@
+BasedOnStyle: Mozilla
+AlignAfterOpenBracket: AlwaysBreak
+AlignOperands: true
+ColumnLimit: 100
+ContinuationIndentWidth: 4
+IndentCaseLabels: false
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation

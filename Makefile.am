@@ -66,3 +66,12 @@ SUBDIRS = \
 
 clean-local:
 	rm -f README.html
+
+clang-format:
+	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
+	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do clang-format -style=file $$i >$$i.fixed; done
+	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
+	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
+	if ls *.fixed; then exit 1; fi
