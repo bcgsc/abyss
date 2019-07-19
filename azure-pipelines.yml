@@ -1,4 +1,80 @@
 jobs:
+- job: linux_clang6
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq clang-6.0
+    displayName: Install clang-6.0
+  - script: |
+      ./autogen.sh
+      ./configure CC=clang-6.0 CXX=clang++-6.0 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 6.0
+
+- job: linux_gcc5
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq gcc-5 g++-5
+    displayName: Install gcc-5
+  - script: |
+      ./autogen.sh
+      ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with gcc-5
+
+- job: linux_gcc6
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq gcc-6 g++-6
+    displayName: Install gcc-6
+  - script: |
+      ./autogen.sh
+      ./configure CC=gcc-6 CXX=g++-6 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with gcc-6
+
+- job: linux_gcc7
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq gcc-7 g++-7
+    displayName: Install gcc-7
+  - script: |
+      ./autogen.sh
+      ./configure CC=gcc-7 CXX=g++-7 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with gcc-7
+
 - job: linux_gcc8
   pool:
     vmImage: Ubuntu 16.04
