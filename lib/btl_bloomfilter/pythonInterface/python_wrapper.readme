@@ -1,0 +1,21 @@
+Python wrapper for BloomFilter.hpp
+
+Requirements - 
+Boost python library (http://www.boost.org/doc/libs/1_60_0/libs/python/doc/html/building.html)
+Available at - /projects/btl/hkhan/source/boost_1_60_0
+
+-This script has the wrapper code for all constructors and member functions. 
+-The script uses bjam to build the 'bloomfilter_ext' python module.
+(bjam is the build tool that comes bundled with every boost distribution)
+-The Jamroot file is a minimalist bjam script that builds the DLLs. It has a number of information 
+such as the boost library path, cpp file name, python module name, python file name, etc. 
+
+Build instructions - 
+bjam
+
+The script runs without any errors. The user should refer the individual constructors/functions and 
+use the appropriate arguments. As many datatypes in C++ are not available in python, users should
+use NumPy data types objects. (http://docs.scipy.org/doc/numpy/reference/arrays.dtypes.html)   
+
+For more info, please refer - Boost python library 
+(http://www.boost.org/doc/libs/1_60_0/libs/python/doc/html/tutorial/index.html#tutorial.quickstart)
