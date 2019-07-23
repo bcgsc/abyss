@@ -294,7 +294,6 @@ AC_CONFIG_FILES([
 	DistanceEst/Makefile
 	Layout/Makefile
 	Map/Makefile
-	Misc/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
 	Scaffold/Makefile
@@ -314,9 +313,8 @@ AC_CONFIG_FILES([
 	Bloom/Makefile
 	BloomDBG/Makefile
 	DataBase/Makefile
-	lib/bloomfilter/Makefile
+	lib/Makefile
 	lib/nthash/Makefile
-	vendor/cpptoml/include/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
