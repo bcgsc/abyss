@@ -56,9 +56,8 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
-	lib/bloomfilter \
+	lib \
 	lib/nthash \
-	vendor/cpptoml/include \
 	$(GTest) \
 	$(UnitTest)
 
