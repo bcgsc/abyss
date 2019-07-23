@@ -294,6 +294,7 @@ AC_CONFIG_FILES([
 	DistanceEst/Makefile
 	Layout/Makefile
 	Map/Makefile
+	Misc/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
 	Scaffold/Makefile
