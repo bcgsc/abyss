@@ -27,7 +27,7 @@ Files: Layout/*
 Copyright: Copyright 2012 Shaun Jackman
 License: GPL-3
 
-Files: lib/bloomfilter/*
+Files: lib/btl_bloomfilter/*
 Copyright: Copyright 2016 Justin Chu
 License: GPL-3
 
