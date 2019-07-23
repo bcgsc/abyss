@@ -25,8 +25,8 @@
 #include "Graph/Path.h"
 #include "Konnector/DBGBloom.h"
 #include "config.h"
-#include "lib/bloomfilter/BloomFilter.hpp"
-#include "lib/bloomfilter/CountingBloomFilter.hpp"
+#include "lib/btl_bloomfilter/BloomFilter.hpp"
+#include "lib/btl_bloomfilter/CountingBloomFilter.hpp"
 
 #include <cmath>
 #include <cstdlib>

@@ -4,7 +4,7 @@
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingHashIterator.h"
 #include "DataLayer/FastaReader.h"
-#include "lib/bloomfilter/BloomFilter.hpp"
+#include "lib/btl_bloomfilter/BloomFilter.hpp"
 
 namespace BloomDBG {
 

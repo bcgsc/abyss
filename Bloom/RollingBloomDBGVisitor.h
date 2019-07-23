@@ -4,7 +4,7 @@
 #include "Common/UnorderedMap.h"
 #include "Common/UnorderedSet.h"
 #include "Graph/BreadthFirstSearch.h"
-#include "lib/bloomfilter/BloomFilter.hpp"
+#include "lib/btl_bloomfilter/BloomFilter.hpp"
 
 #include <iostream>
 

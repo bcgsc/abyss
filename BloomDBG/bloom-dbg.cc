@@ -9,7 +9,7 @@
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/Options.h"
-#include "lib/bloomfilter/CountingBloomFilter.hpp"
+#include "lib/btl_bloomfilter/CountingBloomFilter.hpp"
 
 #include <cstdlib>
 #include <cstring>
