@@ -22,7 +22,6 @@
 #include "Graph/ExtendPath.h"
 #include "Graph/Path.h"
 #include "lib/btl_bloomfilter/BloomFilter.hpp"
-#include "lib/btl_bloomfilter/CountingBloomFilter.hpp"
 
 #include <cmath>
 #include <iomanip>
