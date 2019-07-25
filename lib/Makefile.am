@@ -1,4 +1,3 @@
-dist_doc_DATA = README.md
 noinst_HEADERS = \
     btl_bloomfilter/BloomFilter.hpp \
     btl_bloomfilter/BloomFilterUtil.h \
