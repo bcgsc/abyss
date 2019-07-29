@@ -25,7 +25,6 @@
 #endif
 
 typedef uint8_t BloomCounterType;
-typedef BloomFilter BloomFilterType;
 typedef CountingBloomFilter<BloomCounterType> CountingBloomFilterType;
 
 using namespace std;
@@ -248,7 +247,7 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
 	CountingBloomFilterType solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
-	BloomFilterType visitedKmerSet;
+	BloomFilter visitedKmerSet;
 
 	/* counters for progress messages */
 	BloomDBG::AssemblyCounters counters;
