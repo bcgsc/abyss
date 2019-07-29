@@ -25,7 +25,8 @@
 #endif
 
 typedef uint8_t BloomCounterType;
-typedef CountingBloomFilter<BloomCounterType> BloomFilterType;
+typedef BloomFilter BloomFilterType;
+typedef CountingBloomFilter<BloomCounterType> CountingBloomFilterType;
 
 using namespace std;
 
@@ -244,7 +245,7 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
 	initGlobals(params);
 
 	/* empty Bloom filter de Bruijn graph */
-	BloomFilterType solidKmerSet;
+	CountingBloomFilterType solidKmerSet;
 
 	/* empty visited k-mers Bloom filter */
 	BloomFilterType visitedKmerSet;
@@ -308,7 +309,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 		cerr << "Loading prebuilt Bloom filter from `" << params.bloomPath << "'" << endl;
 
 	/* load the Bloom filter from file */
-	BloomFilterType bloom(params.bloomPath, params.minCov);
+	CountingBloomFilterType bloom(params.bloomPath, params.minCov);
 
 	if (params.verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
@@ -363,7 +364,7 @@ countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& par
 	size_t counters =
 	    BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
 
-	BloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
+	CountingBloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
 
 	BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
 	if (params.verbose)
