@@ -56,7 +56,7 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
-	lib \
+	vendor \
 	vendor/nthash \
 	$(GTest) \
 	$(UnitTest)

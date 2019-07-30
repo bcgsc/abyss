@@ -314,7 +314,7 @@ AC_CONFIG_FILES([
 	Bloom/Makefile
 	BloomDBG/Makefile
 	DataBase/Makefile
-	lib/Makefile
+	vendor/Makefile
 	vendor/nthash/Makefile
 ])
 
