@@ -3,7 +3,7 @@
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/RollingBloomDBG.h"
-#include "lib/btl_bloomfilter/BloomFilter.hpp"
+#include "vendor/btl_bloomfilter/BloomFilter.hpp"
 
 #include <gtest/gtest.h>
 #include <iostream>

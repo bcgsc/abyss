@@ -1,5 +1,5 @@
 #include "BloomDBG/RollingBloomDBG.h"
-#include "lib/btl_bloomfilter/BloomFilter.hpp"
+#include "vendor/btl_bloomfilter/BloomFilter.hpp"
 #include "Common/UnorderedSet.h"
 
 #include <gtest/gtest.h>

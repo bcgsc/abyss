@@ -1,4 +1,4 @@
-#include "lib/btl_bloomfilter/CountingBloomFilter.hpp"
+#include "vendor/btl_bloomfilter/CountingBloomFilter.hpp"
 #include "BloomDBG/RollingHashIterator.h"
 
 #include <gtest/gtest.h>

@@ -12,7 +12,7 @@
 #include "Graph/Properties.h"
 #include "BloomDBG/RollingHash.h"
 #include "BloomDBG/LightweightKmer.h"
-#include "lib/btl_bloomfilter/BloomFilter.hpp"
+#include "vendor/btl_bloomfilter/BloomFilter.hpp"
 
 #include <algorithm>
 #include <cassert>
