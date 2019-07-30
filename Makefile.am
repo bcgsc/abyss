@@ -57,7 +57,7 @@ SUBDIRS = \
 	Sealer \
 	AdjList \
 	lib \
-	lib/nthash \
+	vendor/nthash \
 	$(GTest) \
 	$(UnitTest)
 
