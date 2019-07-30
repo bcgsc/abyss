@@ -308,7 +308,7 @@ AC_CONFIG_FILES([
 	FilterGraph/Makefile
 	GapFiller/Makefile
 	Sealer/Makefile
-	lib/gtest-1.7.0/Makefile
+	vendor/gtest-1.7.0/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile

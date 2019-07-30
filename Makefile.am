@@ -3,7 +3,7 @@ Parallel=Parallel
 endif
 
 if HAVE_PTHREAD
-GTest=lib/gtest-1.7.0
+GTest=vendor/gtest-1.7.0
 UnitTest=Unittest
 endif
 

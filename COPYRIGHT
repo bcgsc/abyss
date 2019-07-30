@@ -128,7 +128,7 @@ License: Expat
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
 
-Files: lib/gtest-*/*
+Files: vendor/gtest-*/*
 Copyright: Copyright 2008 Google Inc.
 License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without

@@ -6,7 +6,7 @@
 #include "BloomDBG/LightweightKmer.h"
 #include "BloomDBG/MaskedKmer.h"
 #include "Common/Sense.h"
-#include "lib/nthash/nthash.hpp"
+#include "vendor/nthash/nthash.hpp"
 
 #include <algorithm>
 #include <string>

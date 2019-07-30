@@ -7,13 +7,13 @@ AM_LDFLAGS = $(PTHREAD_LIBS)
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir) \
-	-I$(top_srcdir)/lib/gtest-1.7.0/include
+	-I$(top_srcdir)/vendor/gtest-1.7.0/include
 
 if HAVE_TR1_TUPLE
 AM_CPPFLAGS += -DGTEST_USE_OWN_TR1_TUPLE=0
 endif
 
-LDADD = $(top_builddir)/lib/gtest-1.7.0/libgtest_main.a
+LDADD = $(top_builddir)/vendor/gtest-1.7.0/libgtest_main.a
 
 check_PROGRAMS = common_stringutil
 common_stringutil_SOURCES = Common/StringUtilTest.cpp
