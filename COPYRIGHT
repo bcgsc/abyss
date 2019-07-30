@@ -31,7 +31,7 @@ Files: vendor/btl_bloomfilter/*
 Copyright: Copyright 2016 Justin Chu
 License: GPL-3
 
-Files: lib/rolling-hash/*
+Files: vendor/nthash/*
 Copyright: Copyright 2016 Hamid Mohamadi
 License: GPL-3
 
