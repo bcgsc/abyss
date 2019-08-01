@@ -1,3 +1,12 @@
+2019-08-01  Johnathan Wong <jowong@bcgsc.ca>
+
+	* Release version 2.2.0
+	* Construct a counting bloom filter instead of a cascading bloom filter.
+
+	abyss-bloom:
+	* Add 'counting' as valid argument to '-t' option to build counting
+	counting bloom filter
+
 2018-12-04  Sauparna Palchowdhury <spchowdhury@bcgsc.ca>
 
 	* Release version 2.1.5
