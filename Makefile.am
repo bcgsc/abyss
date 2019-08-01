@@ -43,7 +43,6 @@ SUBDIRS = \
 	LogKmerCount \
 	Map \
 	MergePaths \
-	Misc \
 	Overlap \
 	PairedDBG \
 	ParseAligns \
