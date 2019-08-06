@@ -4,8 +4,8 @@
 	* Construct a counting bloom filter instead of a cascading bloom filter.
 
 	abyss-bloom:
-	* Add 'counting' as valid argument to '-t' option to build counting
-	counting bloom filter
+	* Add 'counting' as valid argument to '-t' option to build a counting
+	bloom filter
 
 2018-12-04  Sauparna Palchowdhury <spchowdhury@bcgsc.ca>
 
