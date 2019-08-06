@@ -330,12 +330,11 @@ verbose logging enabled:
 At the current time, the user must calculate suitable values for `B` and `H` on
 their own, and finding the best value for `kc` may require experimentation
 (optimal values are typically in the range of 2-4). Internally, the Bloom filter
-assembler divides the memory budget (`B`) equally across (`kc` + 1) Bloom
-filters, where `kc` Bloom filters are used for the cascading Bloom filter and
-one additional Bloom filter is used to track k-mers that have previously been
-included in contigs. Users are recommended to target a Bloom filter false
-positive rate (FPR) that is less than 5%, as reported by the assembly log when
-using the `v=-v` option (verbose level 1).
+assembler allocates the entire memory budget (`B`) to a Counting Bloom filter,
+and an additional (`B/8`) memory to another Bloom filter that is used to track
+k-mers that have previously been included in contigs. Users are recommended to
+target a Bloom filter false positive rate (FPR) that is less than 5%, as reported
+by the assembly log when using the `v=-v` option (verbose level 1).
 
 Assembling using a paired de Bruijn graph
 =========================================
