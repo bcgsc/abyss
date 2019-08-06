@@ -46,28 +46,28 @@ namespace Bloom {
 	/** Print a progress message after loading this many seqs */
 	static const unsigned LOAD_PROGRESS_STEP = 100000;
 	/** file format version number */
-	static const unsigned BLOOM_VERSION = 4;
+	static const unsigned BLOOM_VERSION = 5;
 
 	/** Return the hash value of this object. */
 	inline static size_t hash(const key_type& key)
 	{
 		if (key.isCanonical())
-			return hashmem(&key, sizeof key);
+			return hashmem(&key, key.bytes());
 
 		key_type copy(key);
 		copy.reverseComplement();
-		return hashmem(&copy, sizeof copy, 0);
+		return hashmem(&copy, copy.bytes(), 0);
 	}
 
 	/** Return the hash value of this object given seed. */
 	inline static size_t hash(const key_type& key, size_t seed)
 	{
 		if (key.isCanonical())
-			return hashmem(&key, sizeof key, seed);
+			return hashmem(&key, key.bytes(), seed);
 
 		key_type copy(key);
 		copy.reverseComplement();
-		return hashmem(&copy, sizeof copy, seed);
+		return hashmem(&copy, copy.bytes(), seed);
 	}
 
 	template <typename BF>
@@ -189,17 +189,6 @@ namespace Bloom {
 
 		return header;
 	}
-
-	//TODO: Bloom filter calculation methods
-	//static double calcApproxFPR(size_t numBucket, size_t numEntr,
-	//		unsigned numHash) const;
-	//static double calcRedunancyFPR(size_t numBucket, size_t numEntr,
-	//		unsigned numHash) const;
-	//static size_t calcOptimalSize(size_t numEle, double fpr) const;
-	//static size_t calcOptimalSize(size_t numEle, double fpr,
-	//		unsigned numHash) const;
-	//static unsigned calcOptimalNumHash(double fpr);
-	//static unsigned calcOptimalNumHash(size_t numBucket, size_t numEle);
 
 };
 

@@ -3,7 +3,7 @@ Parallel=Parallel
 endif
 
 if HAVE_PTHREAD
-GTest=lib/gtest-1.7.0
+GTest=vendor/gtest-1.7.0
 UnitTest=Unittest
 endif
 
@@ -43,7 +43,6 @@ SUBDIRS = \
 	LogKmerCount \
 	Map \
 	MergePaths \
-	Misc \
 	Overlap \
 	PairedDBG \
 	ParseAligns \
@@ -56,8 +55,8 @@ SUBDIRS = \
 	GapFiller \
 	Sealer \
 	AdjList \
-	lib/bloomfilter \
-	lib/nthash \
+	vendor \
+	vendor/nthash \
 	$(GTest) \
 	$(UnitTest)
 
@@ -66,3 +65,12 @@ SUBDIRS = \
 
 clean-local:
 	rm -f README.html
+
+clang-format:
+	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
+	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do clang-format -style=file $$i >$$i.fixed; done
+	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
+	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
+	if ls *.fixed; then exit 1; fi

@@ -1,0 +1,49 @@
+# Copyright David Abrahams 2006. Distributed under the Boost
+# Software License, Version 1.0. (See accompanying
+# file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+
+import python ;
+
+if ! [ python.configured ]
+{
+    ECHO "notice: no Python configured in user-config.jam" ;
+    ECHO "notice: will use default configuration" ;
+    using python ;
+}
+
+# Specify the path to the Boost project.  If you move this project,
+# adjust this path to refer to the Boost root directory.
+use-project boost
+  : /projects/btl/hkhan/source/boost_1_60_0 ;
+
+# Set up the project-wide requirements that everything uses the
+# boost_python library from the project whose global ID is
+# /boost/python.
+project
+  : requirements <library>/boost/python//boost_python 
+                 <implicit-dependency>/boost//headers 
+  : usage-requirements <implicit-dependency>/boost//headers 
+  ;
+
+# Declare the three extension modules.  You can specify multiple
+# source files after the colon separated by spaces.
+python-extension bloomfilter_ext : BloomFilter_pythonwrapper.cpp ;
+
+# Put the extension and Boost.Python DLL in the current directory, so
+# that running script by hand works.
+install convenient_copy 
+  : bloomfilter_ext
+  : <install-dependencies>on <install-type>SHARED_LIB <install-type>PYTHON_EXTENSION 
+    <location>. 
+  ;
+
+# A little "rule" (function) to clean up the syntax of declaring tests
+# of these extension modules.
+local rule run-test ( test-name : sources + )
+{
+    import testing ;
+    testing.make-test run-pyd : $(sources) : : $(test-name) ;
+}
+
+# Declare test targets
+run-test Bloom : bloomfilter_ext bloomfilter.py ;

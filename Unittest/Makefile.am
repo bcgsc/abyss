@@ -7,13 +7,13 @@ AM_LDFLAGS = $(PTHREAD_LIBS)
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir) \
-	-I$(top_srcdir)/lib/gtest-1.7.0/include
+	-I$(top_srcdir)/vendor/gtest-1.7.0/include
 
 if HAVE_TR1_TUPLE
 AM_CPPFLAGS += -DGTEST_USE_OWN_TR1_TUPLE=0
 endif
 
-LDADD = $(top_builddir)/lib/gtest-1.7.0/libgtest_main.a
+LDADD = $(top_builddir)/vendor/gtest-1.7.0/libgtest_main.a
 
 check_PROGRAMS = common_stringutil
 common_stringutil_SOURCES = Common/StringUtilTest.cpp
@@ -214,6 +214,18 @@ BloomDBG_HashAgnosticCascadingBloom_SOURCES = \
 BloomDBG_HashAgnosticCascadingBloom_CXXFLAGS = $(AM_CXXFLAGS) \
 	$(OPENMP_CXXFLAGS)
 BloomDBG_HashAgnosticCascadingBloom_LDADD = \
+	$(top_builddir)/DataLayer/libdatalayer.a \
+	$(top_builddir)/Common/libcommon.a \
+	$(LDADD)
+
+check_PROGRAMS += BloomDBG_CountingBloomFilter
+BloomDBG_CountingBloomFilter_SOURCES = \
+	BloomDBG/CountingBloomFilterTest.cpp
+BloomDBG_CountingBloomFilter_CPPFLAGS = $(AM_CPPFLAGS) \
+	-I$(top_srcdir)/Common
+BloomDBG_CountingBloomFilter_CXXFLAGS = $(AM_CXXFLAGS) \
+	$(OPENMP_CXXFLAGS)
+BloomDBG_CountingBloomFilter_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
 	$(LDADD)

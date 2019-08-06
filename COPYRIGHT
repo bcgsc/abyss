@@ -27,11 +27,11 @@ Files: Layout/*
 Copyright: Copyright 2012 Shaun Jackman
 License: GPL-3
 
-Files: lib/bloomfilter/*
+Files: vendor/btl_bloomfilter/*
 Copyright: Copyright 2016 Justin Chu
 License: GPL-3
 
-Files: lib/rolling-hash/*
+Files: vendor/nthash/*
 Copyright: Copyright 2016 Hamid Mohamadi
 License: GPL-3
 
@@ -128,7 +128,7 @@ License: Expat
  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  OTHER DEALINGS IN THE SOFTWARE.
 
-Files: lib/gtest-*/*
+Files: vendor/gtest-*/*
 Copyright: Copyright 2008 Google Inc.
 License: BSD-3-clause
  Redistribution and use in source and binary forms, with or without

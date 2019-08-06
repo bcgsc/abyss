@@ -1,7 +1,12 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 2.1.5, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 2.2.0, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
+
+AC_CONFIG_MACRO_DIR([m4])
 m4_include(m4/m4_ax_pthread.m4)
+m4_include([m4/ax_cxx_compile_stdcxx.m4])
+AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
+
 AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/abyss.cc])
 AC_CONFIG_HEADER([config.h])
@@ -263,7 +268,7 @@ elif test x"$enable_werror" = x"yes"; then
 	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 else
 	# default
-	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra')
+	AC_SUBST(AM_CXXFLAGS, '-Wall -Wextra -Werror')
 fi
 
 # Build abyss-paired-dbg and abyss-paired-dbg-mpi
@@ -289,7 +294,6 @@ AC_CONFIG_FILES([
 	DistanceEst/Makefile
 	Layout/Makefile
 	Map/Makefile
-	Misc/Makefile
 	Overlap/Makefile
 	PopBubbles/Makefile
 	Scaffold/Makefile
@@ -303,14 +307,14 @@ AC_CONFIG_FILES([
 	FilterGraph/Makefile
 	GapFiller/Makefile
 	Sealer/Makefile
-	lib/gtest-1.7.0/Makefile
+	vendor/gtest-1.7.0/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
 	BloomDBG/Makefile
 	DataBase/Makefile
-	lib/bloomfilter/Makefile
-	lib/nthash/Makefile
+	vendor/Makefile
+	vendor/nthash/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then

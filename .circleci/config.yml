@@ -76,6 +76,25 @@ jobs:
           ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi
       - run: make -j12 distcheck
 
+  clang-format:
+    docker:
+      - image: *docker_image
+    steps:
+      - run: *install_common
+      - run: |
+          apt-get install --yes --force-yes sudo
+          sudo apt-get install --yes --force-yes curl
+          curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+          sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-format-8
+          sudo ln -s clang-format-8 /usr/bin/clang-format
+      - checkout
+      - run: |
+          ./autogen.sh
+          ./configure
+      - run: make clang-format
+
 workflows:
   version: 2
   abyss_builds:
@@ -85,3 +104,4 @@ workflows:
       - linux_gcc6
       - linux_gcc5
       - linux_clang6
+      - clang-format

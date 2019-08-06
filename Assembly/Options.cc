@@ -17,6 +17,9 @@ using namespace std;
 
 #define PROGRAM "ABYSS"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 namespace opt {
 
 static const char VERSION_MESSAGE[] =
@@ -48,7 +51,7 @@ static const char USAGE_MESSAGE[] =
 "      --SS              assemble in strand-specific mode\n"
 "      --no-SS           do not assemble in strand-specific mode\n"
 "  -o, --out=FILE        write the contigs to FILE\n"
-"  -k, --kmer=N          the length of a k-mer (when -K is not set)\n"
+"  -k, --kmer=N          the length of a k-mer (when -K is not set) [<=" STR(MAX_KMER) "]\n"
 "                        or the span of a k-mer pair (when -K is set)\n"
 "  -K, --single-kmer=N   the length of a single k-mer in a k-mer pair\n"
 "  -t, --trim-length=N   maximum length of blunt contigs to trim [k]\n"

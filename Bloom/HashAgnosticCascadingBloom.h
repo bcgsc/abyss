@@ -5,7 +5,7 @@
 #ifndef HASH_AGNOSTIC_CASCADING_BLOOM_H
 #define HASH_AGNOSTIC_CASCADING_BLOOM_H 1
 
-#include "lib/bloomfilter/BloomFilter.hpp"
+#include "vendor/btl_bloomfilter/BloomFilter.hpp"
 #include <vector>
 
 /**
@@ -26,9 +26,11 @@
 class HashAgnosticCascadingBloom
 {
   public:
-
 	/** Default constructor */
-	HashAgnosticCascadingBloom() : m_k(0), m_hashes(0) {}
+	HashAgnosticCascadingBloom()
+	  : m_k(0)
+	  , m_hashes(0)
+	{}
 
 	/**
 	 * Constructor.
@@ -37,8 +39,9 @@ class HashAgnosticCascadingBloom
 	 * @param levels number of levels in Cascading Bloom filter
 	 * @param k k-mer size
 	 */
-	HashAgnosticCascadingBloom(size_t size, unsigned hashes,
-		size_t levels, unsigned k) : m_k(k), m_hashes(hashes)
+	HashAgnosticCascadingBloom(size_t size, unsigned hashes, size_t levels, unsigned k)
+	  : m_k(k)
+	  , m_hashes(hashes)
 	{
 		m_data.reserve(levels);
 		for (unsigned i = 0; i < levels; i++)
@@ -50,16 +53,10 @@ class HashAgnosticCascadingBloom
 	 * files.  This is used to make BloomFilter support the
 	 * same interface as HashAgnosticCascadingBloom.
 	 */
-	HashAgnosticCascadingBloom(const string& bloomPath)
-	{
-		loadFilter(bloomPath);
-	}
+	HashAgnosticCascadingBloom(const string& bloomPath) { loadFilter(bloomPath); }
 
 	/** Destructor */
-	~HashAgnosticCascadingBloom()
-	{
-		clear();
-	}
+	~HashAgnosticCascadingBloom() { clear(); }
 
 	/** Return k-mer size used by Bloom filter. */
 	unsigned getKmerSize() const { return m_k; }
@@ -74,6 +71,9 @@ class HashAgnosticCascadingBloom
 		return m_data.back()->getFilterSize();
 	}
 
+	/** Return the size of the bit array. */
+	size_t getFilterSize() const { return size(); }
+
 	/** Return the number of elements with count >= levels. */
 	size_t popcount() const
 	{
@@ -82,16 +82,10 @@ class HashAgnosticCascadingBloom
 	}
 
 	/** Return number of levels in cascading Bloom filter */
-	unsigned levels() const
-	{
-		return m_data.size();
-	}
+	unsigned levels() const { return m_data.size(); }
 
 	/** Return the estimated false positive rate */
-	double FPR() const
-	{
-		return pow((double)popcount()/size(), m_hashes);
-	}
+	double FPR() const { return pow((double)popcount() / size(), m_hashes); }
 
 	/**
 	 * Return true if the element with the given hash values
@@ -145,8 +139,7 @@ class HashAgnosticCascadingBloom
 	}
 
 	/** Operator for writing the Bloom filter to a stream */
-	friend std::ostream& operator<<(std::ostream& out,
-		const HashAgnosticCascadingBloom& o)
+	friend std::ostream& operator<<(std::ostream& out, const HashAgnosticCascadingBloom& o)
 	{
 		assert(o.m_data.size() > 0);
 		assert(o.m_data.back() != NULL);
@@ -166,7 +159,6 @@ class HashAgnosticCascadingBloom
 	}
 
   private:
-
 	/** Free all allocated memory and reset parameters to defaults */
 	void clear()
 	{
