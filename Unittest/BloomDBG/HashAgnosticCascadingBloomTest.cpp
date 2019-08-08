@@ -25,7 +25,7 @@ TEST(HashAgnosticCascadingBloom, base)
 	RollingHashIterator itB(b, numHashes, k);
 	RollingHashIterator itC(c, numHashes, k);
 	RollingHashIterator itD(d, numHashes, k);
-	size_t hash;
+	uint64_t hash;
 
 	x.insert(*itA);
 	EXPECT_EQ(x.popcount(), 0U);

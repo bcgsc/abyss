@@ -42,7 +42,7 @@ protected:
 		 * complements of these k-mers.
 		 */
 
-		size_t hashes[MAX_HASHES];
+		uint64_t hashes[MAX_HASHES];
 		RollingHash("CGACT", m_numHashes, m_k).getHashes(hashes);
 		m_bloom.insert(hashes);
 		RollingHash("TGACT", m_numHashes, m_k).getHashes(hashes);
