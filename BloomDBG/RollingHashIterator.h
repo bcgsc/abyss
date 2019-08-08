@@ -142,7 +142,7 @@ public:
 	}
 
 	/** get reference to hash values for current k-mer */
-	const size_t* operator*() const
+	const uint64_t* operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
 		return m_hashes;
@@ -216,7 +216,7 @@ private:
 	/** number of hash functions */
 	unsigned m_numHashes;
 	/** hash values */
-	size_t m_hashes[MAX_HASHES];
+	uint64_t m_hashes[MAX_HASHES];
 	/** k-mer size */
 	unsigned m_k;
 	/** internal state for rolling hash */

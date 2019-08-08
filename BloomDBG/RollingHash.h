@@ -136,7 +136,7 @@ public:
 	 *
 	 * @param hashes array for returned hash values
 	 */
-	void getHashes(size_t hashes[]) const
+	void getHashes(uint64_t hashes[]) const
 	{
 		for (unsigned i = 0; i < m_numHashes; ++i)
 			hashes[i] = NTE64(m_hash, m_k, i);

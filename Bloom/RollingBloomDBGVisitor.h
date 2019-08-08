@@ -110,7 +110,7 @@ class RollingBloomDBGVisitor : public DefaultBFSVisitor<GraphT>
 				m_out << "," << it->first;
 		}
 
-		size_t hashes[MAX_HASHES];
+		uint64_t hashes[MAX_HASHES];
 		v.rollingHash().getHashes(hashes);
 
 		for (BloomPropertiesIt it = m_bloomProperties.begin(); it != m_bloomProperties.end();
