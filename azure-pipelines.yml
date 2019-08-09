@@ -119,7 +119,7 @@ jobs:
   - script: make clang-format
     displayName: Run clang-format
 
-- job: linux_gcc8_32-bit
+- job: linux_gcc8_32bit
   pool:
     vmImage: Ubuntu 16.04
   steps:
