@@ -120,6 +120,8 @@ main()
 
 	cout << "premade bf tests done" << endl;
 
+#if __linux__
+
 	// memory leak tests
 	BloomFilter* filter3 = new BloomFilter(filterSize, 5, 20);
 
@@ -137,6 +139,8 @@ main()
 
 	cout << "memory leak prevention tests done" << endl;
 	cout << memory_usage() - memUsage << "kb" << endl;
+
+#endif
 
 	remove(filename.c_str());
 

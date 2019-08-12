@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 
 #AUTHOR
@@ -31,6 +31,7 @@ use FindBin;
 #perl 5.10.0
 #use lib "$FindBin::Bin/../lib/Bloom-Faster-1.7/bloom5-16-3/lib/site_perl/5.16.3/x86_64-linux";###rebuild against PERL version or replace by pre-built
 #use Bloom::Faster;
+use lib "$FindBin::Bin/./";
 use BloomFilter;
 use Getopt::Std;
 use Net::SMTP;
