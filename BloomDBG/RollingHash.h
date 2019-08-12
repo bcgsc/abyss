@@ -19,11 +19,13 @@ class RollingHash
 {
 private:
 
+	typedef uint64_t hash_t;
+
 	/**
 	 * Determine the canonical hash value, given hash values for
 	 * forward and reverse-complement of the same k-mer.
 	 */
-	uint64_t canonicalHash(uint64_t hash, uint64_t rcHash) const
+	hash_t canonicalHash(hash_t hash, hash_t rcHash) const
 	{
 		return (rcHash < hash) ? rcHash : hash;
 	}
@@ -136,7 +138,7 @@ public:
 	 *
 	 * @param hashes array for returned hash values
 	 */
-	void getHashes(size_t hashes[]) const
+	void getHashes(hash_t hashes[]) const
 	{
 		for (unsigned i = 0; i < m_numHashes; ++i)
 			hashes[i] = NTE64(m_hash, m_k, i);
@@ -208,12 +210,12 @@ private:
 	/** k-mer length */
 	unsigned m_k;
 	/** value of first hash function for current k-mer */
-	uint64_t m_hash1;
+	hash_t m_hash1;
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
-	uint64_t m_rcHash1;
+	hash_t m_rcHash1;
 	/** current canonical hash value */
-	uint64_t m_hash;
+	hash_t m_hash;
 };
 
 #endif

@@ -98,6 +98,7 @@ private:
 
 public:
 
+	typedef uint64_t hash_t;
 	/**
 	 * Default constructor. Creates an iterator pointing to
 	 * the end of the iterator range.
@@ -142,7 +143,7 @@ public:
 	}
 
 	/** get reference to hash values for current k-mer */
-	const size_t* operator*() const
+	const hash_t* operator*() const
 	{
 		assert(m_pos + m_k <= m_seq.length());
 		return m_hashes;
@@ -216,7 +217,7 @@ private:
 	/** number of hash functions */
 	unsigned m_numHashes;
 	/** hash values */
-	size_t m_hashes[MAX_HASHES];
+	hash_t m_hashes[MAX_HASHES];
 	/** k-mer size */
 	unsigned m_k;
 	/** internal state for rolling hash */

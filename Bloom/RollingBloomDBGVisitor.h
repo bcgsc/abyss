@@ -29,6 +29,7 @@ class RollingBloomDBGVisitor : public DefaultBFSVisitor<GraphT>
 
 	typedef std::vector<std::pair<std::string, BloomFilter*>> BloomProperties;
 	typedef typename BloomProperties::const_iterator BloomPropertiesIt;
+	typedef uint64_t hash_t;
 
 	/** Constructor */
 	template<typename VertexSetT>
@@ -110,7 +111,7 @@ class RollingBloomDBGVisitor : public DefaultBFSVisitor<GraphT>
 				m_out << "," << it->first;
 		}
 
-		size_t hashes[MAX_HASHES];
+		hash_t hashes[MAX_HASHES];
 		v.rollingHash().getHashes(hashes);
 
 		for (BloomPropertiesIt it = m_bloomProperties.begin(); it != m_bloomProperties.end();

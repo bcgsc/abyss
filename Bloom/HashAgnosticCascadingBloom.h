@@ -26,6 +26,7 @@
 class HashAgnosticCascadingBloom
 {
   public:
+	typedef uint64_t hash_t;
 	/** Default constructor */
 	HashAgnosticCascadingBloom()
 	  : m_k(0)
@@ -91,7 +92,7 @@ class HashAgnosticCascadingBloom
 	 * Return true if the element with the given hash values
 	 * has count >= levels.
 	 */
-	bool contains(const std::vector<size_t>& hashes) const
+	bool contains(const std::vector<hash_t>& hashes) const
 	{
 		assert(m_data.back() != NULL);
 		return m_data.back()->contains(hashes);
@@ -101,14 +102,14 @@ class HashAgnosticCascadingBloom
 	 * Return true if the element with the given hash values
 	 * has count >= levels.
 	 */
-	bool contains(const size_t hashes[]) const
+	bool contains(const hash_t hashes[]) const
 	{
 		assert(m_data.back() != NULL);
 		return m_data.back()->contains(hashes);
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	void insert(const std::vector<size_t>& hashes)
+	void insert(const std::vector<hash_t>& hashes)
 	{
 		for (unsigned i = 0; i < m_data.size(); ++i) {
 			assert(m_data.at(i) != NULL);
@@ -120,7 +121,7 @@ class HashAgnosticCascadingBloom
 	}
 
 	/** Add the object with the specified index to this multiset. */
-	void insert(const size_t hashes[])
+	void insert(const hash_t hashes[])
 	{
 		for (unsigned i = 0; i < m_data.size(); ++i) {
 			assert(m_data.at(i) != NULL);

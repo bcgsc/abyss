@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT(BLOOMFILTER, 1.2.0, cjustin@bcgsc.ca)
+AC_INIT(BLOOMFILTER, 1.2.1, cjustin@bcgsc.ca)
 AC_CANONICAL_SYSTEM
 
 AM_INIT_AUTOMAKE()

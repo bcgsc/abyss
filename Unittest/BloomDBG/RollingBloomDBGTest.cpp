@@ -11,6 +11,7 @@ using namespace boost;
 typedef RollingBloomDBG<BloomFilter> Graph;
 typedef graph_traits<Graph> GraphTraits;
 typedef graph_traits<Graph>::vertex_descriptor V;
+typedef uint64_t hash_t;
 
 /** Test fixture for RollingBloomDBG tests. */
 class RollingBloomDBGTest : public ::testing::Test
@@ -42,7 +43,7 @@ protected:
 		 * complements of these k-mers.
 		 */
 
-		size_t hashes[MAX_HASHES];
+		hash_t hashes[MAX_HASHES];
 		RollingHash("CGACT", m_numHashes, m_k).getHashes(hashes);
 		m_bloom.insert(hashes);
 		RollingHash("TGACT", m_numHashes, m_k).getHashes(hashes);
@@ -156,7 +157,7 @@ TEST_F(RollingBloomDBGTest, pathTraversal)
 	const V GACTC("GACTC", RollingHash("GACTC", m_numHashes, m_k));
 	const V ACTCG("ACTCG", RollingHash("ACTCG", m_numHashes, m_k));
 
-	size_t hashes[MAX_HASHES];
+	hash_t hashes[MAX_HASHES];
 	CGACT.rollingHash().getHashes(hashes);
 	bloom.insert(hashes);
 	GACTC.rollingHash().getHashes(hashes);
@@ -268,7 +269,7 @@ protected:
 		 * any additional edges in the graph.
 		 */
 
-		size_t hashes[MAX_HASHES];
+		hash_t hashes[MAX_HASHES];
 		RollingHash("CGACT", m_numHashes, m_k).getHashes(hashes);
 		m_bloom.insert(hashes);
 		RollingHash("TGACT", m_numHashes, m_k).getHashes(hashes);

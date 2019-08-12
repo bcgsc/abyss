@@ -205,9 +205,10 @@ struct graph_traits< RollingBloomDBG<BF> > {
 
 	/**
 	 * Identifier for accessing a vertex in the graph.
-	 * The second member of the pair (std::vector<size_t>) is
+	 * The second member of the pair (std::vector<hash_t>) is
 	 * a set of hash values associated with the k-mer.
 	 */
+	typedef uint64_t hash_t;
 	typedef RollingBloomDBGVertex vertex_descriptor;
 	typedef boost::directed_tag directed_category;
 	struct traversal_category
@@ -223,11 +224,11 @@ struct graph_traits< RollingBloomDBG<BF> > {
 	typedef unsigned degree_size_type;
 
 	// VertexListGraph
-	typedef size_t vertices_size_type;
+	typedef uint64_t vertices_size_type;
 	typedef void vertex_iterator;
 
 	// EdgeListGraph
-	typedef size_t edges_size_type;
+	typedef uint64_t edges_size_type;
 	typedef void edge_iterator;
 
 // AdjacencyGraph
@@ -438,7 +439,8 @@ vertex_exists(
 	const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
 	const RollingBloomDBG<BloomT>& g)
 {
-	size_t hashes[MAX_HASHES];
+	typedef uint64_t hash_t;
+	hash_t hashes[MAX_HASHES];
 	u.rollingHash().getHashes(hashes);
 	return g.m_bloom.contains(hashes);
 }
