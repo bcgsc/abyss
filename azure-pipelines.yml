@@ -140,7 +140,7 @@ jobs:
   - script: make clang-format
     displayName: Run clang-format
 
-- job: macOS_clang6
+- job: macOS_gcc8
   pool:
     vmImage: macOS-10.14
   steps:
