@@ -16,6 +16,7 @@ jobs:
     displayName: Install 32-bit compilation support
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=\"gcc-8 -m32\" CXX=\"g++-8 -m32\" --build=i386-linux-gnu"
       ./configure CC=gcc-8 CXX=g++-8 --build=i686-linux-gnu "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32" --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-8
@@ -35,6 +36,7 @@ jobs:
     displayName: Install clang-6.0
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-6.0 CXX=clang++-6.0"
       ./configure CC=clang-6.0 CXX=clang++-6.0 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with clang 6.0
@@ -54,6 +56,7 @@ jobs:
     displayName: Install gcc-5
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-5 CXX=g++-5"
       ./configure CC=gcc-5 CXX=g++-5 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-5
@@ -73,6 +76,7 @@ jobs:
     displayName: Install gcc-6
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-6 CXX=g++-6"
       ./configure CC=gcc-6 CXX=g++-6 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-6
@@ -92,6 +96,7 @@ jobs:
     displayName: Install gcc-7
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-7 CXX=g++-7"
       ./configure CC=gcc-7 CXX=g++-7 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-7
@@ -111,6 +116,7 @@ jobs:
     displayName: Install gcc-8
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8"
       ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-8
@@ -152,6 +158,7 @@ jobs:
     displayName: Install gcc
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8"
       ./configure CC=gcc-8 CXX=g++-8 --with-boost=/usr/local/Cellar/boost/1.70.0/include/ --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2/ CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include/
       make -j12 distcheck
     displayName: Compiling ABySS with gcc 8
