@@ -146,7 +146,7 @@ jobs:
   - script: make clang-format
     displayName: Run clang-format
 
-- job: macOS_gcc8
+- job: macOS_default_gcc
   pool:
     vmImage: macOS-10.14
   steps:
@@ -154,11 +154,8 @@ jobs:
       brew update
       brew install automake boost@1.70 openmpi google-sparsehash make pandoc ghc
     displayName: Install common
-  - script: brew install gcc@8
-    displayName: Install gcc
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8"
-      ./configure CC=gcc-8 CXX=g++-8 --with-boost=/usr/local/Cellar/boost/1.70.0/include/ --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2/ CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include/
+      ./configure --with-boost=/usr/local/Cellar/boost/1.70.0/include/ --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2/ CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include/
       make -j12 distcheck
-    displayName: Compiling ABySS with gcc 8
+    displayName: Compiling ABySS with default gcc
