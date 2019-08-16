@@ -146,7 +146,7 @@ static void buildFMIndex(FMIndex& fm, const string& path)
 	std::vector<FMIndex::value_type> s;
 	readFile(path.c_str(), s);
 
-	size_t MAX_SIZE = numeric_limits<FMIndex::sais_size_type>::max();
+	uint64_t MAX_SIZE = numeric_limits<FMIndex::sais_size_type>::max();
 	if (s.size() > MAX_SIZE) {
 		std::cerr << PROGRAM << ": `" << path << "', "
 			<< toSI(s.size())
