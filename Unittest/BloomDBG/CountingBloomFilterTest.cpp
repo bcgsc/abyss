@@ -19,16 +19,17 @@ TEST(CountingBloomFilter, base) {
   const char *b = "TGGACAGCGTTACCTC";
   const char *c = "TAATAACAGTCCCTAT";
   const char *d = "GATCGTGGCGGGCGAT";
+  const char *e = "TTTTTTTTTTTTTTTT";
 
   RollingHashIterator itA(a, numHashes, k);
   RollingHashIterator itB(b, numHashes, k);
   RollingHashIterator itC(c, numHashes, k);
   RollingHashIterator itD(d, numHashes, k);
-  size_t hash = 0;
+  RollingHashIterator itE(e, numHashes, k);
 
   x.insert(*itA);
   EXPECT_EQ(x.filtered_popcount(), 0U);
-  EXPECT_FALSE(x.contains(&hash));
+  EXPECT_FALSE(x.contains(*itE));
   x.insert(*itA);
   EXPECT_EQ(x.filtered_popcount(), 1U);
   EXPECT_TRUE(x.contains(*itA));
