@@ -152,12 +152,11 @@ jobs:
   steps:
   - script: |
       brew update
-      brew install automake boost@1.60 openmpi google-sparsehash make pandoc ghc
+      brew install automake boost openmpi google-sparsehash make pandoc ghc
     displayName: Install common
   - script: |
-      export CPPFLAGS="-I/usr/local/opt/boost@1.60/include"
       ./autogen.sh
-      ./configure --with-boost=/usr/local/opt/boost@1.60/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2/ CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include/
+      ./configure --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2/ CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include/
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
 
