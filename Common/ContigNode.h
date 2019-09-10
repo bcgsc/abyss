@@ -69,6 +69,11 @@ ContigNode operator^(bool sense) const
 	return ContigNode(m_index ^ sense);
 }
 
+/** Copy constructors */
+ContigNode(ContigNode&&) = default;
+ContigNode& operator=(const ContigNode&) = default;
+ContigNode& operator=(ContigNode&&) = default;
+
 /** Return whether this ContigNode is ambiguous. */
 bool ambiguous() const
 {
