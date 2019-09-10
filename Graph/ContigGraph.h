@@ -15,6 +15,13 @@ using boost::graph_traits;
 template <typename G>
 class ContigGraph : public G {
   public:
+
+	/** Copy constructors */
+	ContigGraph(const ContigGraph&) = default;
+	ContigGraph(ContigGraph&&) = default;
+	ContigGraph& operator=(const ContigGraph&) = default;
+	ContigGraph& operator=(ContigGraph&&) = default;
+
 	typedef G base_type;
 
 	// Graph
