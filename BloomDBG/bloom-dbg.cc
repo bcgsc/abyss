@@ -357,11 +357,14 @@ countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& par
 		cerr << params;
 
 	/* Initialize a counting Bloom filter:
-	   Divide the requested memory in bytes by the byte-size of each counter to determine the number
-	   of counters, and then round up that count to the next multiple of 64.*/
+	   Divide the requested memory in bytes by 1.125 to account for the memory used
+	   in building the visitedKmer BloomFilter. Then further divide the byte-size
+	   of each counter to determine the number of counters, and then round up that
+	   count to the next multiple of 64.*/
 
+	double countingBloomFilterSize = params.bloomSize / 1.125 / sizeof(BloomCounterType);
 	size_t counters =
-	    BloomDBG::roundUpToMultiple(params.bloomSize / sizeof(BloomCounterType), (size_t)64);
+	    BloomDBG::roundUpToMultiple((size_t) round(countingBloomFilterSize), (size_t)64);
 
 	CountingBloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
 
