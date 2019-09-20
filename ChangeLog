@@ -2,6 +2,8 @@
 
 	* Release version 2.2.3
 	* Revert memory consumption of bloom filters to pre 2.2.0 behaviour
+	ABySS will now share the specified memory among all bloomfilters
+	instead of just the counting bloom filter.
 	* Fix gcc-9 compilation warnings
 
 2019-08-16  Johnathan Wong <jowong@bcgsc.ca>
