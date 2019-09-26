@@ -1,9 +1,9 @@
 2019-09-20  Johnathan Wong <jowong@bcgsc.ca>
 
 	* Release version 2.2.3
-	* Revert memory consumption of bloom filters to pre 2.2.0 behaviour
-	ABySS will now share the specified memory among all bloomfilters
-	instead of just the counting bloom filter.
+	* Revert memory consumption of Bloom filters to pre 2.2.0 behaviour
+	ABySS will now share the specified memory among all Bloom filters
+	instead of just the counting Bloom filter.
 	* Fix gcc-9 compilation warnings
 
 2019-08-16  Johnathan Wong <jowong@bcgsc.ca>
@@ -19,7 +19,7 @@
 2019-08-01  Johnathan Wong <jowong@bcgsc.ca>
 
 	* Release version 2.2.0
-	* Construct a counting bloom filter instead of a cascading bloom filter.
+	* Construct a counting Bloom filter instead of a cascading Bloom filter.
 
 	abyss-bloom:
 	* Add 'counting' as valid argument to '-t' option to build a counting
