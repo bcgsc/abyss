@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 2.2.2, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 2.2.3, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 
 AC_CONFIG_MACRO_DIR([m4])

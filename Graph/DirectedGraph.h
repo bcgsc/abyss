@@ -545,8 +545,15 @@ class Edge
 		return ui < m_removed.size() ? m_removed[ui] : false;
 	}
 
+  protected:
+
+	/** Copy constructors */
+	DirectedGraph(const DirectedGraph& d) = default;
+	DirectedGraph(DirectedGraph&&) = default;
+	DirectedGraph& operator=(const DirectedGraph&) = default;
+	DirectedGraph& operator=(DirectedGraph&&) = default;
+
   private:
-	DirectedGraph& operator =(const DirectedGraph& x);
 
 	/** The set of vertices. */
 	Vertices m_vertices;
