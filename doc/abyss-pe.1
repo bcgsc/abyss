@@ -113,7 +113,7 @@ minimum contig size required for building scaffolds (bp) [1000-10000]
 SS=--SS to assemble in strand-specific mode
 .br
 Requires that all libraries are strand-specific RNA-Seq libraries.
-Assumes that the first read in a read pair is reveresed WRT the
+Assumes that the first read in a read pair is reversed WRT the
 transcripts sequenced.
 .TP
 .B t
@@ -242,7 +242,7 @@ Run `dida-wrapper --help` for a list of available options.
 
 .SS "MPI COMPATIBILITY"
 Due to its use of multi-threading, DIDA has known deadlocking issues
-with OpenMPI.  Using the MPICH MPI library is strongly recommmended
+with OpenMPI.  Using the MPICH MPI library is strongly recommended
 when running assemblies with DIDA. Testing was done with MPICH 3.1.3,
 compiled with --enable-threads=funneled.
 
