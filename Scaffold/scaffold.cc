@@ -1,12 +1,10 @@
-#include "config.h"
+#include "Common/UnorderedMap.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
+#include "DataBase/DB.h"
+#include "DataBase/Options.h"
 #include "Estimate.h"
-#include "IOUtil.h"
-#include "Iterator.h"
-#include "Uncompress.h"
-#include "Common/UnorderedMap.h"
 #include "Graph/Assemble.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
@@ -15,6 +13,10 @@
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
 #include "Graph/PopBubbles.h"
+#include "IOUtil.h"
+#include "Iterator.h"
+#include "Uncompress.h"
+#include "config.h"
 #include <cassert>
 #include <climits>
 #include <cmath>
@@ -24,8 +26,6 @@
 #include <getopt.h>
 #include <iostream>
 #include <utility>
-#include "DataBase/Options.h"
-#include "DataBase/DB.h"
 
 using namespace std;
 using namespace std::rel_ops;
@@ -37,130 +37,144 @@ using boost::tie;
 DB db;
 
 static const char VERSION_MESSAGE[] =
-PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman.\n"
-"\n"
-"Copyright 2018 Canada's Michael Smith Genome Sciences Centre\n";
+    PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+            "Written by Shaun Jackman.\n"
+            "\n"
+            "Copyright 2018 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k<kmer> [OPTION]... FASTA|OVERLAP DIST...\n"
-"Scaffold contigs using the distance estimate graph.\n"
-"\n"
-" Arguments:\n"
-"\n"
-"  FASTA    contigs in FASTA format\n"
-"  OVERLAP  the contig overlap graph\n"
-"  DIST     estimates of the distance between contigs\n"
-"\n"
-" Options:\n"
-"\n"
-"  -n, --npairs=N        minimum number of pairs [0]\n"
-"      or -n A-B:S       Find the value of n in [A,B] with step size S\n"
-"                        that maximizes the scaffold N50.\n"
-"                        Default value for the step size is 1, if unspecified.\n"
-"  -s, --seed-length=N   minimum contig length [1000]\n"
-"      or -s A-B         Find the value of s in [A,B]\n"
-"                        that maximizes the scaffold N50.\n"
-"      --grid            optimize using a grid search [default]\n"
-"      --line            optimize using a line search\n"
-"  -k, --kmer=N          length of a k-mer\n"
-"  -G, --genome-size=N   expected genome size. Used to calculate NG50\n"
-"                        and associated stats [disabled]\n"
-"      --min-gap=N       minimum scaffold gap length to output [50]\n"
-"      --max-gap=N       maximum scaffold gap length to output [inf]\n"
-"      --complex         remove complex transitive edges\n"
-"      --no-complex      don't remove complex transitive edges [default]\n"
-"      --SS              expect contigs to be oriented correctly\n"
-"      --no-SS           no assumption about contig orientation [default]\n"
-"  -o, --out=FILE        write the paths to FILE\n"
-"  -g, --graph=FILE      write the graph to FILE\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
-"      --db=FILE         specify path of database repository in FILE\n"
-"      --library=NAME    specify library NAME for sqlite\n"
-"      --strain=NAME     specify strain NAME for sqlite\n"
-"      --species=NAME    specify species NAME for sqlite\n"
-"\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+    "Usage: " PROGRAM " -k<kmer> [OPTION]... FASTA|OVERLAP DIST...\n"
+    "Scaffold contigs using the distance estimate graph.\n"
+    "\n"
+    " Arguments:\n"
+    "\n"
+    "  FASTA    contigs in FASTA format\n"
+    "  OVERLAP  the contig overlap graph\n"
+    "  DIST     estimates of the distance between contigs\n"
+    "\n"
+    " Options:\n"
+    "\n"
+    "  -n, --npairs=N        minimum number of pairs [0]\n"
+    "      or -n A-B:S       Find the value of n in [A,B] with step size S\n"
+    "                        that maximizes the scaffold N50.\n"
+    "                        Default value for the step size is 1, if unspecified.\n"
+    "  -s, --seed-length=N   minimum contig length [1000]\n"
+    "      or -s A-B         Find the value of s in [A,B]\n"
+    "                        that maximizes the scaffold N50.\n"
+    "      --grid            optimize using a grid search [default]\n"
+    "      --line            optimize using a line search\n"
+    "  -k, --kmer=N          length of a k-mer\n"
+    "  -G, --genome-size=N   expected genome size. Used to calculate NG50\n"
+    "                        and associated stats [disabled]\n"
+    "      --min-gap=N       minimum scaffold gap length to output [50]\n"
+    "      --max-gap=N       maximum scaffold gap length to output [inf]\n"
+    "      --complex         remove complex transitive edges\n"
+    "      --no-complex      don't remove complex transitive edges [default]\n"
+    "      --SS              expect contigs to be oriented correctly\n"
+    "      --no-SS           no assumption about contig orientation [default]\n"
+    "  -o, --out=FILE        write the paths to FILE\n"
+    "  -g, --graph=FILE      write the graph to FILE\n"
+    "  -v, --verbose         display verbose output\n"
+    "      --help            display this help and exit\n"
+    "      --version         output version information and exit\n"
+    "      --db=FILE         specify path of database repository in FILE\n"
+    "      --library=NAME    specify library NAME for sqlite\n"
+    "      --strain=NAME     specify strain NAME for sqlite\n"
+    "      --species=NAME    specify species NAME for sqlite\n"
+    "\n"
+    "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string db;
-	dbVars metaVars;
+string db;
+dbVars metaVars;
 
-	unsigned k; // used by ContigProperties
+unsigned k; // used by ContigProperties
 
-	/** Optimization search strategy. */
-	static int searchStrategy;
+/** Optimization search strategy. */
+static int searchStrategy;
 
-	/** Minimum number of pairs. */
-	static unsigned minEdgeWeight;
-	static unsigned minEdgeWeightEnd;
-	static unsigned minEdgeWeightStep;
+/** Minimum number of pairs. */
+static unsigned minEdgeWeight;
+static unsigned minEdgeWeightEnd;
+static unsigned minEdgeWeightStep;
 
-	/** Minimum contig length. */
-	static unsigned minContigLength = 1000;
-	static unsigned minContigLengthEnd = 1000;
+/** Minimum contig length. */
+static unsigned minContigLength = 1000;
+static unsigned minContigLengthEnd = 1000;
 
-	/** Genome size. Used to calculate NG50. */
-	static long long unsigned genomeSize;
+/** Genome size. Used to calculate NG50. */
+static long long unsigned genomeSize;
 
-	/** Minimum scaffold gap length to output. */
-	static int minGap = 50;
+/** Minimum scaffold gap length to output. */
+static int minGap = 50;
 
-	/** Maximum scaffold gap length to output.
-	 * -ve value means no maximum. */
-	static int maxGap = -1;
+/** Maximum scaffold gap length to output.
+ * -ve value means no maximum. */
+static int maxGap = -1;
 
-	/** Write the paths to this file. */
-	static string out;
+/** Write the paths to this file. */
+static string out;
 
-	/** Write the graph to this file. */
-	static string graphPath;
+/** Write the graph to this file. */
+static string graphPath;
 
-	/** Run a strand-specific RNA-Seq assembly. */
-	static int ss;
+/** Run a strand-specific RNA-Seq assembly. */
+static int ss;
 
-	/** Verbose output. */
-	int verbose; // used by PopBubbles
+/** Verbose output. */
+int verbose; // used by PopBubbles
 
-	/** Output format */
-	int format = DOT; // used by DistanceEst
+/** Output format */
+int format = DOT; // used by DistanceEst
 
-	/** Remove complex transitive edges */
-	static int comp_trans;
+/** Remove complex transitive edges */
+static int comp_trans;
 }
 
 static const char shortopts[] = "G:g:k:n:o:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_MIN_GAP, OPT_MAX_GAP, OPT_COMP,
-	OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
+enum
+{
+	OPT_HELP = 1,
+	OPT_VERSION,
+	OPT_MIN_GAP,
+	OPT_MAX_GAP,
+	OPT_COMP,
+	OPT_DB,
+	OPT_LIBRARY,
+	OPT_STRAIN,
+	OPT_SPECIES
+};
 
 /** Optimization search strategy. */
-enum { GRID_SEARCH, LINE_SEARCH };
+enum
+{
+	GRID_SEARCH,
+	LINE_SEARCH
+};
 
 static const struct option longopts[] = {
-	{ "graph",       no_argument,       NULL, 'g' },
-	{ "kmer",        required_argument, NULL, 'k' },
+	{ "graph", no_argument, NULL, 'g' },
+	{ "kmer", required_argument, NULL, 'k' },
 	{ "genome-size", required_argument, NULL, 'G' },
-	{ "min-gap",     required_argument, NULL, OPT_MIN_GAP },
-	{ "max-gap",     required_argument, NULL, OPT_MAX_GAP },
-	{ "npairs",      required_argument, NULL, 'n' },
-	{ "grid",        no_argument,       &opt::searchStrategy, GRID_SEARCH },
-	{ "line",        no_argument,       &opt::searchStrategy, LINE_SEARCH },
-	{ "out",         required_argument, NULL, 'o' },
+	{ "min-gap", required_argument, NULL, OPT_MIN_GAP },
+	{ "max-gap", required_argument, NULL, OPT_MAX_GAP },
+	{ "npairs", required_argument, NULL, 'n' },
+	{ "grid", no_argument, &opt::searchStrategy, GRID_SEARCH },
+	{ "line", no_argument, &opt::searchStrategy, LINE_SEARCH },
+	{ "out", required_argument, NULL, 'o' },
 	{ "seed-length", required_argument, NULL, 's' },
-	{ "complex",     no_argument, &opt::comp_trans, 1 },
-	{ "no-complex",  no_argument, &opt::comp_trans, 0 },
-	{ "SS",          no_argument,       &opt::ss, 1 },
-	{ "no-SS",       no_argument,       &opt::ss, 0 },
-	{ "verbose",     no_argument,       NULL, 'v' },
-	{ "help",        no_argument,       NULL, OPT_HELP },
-	{ "version",     no_argument,       NULL, OPT_VERSION },
-	{ "db",          required_argument, NULL, OPT_DB },
-	{ "library",     required_argument, NULL, OPT_LIBRARY },
-	{ "strain",      required_argument, NULL, OPT_STRAIN },
-	{ "species",     required_argument, NULL, OPT_SPECIES },
+	{ "complex", no_argument, &opt::comp_trans, 1 },
+	{ "no-complex", no_argument, &opt::comp_trans, 0 },
+	{ "SS", no_argument, &opt::ss, 1 },
+	{ "no-SS", no_argument, &opt::ss, 0 },
+	{ "verbose", no_argument, NULL, 'v' },
+	{ "help", no_argument, NULL, OPT_HELP },
+	{ "version", no_argument, NULL, OPT_VERSION },
+	{ "db", required_argument, NULL, OPT_DB },
+	{ "library", required_argument, NULL, OPT_LIBRARY },
+	{ "strain", required_argument, NULL, OPT_STRAIN },
+	{ "species", required_argument, NULL, OPT_SPECIES },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -172,8 +186,11 @@ typedef ContigGraph<DG> Graph;
  * An edge is invalid when the overlap is larger than the length of
  * either of its incident sequences.
  */
-struct InvalidEdge {
-	InvalidEdge(Graph& g) : m_g(g) { }
+struct InvalidEdge
+{
+	InvalidEdge(Graph& g)
+	  : m_g(g)
+	{}
 	bool operator()(graph_traits<Graph>::edge_descriptor e) const
 	{
 		int d = m_g[e].distance;
@@ -185,8 +202,12 @@ struct InvalidEdge {
 };
 
 /** Return whether the specified edges has sufficient support. */
-struct PoorSupport {
-	PoorSupport(Graph& g, unsigned minEdgeWeight) : m_g(g), m_minEdgeWeight(minEdgeWeight) { }
+struct PoorSupport
+{
+	PoorSupport(Graph& g, unsigned minEdgeWeight)
+	  : m_g(g)
+	  , m_minEdgeWeight(minEdgeWeight)
+	{}
 	bool operator()(graph_traits<Graph>::edge_descriptor e) const
 	{
 		return m_g[e].numPairs < m_minEdgeWeight;
@@ -196,7 +217,8 @@ struct PoorSupport {
 };
 
 /** Remove short vertices and unsupported edges from the graph. */
-static void filterGraph(Graph& g, unsigned minEdgeWeight, unsigned minContigLength)
+static void
+filterGraph(Graph& g, unsigned minEdgeWeight, unsigned minContigLength)
 {
 	typedef graph_traits<Graph> GTraits;
 	typedef GTraits::vertex_descriptor V;
@@ -230,13 +252,15 @@ static void filterGraph(Graph& g, unsigned minEdgeWeight, unsigned minContigLeng
 }
 
 /** Return true if the specified edge is a cycle. */
-static bool isCycle(Graph& g, graph_traits<Graph>::edge_descriptor e)
+static bool
+isCycle(Graph& g, graph_traits<Graph>::edge_descriptor e)
 {
 	return edge(target(e, g), source(e, g), g).second;
 }
 
 /** Remove simple cycles of length two from the graph. */
-static void removeCycles(Graph& g)
+static void
+removeCycles(Graph& g)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef graph_traits<Graph>::edge_iterator Eit;
@@ -265,7 +289,8 @@ static void removeCycles(Graph& g)
  * For a pair of edges (u,v1) and (u,v2) in g, if exactly one of the
  * edges (v1,v2) or (v2,v1) exists in g0, add that edge to g.
  */
-static void resolveForks(Graph& g, const Graph& g0)
+static void
+resolveForks(Graph& g, const Graph& g0)
 {
 	typedef graph_traits<Graph>::adjacency_iterator Vit;
 	typedef graph_traits<Graph>::edge_descriptor E;
@@ -293,25 +318,22 @@ static void resolveForks(Graph& g, const Graph& g0)
 				pair<E, bool> e21 = edge(v2, v1, g0);
 				if (e12.second && e21.second) {
 					if (opt::verbose > 1)
-						cerr << "cycle: " << get(vertex_name, g, v1)
-							<< ' ' << get(vertex_name, g, v2) << '\n';
+						cerr << "cycle: " << get(vertex_name, g, v1) << ' '
+						     << get(vertex_name, g, v2) << '\n';
 				} else if (e12.second || e21.second) {
 					E e = e12.second ? e12.first : e21.first;
 					V v = source(e, g0), w = target(e, g0);
 					add_edge(v, w, g0[e], g);
 					numEdges++;
 					if (opt::verbose > 1)
-						cerr << get(vertex_name, g, u)
-							<< " -> " << get(vertex_name, g, v)
-							<< " -> " << get(vertex_name, g, w)
-							<< " [" << g0[e] << "]\n";
+						cerr << get(vertex_name, g, u) << " -> " << get(vertex_name, g, v) << " -> "
+						     << get(vertex_name, g, w) << " [" << g0[e] << "]\n";
 				}
 			}
 		}
 	}
 	if (opt::verbose > 0)
-		cerr << "Added " << numEdges
-			<< " edges to ambiguous vertices.\n";
+		cerr << "Added " << numEdges << " edges to ambiguous vertices.\n";
 	if (!opt::db.empty())
 		addToDb(db, "E_added_ambig", numEdges);
 }
@@ -320,7 +342,8 @@ static void resolveForks(Graph& g, const Graph& g0)
  * For an edge (u,v), remove the vertex v if deg+(u) > 1
  * and deg-(v) = 1 and deg+(v) = 0.
  */
-static void pruneTips(Graph& g)
+static void
+pruneTips(Graph& g)
 {
 	/** Identify the tips. */
 	size_t n = 0;
@@ -340,7 +363,8 @@ static void pruneTips(Graph& g)
  * operation: remove vertex u
  * output: digraph g { t1->v1 t2->v2 }
  */
-static void removeRepeats(Graph& g)
+static void
+removeRepeats(Graph& g)
 {
 	typedef graph_traits<Graph>::adjacency_iterator Ait;
 	typedef graph_traits<Graph>::edge_descriptor E;
@@ -349,28 +373,23 @@ static void removeRepeats(Graph& g)
 	vector<V> repeats;
 	vector<E> transitive;
 	find_transitive_edges(g, back_inserter(transitive));
-	for (vector<E>::const_iterator it = transitive.begin();
-			it != transitive.end(); ++it) {
+	for (vector<E>::const_iterator it = transitive.begin(); it != transitive.end(); ++it) {
 		// Iterate through the transitive edges, u->w1.
 		V u = source(*it, g), w1 = target(*it, g);
 		Ait vit, vlast;
-		for (tie(vit, vlast) = adjacent_vertices(u, g);
-				vit != vlast; ++vit) {
+		for (tie(vit, vlast) = adjacent_vertices(u, g); vit != vlast; ++vit) {
 			V v = *vit;
 			assert(u != v); // no self loops
 			if (!edge(v, w1, g).second)
 				continue;
 			// u->w1 is a transitive edge spanning u->v->w1.
 			Ait wit, wlast;
-			for (tie(wit, wlast) = adjacent_vertices(v, g);
-					wit != wlast; ++wit) {
+			for (tie(wit, wlast) = adjacent_vertices(v, g); wit != wlast; ++wit) {
 				// For each edge v->w2, check that an edge
 				// w1->w2 or w2->w1 exists. If not, v is a repeat.
 				V w2 = *wit;
 				assert(v != w2); // no self loops
-				if (w1 != w2
-						&& !edge(w1, w2, g).second
-						&& !edge(w2, w1, g).second) {
+				if (w1 != w2 && !edge(w1, w2, g).second && !edge(w2, w1, g).second) {
 					repeats.push_back(v);
 					break;
 				}
@@ -379,20 +398,17 @@ static void removeRepeats(Graph& g)
 	}
 
 	sort(repeats.begin(), repeats.end());
-	repeats.erase(unique(repeats.begin(), repeats.end()),
-			repeats.end());
+	repeats.erase(unique(repeats.begin(), repeats.end()), repeats.end());
 	if (opt::verbose > 1) {
 		cerr << "Ambiguous:";
-		for (vector<V>::const_iterator it = repeats.begin();
-				it != repeats.end(); ++it)
+		for (vector<V>::const_iterator it = repeats.begin(); it != repeats.end(); ++it)
 			cerr << ' ' << get(vertex_name, g, *it);
 		cerr << '\n';
 	}
 
 	// Remove the repetitive vertices.
 	unsigned numRemoved = 0;
-	for (vector<V>::const_iterator it = repeats.begin();
-			it != repeats.end(); ++it) {
+	for (vector<V>::const_iterator it = repeats.begin(); it != repeats.end(); ++it) {
 		V u = *it;
 		V uc = get(vertex_complement, g, u);
 		clear_out_edges(u, g);
@@ -403,10 +419,8 @@ static void removeRepeats(Graph& g)
 	}
 
 	if (opt::verbose > 0) {
-		cerr << "Cleared "
-			<< repeats.size() << " ambiguous vertices.\n"
-			<< "Removed "
-			<< numRemoved << " ambiguous vertices.\n";
+		cerr << "Cleared " << repeats.size() << " ambiguous vertices.\n"
+		     << "Removed " << numRemoved << " ambiguous vertices.\n";
 		printGraphStats(cerr, g);
 	}
 	if (!opt::db.empty()) {
@@ -421,7 +435,8 @@ static void removeRepeats(Graph& g)
  * operation: remove edge u1->v2
  * output: digraph g {u1->v1 u2->v2 }
  */
-static void removeWeakEdges(Graph& g)
+static void
+removeWeakEdges(Graph& g)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef graph_traits<Graph>::edge_iterator Eit;
@@ -478,11 +493,9 @@ static void removeWeakEdges(Graph& g)
 
 	if (opt::verbose > 1) {
 		cerr << "Weak edges:\n";
-		for (vector<E>::const_iterator it = weak.begin();
-				it != weak.end(); ++it) {
+		for (vector<E>::const_iterator it = weak.begin(); it != weak.end(); ++it) {
 			E e = *it;
-			cerr << '\t' << get(edge_name, g, e)
-				<< " [" << g[e] << "]\n";
+			cerr << '\t' << get(edge_name, g, e) << " [" << g[e] << "]\n";
 		}
 	}
 
@@ -496,7 +509,8 @@ static void removeWeakEdges(Graph& g)
 		addToDb(db, "E_removed_weak", weak.size());
 }
 
-static void removeLongEdges(Graph& g)
+static void
+removeLongEdges(Graph& g)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef graph_traits<Graph>::edge_iterator Eit;
@@ -514,7 +528,8 @@ static void removeLongEdges(Graph& g)
 /** Return whether the specified distance estimate is an exact
  * overlap.
  */
-static bool isOverlap(const DistanceEst& d)
+static bool
+isOverlap(const DistanceEst& d)
 {
 	if (d.stdDev == 0) {
 		assert(d.distance < 0);
@@ -527,8 +542,8 @@ static bool isOverlap(const DistanceEst& d)
  * @param g0 the original graph
  * @param g1 the transformed graph
  */
-static ContigPath addDistEst(const Graph& g0, const Graph& g1,
-		const ContigPath& path)
+static ContigPath
+addDistEst(const Graph& g0, const Graph& g1, const ContigPath& path)
 {
 	typedef graph_traits<Graph>::edge_descriptor E;
 	typedef edge_bundle_type<Graph>::type EP;
@@ -537,14 +552,14 @@ static ContigPath addDistEst(const Graph& g0, const Graph& g1,
 	out.reserve(2 * path.size());
 	ContigNode u = path.front();
 	out.push_back(u);
-	for (ContigPath::const_iterator it = path.begin() + 1;
-			it != path.end(); ++it) {
+	for (ContigPath::const_iterator it = path.begin() + 1; it != path.end(); ++it) {
 		ContigNode v = *it;
 		assert(!v.ambiguous());
 		pair<E, bool> e0 = edge(u, v, g0);
 		pair<E, bool> e1 = edge(u, v, g1);
 		if (!e0.second && !e1.second)
-			std::cerr << "error: missing edge: " << get(vertex_name, g0, u) << " -> " << get(vertex_name, g0, v) << '\n';
+			std::cerr << "error: missing edge: " << get(vertex_name, g0, u) << " -> "
+			          << get(vertex_name, g0, v) << '\n';
 		assert(e0.second || e1.second);
 		const EP& ep = e0.second ? g0[e0.first] : g1[e1.first];
 		if (!isOverlap(ep)) {
@@ -561,7 +576,8 @@ static ContigPath addDistEst(const Graph& g0, const Graph& g1,
 }
 
 /** Read a graph from the specified file. */
-static void readGraph(const string& path, Graph& g)
+static void
+readGraph(const string& path, Graph& g)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'...\n";
@@ -574,17 +590,16 @@ static void readGraph(const string& path, Graph& g)
 		printGraphStats(cerr, g);
 
 	vector<int> vals = passGraphStatsVal(g);
-	vector<string> keys = make_vector<string>()
-		<< "V_readGraph"
-		<< "E_readGraph"
-		<< "degree0_readGraph"
-		<< "degree1_readGraph"
-		<< "degree234_readGraph"
-		<< "degree5_readGraph"
-		<< "max_readGraph";
+	vector<string> keys = make_vector<string>() << "V_readGraph"
+	                                            << "E_readGraph"
+	                                            << "degree0_readGraph"
+	                                            << "degree1_readGraph"
+	                                            << "degree234_readGraph"
+	                                            << "degree5_readGraph"
+	                                            << "max_readGraph";
 
 	if (!opt::db.empty()) {
-		for(unsigned i=0; i<vals.size(); i++)
+		for (unsigned i = 0; i < vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
 	g_contigNames.lock();
@@ -592,7 +607,8 @@ static void readGraph(const string& path, Graph& g)
 
 /** Return the scaffold length of [first, last), not counting gaps. */
 template<typename It>
-unsigned addLength(const Graph& g, It first, It last)
+unsigned
+addLength(const Graph& g, It first, It last)
 {
 	typedef typename graph_traits<Graph>::vertex_descriptor V;
 	assert(first != last);
@@ -610,11 +626,11 @@ unsigned addLength(const Graph& g, It first, It last)
 typedef vector<ContigPath> ContigPaths;
 
 /**
-  * Build the scaffold length histogram.
-  * @param g The graph g is destroyed.
-  */
-static Histogram buildScaffoldLengthHistogram(
-		Graph& g, const ContigPaths& paths)
+ * Build the scaffold length histogram.
+ * @param g The graph g is destroyed.
+ */
+static Histogram
+buildScaffoldLengthHistogram(Graph& g, const ContigPaths& paths)
 {
 	Histogram h;
 
@@ -626,11 +642,9 @@ static Histogram buildScaffoldLengthHistogram(
 
 	// Remove the vertices that are used in paths
 	// and add the lengths of the scaffolds.
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		h.insert(addLength(g, it->begin(), it->end()));
-		remove_vertex_if(g, it->begin(), it->end(),
-				not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		remove_vertex_if(g, it->begin(), it->end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 	}
 
 	// Add the contigs that were not used in paths.
@@ -645,51 +659,63 @@ static Histogram buildScaffoldLengthHistogram(
 }
 
 /** Add contiguity stats to database */
-static void addCntgStatsToDb(
-		const Histogram h, const unsigned min)
+static void
+addCntgStatsToDb(const Histogram h, const unsigned min)
 {
 	vector<int> vals = passContiguityStatsVal(h, min);
-	vector<string> keys = make_vector<string>()
-		<< "n"
-		<< "n200"
-		<< "nN50"
-		<< "min"
-		<< "N75"
-		<< "N50"
-		<< "N25"
-		<< "Esize"
-		<< "max"
-		<< "sum"
-		<< "nNG50"
-		<< "NG50";
+	vector<string> keys = make_vector<string>() << "n"
+	                                            << "n200"
+	                                            << "nN50"
+	                                            << "min"
+	                                            << "N75"
+	                                            << "N50"
+	                                            << "N25"
+	                                            << "Esize"
+	                                            << "max"
+	                                            << "sum"
+	                                            << "nNG50"
+	                                            << "NG50";
 	if (!opt::db.empty()) {
-		for(unsigned i=0; i<vals.size(); i++)
+		for (unsigned i = 0; i < vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
 }
 
 /** Parameters of scaffolding. */
-struct ScaffoldParam {
-	ScaffoldParam(unsigned n, unsigned s) : n(n), s(s) { }
+struct ScaffoldParam
+{
+	ScaffoldParam(unsigned n, unsigned s)
+	  : n(n)
+	  , s(s)
+	{}
 	bool operator==(const ScaffoldParam& o) const { return n == o.n && s == o.s; }
 	unsigned n;
 	unsigned s;
 };
 
 NAMESPACE_STD_HASH_BEGIN
-	template <> struct hash<ScaffoldParam> {
-		size_t operator()(const ScaffoldParam& param) const
-		{
-			return hash<unsigned>()(param.n) ^ hash<unsigned>()(param.s);
-		}
-	};
+template<>
+struct hash<ScaffoldParam>
+{
+	size_t operator()(const ScaffoldParam& param) const
+	{
+		return hash<unsigned>()(param.n) ^ hash<unsigned>()(param.s);
+	}
+};
 NAMESPACE_STD_HASH_END
 
 /** Result of scaffolding. */
-struct ScaffoldResult : ScaffoldParam{
-	ScaffoldResult() : ScaffoldParam(0, 0), n50(0) { }
+struct ScaffoldResult : ScaffoldParam
+{
+	ScaffoldResult()
+	  : ScaffoldParam(0, 0)
+	  , n50(0)
+	{}
 	ScaffoldResult(unsigned n, unsigned s, unsigned n50, std::string metrics)
-		: ScaffoldParam(n, s), n50(n50), metrics(metrics) { }
+	  : ScaffoldParam(n, s)
+	  , n50(n50)
+	  , metrics(metrics)
+	{}
 	unsigned n50;
 	std::string metrics;
 };
@@ -699,9 +725,7 @@ struct ScaffoldResult : ScaffoldParam{
  * @return the scaffold N50
  */
 ScaffoldResult
-scaffold(const Graph& g0,
-		unsigned minEdgeWeight, unsigned minContigLength,
-		bool output)
+scaffold(const Graph& g0, unsigned minEdgeWeight, unsigned minContigLength, bool output)
 {
 	Graph g(g0);
 
@@ -744,8 +768,7 @@ scaffold(const Graph& g0,
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	vector<V> popped = popBubbles(g);
 	if (opt::verbose > 0) {
-		cerr << "Removed " << popped.size()
-			<< " vertices in bubbles.\n";
+		cerr << "Removed " << popped.size() << " vertices in bubbles.\n";
 		printGraphStats(cerr, g);
 	}
 
@@ -754,8 +777,7 @@ scaffold(const Graph& g0,
 
 	if (opt::verbose > 1) {
 		cerr << "Popped:";
-		for (vector<V>::const_iterator it = popped.begin();
-				it != popped.end(); ++it)
+		for (vector<V>::const_iterator it = popped.begin(); it != popped.end(); ++it)
 			cerr << ' ' << get(vertex_name, g, *it);
 		cerr << '\n';
 	}
@@ -773,11 +795,9 @@ scaffold(const Graph& g0,
 	sort(paths.begin(), paths.end());
 	unsigned n = 0;
 	if (opt::verbose > 0) {
-		for (ContigPaths::const_iterator it = paths.begin();
-				it != paths.end(); ++it)
+		for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it)
 			n += it->size();
-		cerr << "Assembled " << n << " contigs in "
-			<< paths.size() << " scaffolds.\n";
+		cerr << "Assembled " << n << " contigs in " << paths.size() << " scaffolds.\n";
 		printGraphStats(cerr, g);
 	}
 
@@ -792,10 +812,8 @@ scaffold(const Graph& g0,
 		ostream& out = opt::out.empty() || opt::out == "-" ? cout : fout;
 		assert_good(out, opt::out);
 		g_contigNames.unlock();
-		for (vector<ContigPath>::const_iterator it = paths.begin();
-				it != paths.end(); ++it)
-			out << createContigName() << '\t'
-				<< addDistEst(g0, g, *it) << '\n';
+		for (vector<ContigPath>::const_iterator it = paths.begin(); it != paths.end(); ++it)
+			out << createContigName() << '\t' << addDistEst(g0, g, *it) << '\n';
 		assert_good(out, opt::out);
 
 		// Output the graph.
@@ -811,15 +829,16 @@ scaffold(const Graph& g0,
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	std::ostringstream ss;
 	Histogram scaffold_histogram = buildScaffoldLengthHistogram(g, paths);
-	printContiguityStats(ss, scaffold_histogram, STATS_MIN_LENGTH,
-			false, "\t", opt::genomeSize)
-		<< "\tn=" << minEdgeWeight << " s=" << minContigLength << '\n';
+	printContiguityStats(ss, scaffold_histogram, STATS_MIN_LENGTH, false, "\t", opt::genomeSize)
+	    << "\tn=" << minEdgeWeight << " s=" << minContigLength << '\n';
 	std::string metrics = ss.str();
 	addCntgStatsToDb(scaffold_histogram, STATS_MIN_LENGTH);
 
-	return ScaffoldResult(minEdgeWeight, minContigLength,
-			scaffold_histogram.trimLow(STATS_MIN_LENGTH).n50(),
-			metrics);
+	return ScaffoldResult(
+	    minEdgeWeight,
+	    minContigLength,
+	    scaffold_histogram.trimLow(STATS_MIN_LENGTH).n50(),
+	    metrics);
 }
 
 /** Memoize the optimization results so far. */
@@ -858,10 +877,11 @@ scaffold_memoized(const Graph& g, unsigned n, unsigned s, ScaffoldMemo& memo)
 
 /** Find the value of n that maximizes the scaffold N50. */
 static ScaffoldResult
-optimize_n(const Graph& g,
-		std::pair<unsigned, unsigned> minEdgeWeight,
-		unsigned minContigLength,
-		ScaffoldMemo& memo)
+optimize_n(
+    const Graph& g,
+    std::pair<unsigned, unsigned> minEdgeWeight,
+    unsigned minContigLength,
+    ScaffoldMemo& memo)
 {
 	std::string metrics_table;
 	unsigned bestn = 0, bestN50 = 0;
@@ -879,19 +899,17 @@ optimize_n(const Graph& g,
 
 /** Find the value of s that maximizes the scaffold N50. */
 static ScaffoldResult
-optimize_s(const Graph& g,
-		unsigned minEdgeWeight,
-		std::pair<unsigned, unsigned> minContigLength,
-		ScaffoldMemo& memo)
+optimize_s(
+    const Graph& g,
+    unsigned minEdgeWeight,
+    std::pair<unsigned, unsigned> minContigLength,
+    ScaffoldMemo& memo)
 {
 	std::string metrics_table;
 	unsigned bests = 0, bestN50 = 0;
 	const double STEP = cbrt(10); // Three steps per decade.
-	unsigned ilast = (unsigned)round(
-			log(minContigLength.second) / log(STEP));
-	for (unsigned i = (unsigned)round(
-				log(minContigLength.first) / log(STEP));
-			i <= ilast; ++i) {
+	unsigned ilast = (unsigned)round(log(minContigLength.second) / log(STEP));
+	for (unsigned i = (unsigned)round(log(minContigLength.first) / log(STEP)); i <= ilast; ++i) {
 		unsigned s = (unsigned)pow(STEP, (int)i);
 
 		// Round to 1 figure.
@@ -911,9 +929,10 @@ optimize_s(const Graph& g,
 
 /** Find the values of n and s that maximizes the scaffold N50. */
 static ScaffoldResult
-optimize_grid_search(const Graph& g,
-		std::pair<unsigned, unsigned> minEdgeWeight,
-		std::pair<unsigned, unsigned> minContigLength)
+optimize_grid_search(
+    const Graph& g,
+    std::pair<unsigned, unsigned> minEdgeWeight,
+    std::pair<unsigned, unsigned> minContigLength)
 {
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (opt::verbose == 0)
@@ -935,9 +954,10 @@ optimize_grid_search(const Graph& g,
 
 /** Find the values of n and s that maximizes the scaffold N50. */
 static ScaffoldResult
-optimize_line_search(const Graph& g,
-		std::pair<unsigned, unsigned> minEdgeWeight,
-		std::pair<unsigned, unsigned> minContigLength)
+optimize_line_search(
+    const Graph& g,
+    std::pair<unsigned, unsigned> minEdgeWeight,
+    std::pair<unsigned, unsigned> minContigLength)
 {
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
 	if (opt::verbose == 0)
@@ -946,10 +966,10 @@ optimize_line_search(const Graph& g,
 	ScaffoldMemo memo;
 	std::string metrics_table;
 	ScaffoldResult best(
-			(minEdgeWeight.first + minEdgeWeight.second) / 2,
-			minContigLength.second, 0, "");
+	    (minEdgeWeight.first + minEdgeWeight.second) / 2, minContigLength.second, 0, "");
 	// An upper limit on the number of iterations.
-	const unsigned MAX_ITERATIONS = 1 + (minEdgeWeight.second - minEdgeWeight.first) / opt::minEdgeWeightStep;
+	const unsigned MAX_ITERATIONS =
+	    1 + (minEdgeWeight.second - minEdgeWeight.first) / opt::minEdgeWeightStep;
 	for (unsigned i = 0; i < MAX_ITERATIONS; ++i) {
 		// Optimize s.
 		if (opt::verbose > 0) {
@@ -981,33 +1001,32 @@ optimize_line_search(const Graph& g,
 }
 
 /** Run abyss-scaffold. */
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
 	if (!opt::db.empty())
 		opt::metaVars.resize(3);
 
 	bool die = false;
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-		  case '?':
+		case '?':
 			die = true;
 			break;
-		  case 'k':
+		case 'k':
 			arg >> opt::k;
 			break;
-		  case 'G':
-			{
-				double x;
-				arg >> x;
-				opt::genomeSize = x;
-				break;
-			}
-		  case 'g':
+		case 'G': {
+			double x;
+			arg >> x;
+			opt::genomeSize = x;
+			break;
+		}
+		case 'g':
 			arg >> opt::graphPath;
 			break;
-		  case 'n':
+		case 'n':
 			arg >> opt::minEdgeWeight;
 			if (arg.peek() == '-') {
 				arg >> expect("-") >> opt::minEdgeWeightEnd;
@@ -1019,56 +1038,55 @@ int main(int argc, char** argv)
 			else
 				opt::minEdgeWeightStep = 1;
 			break;
-		  case 'o':
+		case 'o':
 			arg >> opt::out;
 			break;
-		  case 's':
+		case 's':
 			arg >> opt::minContigLength;
 			if (arg.peek() == '-') {
 				opt::minContigLengthEnd = 100 * opt::minContigLength;
 				arg >> expect("-") >> opt::minContigLengthEnd;
-				assert(opt::minContigLength
-						<= opt::minContigLengthEnd);
+				assert(opt::minContigLength <= opt::minContigLengthEnd);
 			} else
 				opt::minContigLengthEnd = opt::minContigLength;
 			break;
-		  case 'v':
+		case 'v':
 			opt::verbose++;
 			break;
-		  case OPT_MIN_GAP:
+		case OPT_MIN_GAP:
 			arg >> opt::minGap;
 			break;
-		  case OPT_MAX_GAP:
+		case OPT_MAX_GAP:
 			arg >> opt::maxGap;
 			break;
-		  case OPT_HELP:
+		case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
-		  case OPT_VERSION:
+		case OPT_VERSION:
 			cout << VERSION_MESSAGE;
 			exit(EXIT_SUCCESS);
-		  case OPT_DB:
+		case OPT_DB:
 			arg >> opt::db;
 			break;
-		  case OPT_LIBRARY:
+		case OPT_LIBRARY:
 			arg >> opt::metaVars[0];
 			break;
-		  case OPT_STRAIN:
+		case OPT_STRAIN:
 			arg >> opt::metaVars[1];
 			break;
-		  case OPT_SPECIES:
+		case OPT_SPECIES:
 			arg >> opt::metaVars[2];
 			break;
 		}
 		if (optarg != NULL && !arg.eof()) {
-			cerr << PROGRAM ": invalid option: `-"
-				<< (char)c << optarg << "'\n";
+			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (opt::k <= 0) {
-		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		cerr << PROGRAM ": "
+		     << "missing -k,--kmer option\n";
 		die = true;
 	}
 
@@ -1078,17 +1096,11 @@ int main(int argc, char** argv)
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM
-			<< " --help' for more information.\n";
+		cerr << "Try `" << PROGRAM << " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 	if (!opt::db.empty()) {
-		init(db,
-				opt::db,
-				opt::verbose,
-				PROGRAM,
-				opt::getCommand(argc, argv),
-				opt::metaVars);
+		init(db, opt::db, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 		addToDb(db, "K", opt::k);
 	}
 
@@ -1114,15 +1126,14 @@ int main(int argc, char** argv)
 	remove_edge_if(InvalidEdge(g), static_cast<DG&>(g));
 	unsigned numRemoved = numBefore - num_edges(g);
 	if (numRemoved > 0)
-		cerr << "warning: Removed "
-			<< numRemoved << " invalid edges.\n";
+		cerr << "warning: Removed " << numRemoved << " invalid edges.\n";
 
 	if (!opt::db.empty())
 		addToDb(db, "Edges_invalid", numRemoved);
 
 	const unsigned STATS_MIN_LENGTH = opt::minContigLength;
-	if (opt::minEdgeWeight == opt::minEdgeWeightEnd
-			&& opt::minContigLength == opt::minContigLengthEnd) {
+	if (opt::minEdgeWeight == opt::minEdgeWeightEnd &&
+	    opt::minContigLength == opt::minContigLengthEnd) {
 		ScaffoldResult result = scaffold(g, opt::minEdgeWeight, opt::minContigLength, true);
 		// Print assembly contiguity statistics.
 		if (opt::verbose > 0)
@@ -1132,19 +1143,21 @@ int main(int argc, char** argv)
 	} else {
 		ScaffoldResult best(0, 0, 0, "");
 		switch (opt::searchStrategy) {
-			case GRID_SEARCH:
-				best = optimize_grid_search(g,
-						std::make_pair(opt::minEdgeWeight, opt::minEdgeWeightEnd),
-						std::make_pair(opt::minContigLength, opt::minContigLengthEnd));
-				break;
-			case LINE_SEARCH:
-				best = optimize_line_search(g,
-						std::make_pair(opt::minEdgeWeight, opt::minEdgeWeightEnd),
-						std::make_pair(opt::minContigLength, opt::minContigLengthEnd));
-				break;
-			default:
-			    abort();
-				break;
+		case GRID_SEARCH:
+			best = optimize_grid_search(
+			    g,
+			    std::make_pair(opt::minEdgeWeight, opt::minEdgeWeightEnd),
+			    std::make_pair(opt::minContigLength, opt::minContigLengthEnd));
+			break;
+		case LINE_SEARCH:
+			best = optimize_line_search(
+			    g,
+			    std::make_pair(opt::minEdgeWeight, opt::minEdgeWeightEnd),
+			    std::make_pair(opt::minContigLength, opt::minContigLengthEnd));
+			break;
+		default:
+			abort();
+			break;
 		}
 
 		if (opt::verbose > 0)
@@ -1158,7 +1171,9 @@ int main(int argc, char** argv)
 			std::cerr << best.metrics;
 		}
 
-		std::cerr << '\n' << "Best scaffold N50 is " << best.n50 << " at n=" << best.n << " s=" << best.s << ".\n";
+		std::cerr << '\n'
+		          << "Best scaffold N50 is " << best.n50 << " at n=" << best.n << " s=" << best.s
+		          << ".\n";
 
 		// Print assembly contiguity statistics.
 		std::cerr << '\n';

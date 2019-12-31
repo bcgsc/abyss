@@ -27,67 +27,76 @@ using namespace std;
 #define PROGRAM "ParseAligns"
 
 static const char VERSION_MESSAGE[] =
-PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Jared Simpson and Shaun Jackman.\n"
-"\n"
-"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
+    PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+            "Written by Jared Simpson and Shaun Jackman.\n"
+            "\n"
+            "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k<kmer> [OPTION]... [FILE]...\n"
-"Write pairs that map to the same contig to the file SAME.\n"
-"Write pairs that map to different contigs to standard output.\n"
-"Alignments may be read from FILE(s) or standard input.\n"
-"\n"
-" Options:\n"
-"\n"
-"  -l, --min-align=N     minimum alignment length\n"
-"  -d, --dist=DISTANCE   write distance estimates to this file\n"
-"  -f, --frag=SAME       write fragment sizes to this file\n"
-"  -h, --hist=FILE       write the fragment size histogram to FILE\n"
-"      --sam             alignments are in SAM format\n"
-"      --kaligner        alignments are in KAligner format\n"
-"  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
-"\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+    "Usage: " PROGRAM " -k<kmer> [OPTION]... [FILE]...\n"
+    "Write pairs that map to the same contig to the file SAME.\n"
+    "Write pairs that map to different contigs to standard output.\n"
+    "Alignments may be read from FILE(s) or standard input.\n"
+    "\n"
+    " Options:\n"
+    "\n"
+    "  -l, --min-align=N     minimum alignment length\n"
+    "  -d, --dist=DISTANCE   write distance estimates to this file\n"
+    "  -f, --frag=SAME       write fragment sizes to this file\n"
+    "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
+    "      --sam             alignments are in SAM format\n"
+    "      --kaligner        alignments are in KAligner format\n"
+    "  -c, --cover=COVERAGE  coverage cut-off for distance estimates\n"
+    "  -v, --verbose         display verbose output\n"
+    "      --help            display this help and exit\n"
+    "      --version         output version information and exit\n"
+    "\n"
+    "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	unsigned k; // used by DistanceEst
-	static unsigned c;
-	static int verbose;
-	static string distPath;
-	static string fragPath;
-	static string histPath;
+unsigned k; // used by DistanceEst
+static unsigned c;
+static int verbose;
+static string distPath;
+static string fragPath;
+static string histPath;
 
-	/** Input alignment format. */
-	static int inputFormat;
-	enum { KALIGNER, SAM };
+/** Input alignment format. */
+static int inputFormat;
+enum
+{
+	KALIGNER,
+	SAM
+};
 
- 	/** Output format */
- 	int format = ADJ; // used by Estimate
+/** Output format */
+int format = ADJ; // used by Estimate
 }
 
 static const char shortopts[] = "d:l:f:h:c:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum
+{
+	OPT_HELP = 1,
+	OPT_VERSION
+};
 
 static const struct option longopts[] = {
-	{ "dist",    required_argument, NULL, 'd' },
+	{ "dist", required_argument, NULL, 'd' },
 	{ "min-align", required_argument, NULL, 'l' },
-	{ "frag",    required_argument, NULL, 'f' },
-	{ "hist",    required_argument, NULL, 'h' },
-	{ "kaligner",no_argument, &opt::inputFormat, opt::KALIGNER },
-	{ "sam",     no_argument, &opt::inputFormat, opt::SAM },
-	{ "cover",   required_argument, NULL, 'c' },
-	{ "verbose", no_argument,       NULL, 'v' },
-	{ "help",    no_argument,       NULL, OPT_HELP },
-	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ "frag", required_argument, NULL, 'f' },
+	{ "hist", required_argument, NULL, 'h' },
+	{ "kaligner", no_argument, &opt::inputFormat, opt::KALIGNER },
+	{ "sam", no_argument, &opt::inputFormat, opt::SAM },
+	{ "cover", required_argument, NULL, 'c' },
+	{ "verbose", no_argument, NULL, 'v' },
+	{ "help", no_argument, NULL, OPT_HELP },
+	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
 
-static struct {
+static struct
+{
 	size_t alignments;
 	size_t bothUnaligned;
 	size_t oneUnaligned;
@@ -109,14 +118,17 @@ typedef unordered_map<string, AlignmentVector> ReadAlignMap;
 typedef unordered_map<string, EstimateRecord> EstimateMap;
 static EstimateMap estMap;
 
-static bool checkUniqueAlignments(const AlignmentVector& alignVec);
-static string makePairID(string id);
+static bool
+checkUniqueAlignments(const AlignmentVector& alignVec);
+static string
+makePairID(string id);
 
 /**
  * Return the size of the fragment demarcated by the specified
  * alignments.
  */
-static int fragmentSize(const Alignment& a0, const Alignment& a1)
+static int
+fragmentSize(const Alignment& a0, const Alignment& a1)
 {
 	assert(a0.contig == a1.contig);
 	assert(a0.isRC != a1.isRC);
@@ -128,17 +140,16 @@ static int fragmentSize(const Alignment& a0, const Alignment& a1)
 typedef pair<ContigNode, DistanceEst> Estimate;
 typedef vector<Estimate> Estimates;
 
-static void addEstimate(EstimateMap& map, const Alignment& a,
-		Estimate& est, bool reverse)
+static void
+addEstimate(EstimateMap& map, const Alignment& a, Estimate& est, bool reverse)
 {
-	//count up the number of estimates that agree
+	// count up the number of estimates that agree
 	bool placed = false;
 	bool a_isRC = a.isRC != reverse;
 	EstimateMap::iterator estimatesIt = map.find(a.contig);
 	if (estimatesIt != map.end()) {
 		Estimates& estimates = estimatesIt->second.estimates[a_isRC];
-		for (Estimates::iterator estIt = estimates.begin();
-				estIt != estimates.end(); ++estIt) {
+		for (Estimates::iterator estIt = estimates.begin(); estIt != estimates.end(); ++estIt) {
 			if (estIt->first.id() == est.first.id()) {
 				estIt->second.numPairs++;
 				estIt->second.distance += est.second.distance;
@@ -149,10 +160,10 @@ static void addEstimate(EstimateMap& map, const Alignment& a,
 	}
 	if (!placed)
 		map[a.contig].estimates[a_isRC].push_back(est);
-
 }
 
-static void doReadIntegrity(const ReadAlignMap::value_type& a)
+static void
+doReadIntegrity(const ReadAlignMap::value_type& a)
 {
 	AlignmentVector::const_iterator refAlignIter = a.second.begin();
 	unsigned firstStart, lastEnd, largestSize;
@@ -164,16 +175,14 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 	first = last = largest = *refAlignIter;
 	++refAlignIter;
 
-	//for each alignment in the vector a.second
+	// for each alignment in the vector a.second
 	for (; refAlignIter != a.second.end(); ++refAlignIter) {
 		if ((unsigned)refAlignIter->read_start_pos < firstStart) {
 			firstStart = refAlignIter->read_start_pos;
 			first = *refAlignIter;
 		}
-		if ((unsigned)(refAlignIter->read_start_pos +
-					refAlignIter->align_length) > lastEnd) {
-			lastEnd = refAlignIter->read_start_pos +
-				refAlignIter->align_length;
+		if ((unsigned)(refAlignIter->read_start_pos + refAlignIter->align_length) > lastEnd) {
+			lastEnd = refAlignIter->read_start_pos + refAlignIter->align_length;
 			last = *refAlignIter;
 		}
 		if ((unsigned)refAlignIter->align_length > largestSize) {
@@ -184,27 +193,20 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 
 	if (largest.contig != last.contig) {
 		Estimate est;
-		unsigned largest_end =
-			largest.read_start_pos + largest.align_length - opt::k;
+		unsigned largest_end = largest.read_start_pos + largest.align_length - opt::k;
 		int distance = last.read_start_pos - largest_end;
-		est.first = find_vertex(
-				last.contig, largest.isRC != last.isRC,
-				g_contigNames);
+		est.first = find_vertex(last.contig, largest.isRC != last.isRC, g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;
 		addEstimate(estMap, largest, est, false);
 	}
 
-	if (largest.contig != first.contig &&
-			largest.contig != last.contig) {
+	if (largest.contig != first.contig && largest.contig != last.contig) {
 		Estimate est;
-		unsigned first_end =
-			first.read_start_pos + first.align_length - opt::k;
+		unsigned first_end = first.read_start_pos + first.align_length - opt::k;
 		int distance = last.read_start_pos - first_end;
-		est.first = find_vertex(
-				last.contig, first.isRC != last.isRC,
-				g_contigNames);
+		est.first = find_vertex(last.contig, first.isRC != last.isRC, g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;
@@ -215,12 +217,9 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 		largest.flipQuery();
 		first.flipQuery();
 		Estimate est;
-		unsigned largest_end =
-			largest.read_start_pos + largest.align_length - opt::k;
+		unsigned largest_end = largest.read_start_pos + largest.align_length - opt::k;
 		int distance = first.read_start_pos - largest_end;
-		est.first = find_vertex(
-				first.contig, largest.isRC != first.isRC,
-				g_contigNames);
+		est.first = find_vertex(first.contig, largest.isRC != first.isRC, g_contigNames);
 		est.second.distance = distance - opt::k;
 		est.second.numPairs = 1;
 		est.second.stdDev = 0;
@@ -259,31 +258,27 @@ static void doReadIntegrity(const ReadAlignMap::value_type& a)
 #endif
 }
 
-static void generateDistFile()
+static void
+generateDistFile()
 {
 	ofstream distFile(opt::distPath.c_str());
 	assert(distFile.is_open());
-	for (EstimateMap::iterator mapIt = estMap.begin();
-			mapIt != estMap.end(); ++mapIt) {
-		//Skip empty iterators
+	for (EstimateMap::iterator mapIt = estMap.begin(); mapIt != estMap.end(); ++mapIt) {
+		// Skip empty iterators
 		assert(!mapIt->second.estimates[0].empty() || !mapIt->second.estimates[1].empty());
 		distFile << mapIt->first;
 		for (int refIsRC = 0; refIsRC <= 1; refIsRC++) {
 			if (refIsRC)
 				distFile << " ;";
 
-			for (Estimates::iterator vecIt
-					= mapIt->second.estimates[refIsRC].begin();
-					vecIt != mapIt->second.estimates[refIsRC].end(); ++vecIt) {
-				vecIt->second.distance
-					= (int)round((double)vecIt->second.distance /
-							(double)vecIt->second.numPairs);
-				if (vecIt->second.numPairs >= opt::c
-						&& vecIt->second.numPairs != 0
-						/*&& vecIt->distance > 1 - opt::k*/)
-					distFile
-						<< ' ' << get(g_contigNames, vecIt->first)
-						<< ',' << vecIt->second;
+			for (Estimates::iterator vecIt = mapIt->second.estimates[refIsRC].begin();
+			     vecIt != mapIt->second.estimates[refIsRC].end();
+			     ++vecIt) {
+				vecIt->second.distance =
+				    (int)round((double)vecIt->second.distance / (double)vecIt->second.numPairs);
+				if (vecIt->second.numPairs >= opt::c && vecIt->second.numPairs != 0
+				    /*&& vecIt->distance > 1 - opt::k*/)
+					distFile << ' ' << get(g_contigNames, vecIt->first) << ',' << vecIt->second;
 			}
 		}
 		distFile << '\n';
@@ -292,8 +287,10 @@ static void generateDistFile()
 	distFile.close();
 }
 
-static bool isSingleEnd(const string& id);
-static bool needsFlipping(const string& id);
+static bool
+isSingleEnd(const string& id);
+static bool
+needsFlipping(const string& id);
 
 /**
  * Return an alignment flipped as necessary to produce an alignment
@@ -302,14 +299,14 @@ static bool needsFlipping(const string& id);
  * alignment, so that the alignment is forward-reverse, which is
  * required by DistanceEst.
  */
-static const Alignment flipAlignment(const Alignment& a,
-		const string& id)
+static const Alignment
+flipAlignment(const Alignment& a, const string& id)
 {
 	return needsFlipping(id) ? a.flipQuery() : a;
 }
 
-static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
-		const ReadAlignMap::value_type& pair)
+static void
+handleAlignmentPair(const ReadAlignMap::value_type& curr, const ReadAlignMap::value_type& pair)
 {
 	const string& currID = curr.first;
 	const string& pairID = pair.first;
@@ -323,31 +320,24 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 		stats.bothUnaligned++;
 	} else if (curr.second.empty() || pair.second.empty()) {
 		stats.oneUnaligned++;
-	} else if (!checkUniqueAlignments(curr.second)
-			|| !checkUniqueAlignments(pair.second)) {
+	} else if (!checkUniqueAlignments(curr.second) || !checkUniqueAlignments(pair.second)) {
 		stats.numMulti++;
-	} else if (curr.second.size() > MAX_SPAN
-			&& pair.second.size() > MAX_SPAN) {
+	} else if (curr.second.size() > MAX_SPAN && pair.second.size() > MAX_SPAN) {
 		stats.numSplit++;
 	} else {
 		// Iterate over the vectors, outputting the aligments
 		bool counted = false;
-		for (AlignmentVector::const_iterator refAlignIter
-					= curr.second.begin();
-				refAlignIter != curr.second.end(); ++refAlignIter) {
-			for (AlignmentVector::const_iterator pairAlignIter
-						= pair.second.begin();
-					pairAlignIter != pair.second.end();
-					++pairAlignIter) {
-				const Alignment& a0 = flipAlignment(*refAlignIter,
-						currID);
-				const Alignment& a1 = flipAlignment(*pairAlignIter,
-						pairID);
+		for (AlignmentVector::const_iterator refAlignIter = curr.second.begin();
+		     refAlignIter != curr.second.end();
+		     ++refAlignIter) {
+			for (AlignmentVector::const_iterator pairAlignIter = pair.second.begin();
+			     pairAlignIter != pair.second.end();
+			     ++pairAlignIter) {
+				const Alignment& a0 = flipAlignment(*refAlignIter, currID);
+				const Alignment& a1 = flipAlignment(*pairAlignIter, pairID);
 
 				bool sameTarget = a0.contig == a1.contig;
-				if (sameTarget
-						&& curr.second.size() == 1
-						&& pair.second.size() == 1) {
+				if (sameTarget && curr.second.size() == 1 && pair.second.size() == 1) {
 					// Same target and the only alignment.
 					if (a0.isRC != a1.isRC) {
 						// Correctly oriented. Add this alignment to
@@ -363,11 +353,9 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 					counted = true;
 				}
 
-				bool outputSameTarget = opt::fragPath.empty()
-					&& opt::histPath.empty();
+				bool outputSameTarget = opt::fragPath.empty() && opt::histPath.empty();
 				if (!sameTarget || outputSameTarget) {
-					cout << SAMRecord(a0, a1) << '\n'
-						<< SAMRecord(a1, a0) << '\n';
+					cout << SAMRecord(a0, a1) << '\n' << SAMRecord(a1, a0) << '\n';
 					assert(cout.good());
 				}
 			}
@@ -377,7 +365,8 @@ static void handleAlignmentPair(const ReadAlignMap::value_type& curr,
 	}
 }
 
-static void printProgress(const ReadAlignMap& map)
+static void
+printProgress(const ReadAlignMap& map)
 {
 	if (opt::verbose == 0)
 		return;
@@ -390,16 +379,16 @@ static void printProgress(const ReadAlignMap& map)
 	if (stats.alignments % 1000000 == 0 || buckets != prevBuckets) {
 		prevBuckets = buckets;
 		size_t size = map.size();
-		cerr << "Read " << stats.alignments << " alignments. "
-			"Hash load: " << size << " / " << buckets
-			<< " = " << (float)size / buckets
-			<< " using " << toSI(getMemoryUsage()) << "B." << endl;
+		cerr << "Read " << stats.alignments
+		     << " alignments. "
+		        "Hash load: "
+		     << size << " / " << buckets << " = " << (float)size / buckets << " using "
+		     << toSI(getMemoryUsage()) << "B." << endl;
 	}
 }
 
-static void handleAlignment(
-		const ReadAlignMap::value_type& alignments,
-		ReadAlignMap& out)
+static void
+handleAlignment(const ReadAlignMap::value_type& alignments, ReadAlignMap& out)
 {
 	if (!isSingleEnd(alignments.first)) {
 		string pairID = makePairID(alignments.first);
@@ -408,8 +397,7 @@ static void handleAlignment(
 			handleAlignmentPair(*pairIter, alignments);
 			out.erase(pairIter);
 		} else if (!out.insert(alignments).second) {
-			cerr << "error: duplicate read ID `" << alignments.first
-				<< "'\n";
+			cerr << "error: duplicate read ID `" << alignments.first << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -421,13 +409,13 @@ static void handleAlignment(
 	printProgress(out);
 }
 
-static void readAlignment(const string& line, ReadAlignMap& out)
+static void
+readAlignment(const string& line, ReadAlignMap& out)
 {
 	istringstream s(line);
 	pair<string, AlignmentVector> v;
 	switch (opt::inputFormat) {
-	  case opt::SAM:
-	  {
+	case opt::SAM: {
 		SAMRecord sam;
 		s >> sam;
 		assert(s);
@@ -439,23 +427,21 @@ static void readAlignment(const string& line, ReadAlignMap& out)
 		if (!sam.isUnmapped())
 			v.second.push_back(sam);
 		break;
-	  }
-	  case opt::KALIGNER:
-	  {
+	}
+	case opt::KALIGNER: {
 		s >> v.first;
 		assert(s);
 		v.second.reserve(count(line.begin(), line.end(), '\t'));
-		v.second.assign(
-					istream_iterator<Alignment>(s),
-					istream_iterator<Alignment>());
+		v.second.assign(istream_iterator<Alignment>(s), istream_iterator<Alignment>());
 		assert(s.eof());
 		break;
-	  }
+	}
 	}
 	handleAlignment(v, out);
 }
 
-static void readAlignments(istream& in, ReadAlignMap* pout)
+static void
+readAlignments(istream& in, ReadAlignMap* pout)
 {
 	for (string line; getline(in, line);)
 		if (line.empty() || line[0] == '@')
@@ -465,7 +451,8 @@ static void readAlignments(istream& in, ReadAlignMap* pout)
 	assert(in.eof());
 }
 
-static void readAlignmentsFile(string path, ReadAlignMap* pout)
+static void
+readAlignmentsFile(string path, ReadAlignMap* pout)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'..." << endl;
@@ -476,51 +463,65 @@ static void readAlignmentsFile(string path, ReadAlignMap* pout)
 }
 
 /** Return the specified number formatted as a percent. */
-static string percent(size_t x, size_t n)
+static string
+percent(size_t x, size_t n)
 {
 	ostringstream ss;
 	ss << setw((int)log10(n) + 1) << x;
 	if (x > 0)
-		ss << "  " << setprecision(3) << (float)100*x/n << '%';
+		ss << "  " << setprecision(3) << (float)100 * x / n << '%';
 	return ss.str();
 }
 
-int main(int argc, char* const* argv)
+int
+main(int argc, char* const* argv)
 {
 	bool die = false;
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-			case '?': die = true; break;
-			case 'l': arg >> opt::k; break;
-			case 'c': arg >> opt::c; break;
-			case 'd': arg >> opt::distPath; break;
-			case 'f': arg >> opt::fragPath; break;
-			case 'h': arg >> opt::histPath; break;
-			case 'v': opt::verbose++; break;
-			case OPT_HELP:
-				cout << USAGE_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_VERSION:
-				cout << VERSION_MESSAGE;
-				exit(EXIT_SUCCESS);
+		case '?':
+			die = true;
+			break;
+		case 'l':
+			arg >> opt::k;
+			break;
+		case 'c':
+			arg >> opt::c;
+			break;
+		case 'd':
+			arg >> opt::distPath;
+			break;
+		case 'f':
+			arg >> opt::fragPath;
+			break;
+		case 'h':
+			arg >> opt::histPath;
+			break;
+		case 'v':
+			opt::verbose++;
+			break;
+		case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && !arg.eof()) {
-			cerr << PROGRAM ": invalid option: `-"
-				<< (char)c << optarg << "'\n";
+			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (opt::k <= 0 && opt::inputFormat == opt::KALIGNER) {
-		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
+		cerr << PROGRAM ": "
+		     << "missing -k,--kmer option\n";
 		die = true;
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM
-			<< " --help' for more information.\n";
+		cerr << "Try `" << PROGRAM << " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -531,8 +532,7 @@ int main(int argc, char* const* argv)
 
 	ReadAlignMap alignTable(1);
 	if (optind < argc) {
-		for_each(argv + optind, argv + argc,
-				bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
+		for_each(argv + optind, argv + argc, bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
 	} else {
 		if (opt::verbose > 0)
 			cerr << "Reading from standard input..." << endl;
@@ -543,21 +543,36 @@ int main(int argc, char* const* argv)
 
 	unsigned numRF = histogram.count(INT_MIN, 0);
 	unsigned numFR = histogram.count(1, INT_MAX);
-	size_t sum = alignTable.size()
-		+ stats.bothUnaligned + stats.oneUnaligned
-		+ numFR + numRF + stats.numFF
-		+ stats.numDifferent + stats.numMulti + stats.numSplit;
-	cerr <<
-		"Mateless   " << percent(alignTable.size(), sum) << "\n"
-		"Unaligned  " << percent(stats.bothUnaligned, sum) << "\n"
-		"Singleton  " << percent(stats.oneUnaligned, sum) << "\n"
-		"FR         " << percent(numFR, sum) << "\n"
-		"RF         " << percent(numRF, sum) << "\n"
-		"FF         " << percent(stats.numFF, sum) << "\n"
-		"Different  " << percent(stats.numDifferent, sum) << "\n"
-		"Multimap   " << percent(stats.numMulti, sum) << "\n"
-		"Split      " << percent(stats.numSplit, sum) << "\n"
-		"Total      " << sum << endl;
+	size_t sum = alignTable.size() + stats.bothUnaligned + stats.oneUnaligned + numFR + numRF +
+	             stats.numFF + stats.numDifferent + stats.numMulti + stats.numSplit;
+	cerr << "Mateless   " << percent(alignTable.size(), sum)
+	     << "\n"
+	        "Unaligned  "
+	     << percent(stats.bothUnaligned, sum)
+	     << "\n"
+	        "Singleton  "
+	     << percent(stats.oneUnaligned, sum)
+	     << "\n"
+	        "FR         "
+	     << percent(numFR, sum)
+	     << "\n"
+	        "RF         "
+	     << percent(numRF, sum)
+	     << "\n"
+	        "FF         "
+	     << percent(stats.numFF, sum)
+	     << "\n"
+	        "Different  "
+	     << percent(stats.numDifferent, sum)
+	     << "\n"
+	        "Multimap   "
+	     << percent(stats.numMulti, sum)
+	     << "\n"
+	        "Split      "
+	     << percent(stats.numSplit, sum)
+	     << "\n"
+	        "Total      "
+	     << sum << endl;
 
 	if (!opt::distPath.empty())
 		generateDistFile();
@@ -580,17 +595,25 @@ int main(int argc, char* const* argv)
 	histogram.removeOutliers();
 	Histogram h = histogram.trimFraction(0.0001);
 	if (opt::verbose > 0)
-		cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
-			"median: " << setprecision(4) << h.median() << " "
-			"sd: " << setprecision(4) << h.sd() << " "
-			"n: " << h.size() << " "
-			"min: " << h.minimum() << " max: " << h.maximum() << '\n'
-			<< h.barplot() << endl;
+		cerr << "Stats mean: " << setprecision(4) << h.mean()
+		     << " "
+		        "median: "
+		     << setprecision(4) << h.median()
+		     << " "
+		        "sd: "
+		     << setprecision(4) << h.sd()
+		     << " "
+		        "n: "
+		     << h.size()
+		     << " "
+		        "min: "
+		     << h.minimum() << " max: " << h.maximum() << '\n'
+		     << h.barplot() << endl;
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
 		cerr << "error: The mate pairs of this library are oriented "
-			"forward-forward (FF), which is not supported by ABySS."
-			<< endl;
+		        "forward-forward (FF), which is not supported by ABySS."
+		     << endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -599,7 +622,8 @@ int main(int argc, char* const* argv)
 
 /** Return whether any k-mer in the query is aligned more than once.
  */
-static bool checkUniqueAlignments(const AlignmentVector& alignVec)
+static bool
+checkUniqueAlignments(const AlignmentVector& alignVec)
 {
 	assert(!alignVec.empty());
 	if (alignVec.size() == 1)
@@ -608,11 +632,9 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 	unsigned nKmer = alignVec.front().read_length - opt::k + 1;
 	vector<unsigned> coverage(nKmer);
 
-	for (AlignmentVector::const_iterator iter = alignVec.begin();
-			iter != alignVec.end(); ++iter) {
+	for (AlignmentVector::const_iterator iter = alignVec.begin(); iter != alignVec.end(); ++iter) {
 		assert((unsigned)iter->align_length >= opt::k);
-		unsigned end = iter->read_start_pos
-			+ iter->align_length - opt::k + 1;
+		unsigned end = iter->read_start_pos + iter->align_length - opt::k + 1;
 		assert(end <= nKmer);
 		for (unsigned i = iter->read_start_pos; i < end; i++)
 			coverage[i]++;
@@ -624,31 +646,30 @@ static bool checkUniqueAlignments(const AlignmentVector& alignVec)
 	return true;
 }
 
-static bool replaceSuffix(string& s,
-		const string& suffix0, const string& suffix1)
+static bool
+replaceSuffix(string& s, const string& suffix0, const string& suffix1)
 {
 	if (endsWith(s, suffix0)) {
-		s.replace(s.length() - suffix0.length(), string::npos,
-				suffix1);
+		s.replace(s.length() - suffix0.length(), string::npos, suffix1);
 		return true;
 	} else if (endsWith(s, suffix1)) {
-		s.replace(s.length() - suffix1.length(), string::npos,
-				suffix0);
+		s.replace(s.length() - suffix1.length(), string::npos, suffix0);
 		return true;
 	} else
 		return false;
 }
 
 /** Return true if the specified read ID is of a single-end read. */
-static bool isSingleEnd(const string& id)
+static bool
+isSingleEnd(const string& id)
 {
 	unsigned l = id.length();
-	return endsWith(id, ".fn")
-		|| (l > 6 && id.substr(l-6, 5) == ".part");
+	return endsWith(id, ".fn") || (l > 6 && id.substr(l - 6, 5) == ".part");
 }
 
 /** Return the mate ID of the specified read ID. */
-static string makePairID(string id)
+static string
+makePairID(string id)
 {
 	if (equal(id.begin(), id.begin() + 3, "SRR"))
 		return id;
@@ -656,27 +677,44 @@ static string makePairID(string id)
 	assert(!id.empty());
 	char& c = id[id.length() - 1];
 	switch (c) {
-		case '1': c = '2'; return id;
-		case '2': c = '1'; return id;
-		case 'A': c = 'B'; return id;
-		case 'B': c = 'A'; return id;
-		case 'F': c = 'R'; return id;
-		case 'R': c = 'F'; return id;
-		case 'f': c = 'r'; return id;
-		case 'r': c = 'f'; return id;
+	case '1':
+		c = '2';
+		return id;
+	case '2':
+		c = '1';
+		return id;
+	case 'A':
+		c = 'B';
+		return id;
+	case 'B':
+		c = 'A';
+		return id;
+	case 'F':
+		c = 'R';
+		return id;
+	case 'R':
+		c = 'F';
+		return id;
+	case 'f':
+		c = 'r';
+		return id;
+	case 'r':
+		c = 'f';
+		return id;
 	}
 
-	if (replaceSuffix(id, "forward", "reverse")
-				|| replaceSuffix(id, "F3", "R3"))
+	if (replaceSuffix(id, "forward", "reverse") || replaceSuffix(id, "F3", "R3"))
 		return id;
 
-	cerr << "error: read ID `" << id << "' must end in one of\n"
-		"\t1 and 2 or A and B or F and R or"
-		" F3 and R3 or forward and reverse\n";
+	cerr << "error: read ID `" << id
+	     << "' must end in one of\n"
+	        "\t1 and 2 or A and B or F and R or"
+	        " F3 and R3 or forward and reverse\n";
 	exit(EXIT_FAILURE);
 }
 
-static bool needsFlipping(const string& id)
+static bool
+needsFlipping(const string& id)
 {
 	return endsWith(id, "F3");
 }

@@ -1,35 +1,40 @@
+#include "Assembly/Options.h"
 #if PAIRED_DBG
-# include "PairedDBG/SequenceCollection.h"
-# include "PairedDBG/PairedDBGAlgorithms.h"
+#include "PairedDBG/PairedDBGAlgorithms.h"
+#include "PairedDBG/SequenceCollection.h"
 #else
-# include "Assembly/SequenceCollection.h"
+#include "Assembly/SequenceCollection.h"
 #endif
 #include "Assembly/AssemblyAlgorithms.h"
 #include "Assembly/DotWriter.h"
+#include "DataBase/DB.h"
+
 #include <algorithm>
 #include <cstdio> // for setvbuf
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "DataBase/DB.h"
 
 using namespace std;
 
 DB db;
 
-static void removeLowCoverageContigs(SequenceCollectionHash& g)
+static void
+removeLowCoverageContigs(SequenceCollectionHash& g)
 {
 	AssemblyAlgorithms::markAmbiguous(&g);
 
 	cout << "Removing low-coverage contigs "
-			"(mean k-mer coverage < " << opt::coverage << ")\n";
+	        "(mean k-mer coverage < "
+	     << opt::coverage << ")\n";
 	AssemblyAlgorithms::assemble(&g);
 	AssemblyAlgorithms::splitAmbiguous(&g);
 
 	opt::coverage = 0;
 }
 
-static void popBubbles(SequenceCollectionHash& g)
+static void
+popBubbles(SequenceCollectionHash& g)
 {
 	cout << "Popping bubbles" << endl;
 	ofstream out;
@@ -39,8 +44,8 @@ static void popBubbles(SequenceCollectionHash& g)
 	cout << "Removed " << numPopped << " bubbles\n";
 }
 
-static void write_graph(const string& path,
-		const SequenceCollectionHash& c)
+static void
+write_graph(const string& path, const SequenceCollectionHash& c)
 {
 	if (path.empty())
 		return;
@@ -49,16 +54,18 @@ static void write_graph(const string& path,
 	DotWriter::write(out, c);
 }
 
-static void assemble(const string& pathIn, const string& pathOut)
+static void
+assemble(const string& pathIn, const string& pathOut)
 {
 	Timer timer(__func__);
 	SequenceCollectionHash g;
 
 	if (!pathIn.empty())
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
-	for_each(opt::inFiles.begin(), opt::inFiles.end(), bind1st(
-			ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>),
-			&g));
+	for_each(
+	    opt::inFiles.begin(),
+	    opt::inFiles.end(),
+	    bind1st(ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>), &g));
 	size_t numLoaded = g.size();
 	if (!opt::db.empty())
 		addToDb(db, "loadedKmer", numLoaded);
@@ -70,16 +77,14 @@ static void assemble(const string& pathIn, const string& pathOut)
 		exit(EXIT_FAILURE);
 	}
 
-	AssemblyAlgorithms::setCoverageParameters(
-			AssemblyAlgorithms::coverageHistogram(g));
+	AssemblyAlgorithms::setCoverageParameters(AssemblyAlgorithms::coverageHistogram(g));
 
 	if (opt::kc > 0) {
 		cout << "Minimum k-mer multiplicity kc is " << opt::kc << endl;
 		cout << "Removing low-multiplicity k-mers" << endl;
 		size_t removed = AssemblyAlgorithms::applyKmerCoverageThreshold(g, opt::kc);
-		cout << "Removed " <<  removed
-			<< " low-multiplicity k-mers, " << g.size()
-			<< " k-mers remaining" << std::endl;
+		cout << "Removed " << removed << " low-multiplicity k-mers, " << g.size()
+		     << " k-mers remaining" << std::endl;
 	}
 
 	cout << "Generating adjacency" << endl;
@@ -122,13 +127,14 @@ erode:
 
 	size_t numAssembled = g.size();
 	size_t numRemoved = numLoaded - numAssembled;
-	cout << "Removed " << numRemoved << " k-mer.\n"
-		"The signal-to-noise ratio (SNR) is "
-		<< 10 * log10((double)numAssembled / numRemoved)
-		<< " dB.\n";
+	cout << "Removed " << numRemoved
+	     << " k-mer.\n"
+	        "The signal-to-noise ratio (SNR) is "
+	     << 10 * log10((double)numAssembled / numRemoved) << " dB.\n";
 }
 
-int main(int argc, char* const* argv)
+int
+main(int argc, char* const* argv)
 {
 	Timer timer("Total");
 
@@ -142,16 +148,16 @@ int main(int argc, char* const* argv)
 
 	bool krange = opt::kMin != opt::kMax;
 	if (krange)
-		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax
-				<< ":" << opt::kStep << endl;
+		cout << "Assembling k=" << opt::kMin << "-" << opt::kMax << ":" << opt::kStep << endl;
 
 	if (!opt::db.empty()) {
-		init(db,
-				opt::getUvalue(),
-				opt::getVvalue(),
-				"ABYSS",
-				opt::getCommand(),
-				opt::getMetaValue());
+		init(
+		    db,
+		    opt::getUvalue(),
+		    opt::getVvalue(),
+		    "ABYSS",
+		    opt::getCommand(),
+		    opt::getMetaValue());
 		addToDb(db, "SS", opt::ss);
 		addToDb(db, "k", opt::kmerSize);
 		addToDb(db, "singleK", opt::singleKmerSize);
@@ -175,7 +181,7 @@ int main(int argc, char* const* argv)
 			opt::erodeStrand = (unsigned)-1;
 			opt::coverage = -1;
 			opt::trimLen = k;
-			opt::bubbleLen = 3*k;
+			opt::bubbleLen = 3 * k;
 		}
 
 		ostringstream k0, k1;

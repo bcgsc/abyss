@@ -1,24 +1,26 @@
-#include "config.h"
 #include "Common/Options.h"
 #include "ContigNode.h"
 #include "ContigPath.h"
 #include "ContigProperties.h"
+#include "DataBase/DB.h"
+#include "DataBase/Options.h"
 #include "DataLayer/Options.h"
 #include "Dictionary.h"
 #include "FastaReader.h"
-#include "Histogram.h"
-#include "IOUtil.h"
-#include "MemoryUtil.h"
-#include "smith_waterman.h"
-#include "Sequence.h"
-#include "StringUtil.h"
-#include "Uncompress.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
 #include "Graph/Options.h"
+#include "Histogram.h"
+#include "IOUtil.h"
+#include "MemoryUtil.h"
+#include "Sequence.h"
+#include "StringUtil.h"
+#include "Uncompress.h"
+#include "config.h"
+#include "smith_waterman.h"
 #include <algorithm>
 #include <cstdlib>
 #include <fstream>
@@ -26,8 +28,6 @@
 #include <iostream>
 #include <limits>
 #include <vector>
-#include "DataBase/Options.h"
-#include "DataBase/DB.h"
 
 using namespace std;
 
@@ -36,104 +36,116 @@ using namespace std;
 DB db;
 
 static const char VERSION_MESSAGE[] =
-PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman.\n"
-"\n"
-"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
+    PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+            "Written by Shaun Jackman.\n"
+            "\n"
+            "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... FASTA [OVERLAP] PATH\n"
-"Merge paths of contigs to create larger contigs.\n"
-"\n"
-" Arguments:\n"
-"\n"
-"  FASTA    contigs in FASTA format\n"
-"  OVERLAP  contig overlap graph\n"
-"  PATH     sequences of contig IDs\n"
-"\n"
-" Options:\n"
-"\n"
-"  -k, --kmer=KMER_SIZE  k-mer size\n"
-"  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
-"  -g, --graph=FILE      write the contig overlap graph to FILE\n"
-"      --merged          output only merged contigs\n"
-"      --adj             output the graph in adj format\n"
-"      --dot             output the graph in dot format [default]\n"
-"      --dot-meancov     same as above but give the mean coverage\n"
-"      --gfa             output the graph in GFA1 format\n"
-"      --gfa1            output the graph in GFA1 format\n"
-"      --gfa2            output the graph in GFA2 format\n"
-"      --gv              output the graph in GraphViz format\n"
-"      --sam             output the graph in SAM format\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
-"      --db=FILE         specify path of database repository in FILE\n"
-"      --library=NAME    specify library NAME for database\n"
-"      --strain=NAME     specify strain NAME for database\n"
-"      --species=NAME    specify species NAME for database\n"
-"\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+    "Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... FASTA [OVERLAP] PATH\n"
+    "Merge paths of contigs to create larger contigs.\n"
+    "\n"
+    " Arguments:\n"
+    "\n"
+    "  FASTA    contigs in FASTA format\n"
+    "  OVERLAP  contig overlap graph\n"
+    "  PATH     sequences of contig IDs\n"
+    "\n"
+    " Options:\n"
+    "\n"
+    "  -k, --kmer=KMER_SIZE  k-mer size\n"
+    "  -o, --out=FILE        output the merged contigs to FILE [stdout]\n"
+    "  -g, --graph=FILE      write the contig overlap graph to FILE\n"
+    "      --merged          output only merged contigs\n"
+    "      --adj             output the graph in adj format\n"
+    "      --dot             output the graph in dot format [default]\n"
+    "      --dot-meancov     same as above but give the mean coverage\n"
+    "      --gfa             output the graph in GFA1 format\n"
+    "      --gfa1            output the graph in GFA1 format\n"
+    "      --gfa2            output the graph in GFA2 format\n"
+    "      --gv              output the graph in GraphViz format\n"
+    "      --sam             output the graph in SAM format\n"
+    "  -v, --verbose         display verbose output\n"
+    "      --help            display this help and exit\n"
+    "      --version         output version information and exit\n"
+    "      --db=FILE         specify path of database repository in FILE\n"
+    "      --library=NAME    specify library NAME for database\n"
+    "      --strain=NAME     specify strain NAME for database\n"
+    "      --species=NAME    specify species NAME for database\n"
+    "\n"
+    "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string db;
-	dbVars metaVars;
-	unsigned k; // used by ContigProperties
-	unsigned pathCount; // num of initial paths
+string db;
+dbVars metaVars;
+unsigned k;         // used by ContigProperties
+unsigned pathCount; // num of initial paths
 
-	/** Output FASTA path. */
-	static string out = "-";
+/** Output FASTA path. */
+static string out = "-";
 
-	/** Output graph path. */
-	static string graphPath;
+/** Output graph path. */
+static string graphPath;
 
-	/** Output graph format. */
-	int format = DOT;
+/** Output graph format. */
+int format = DOT;
 
-	/** Output only merged contigs. */
-	int onlyMerged;
+/** Output only merged contigs. */
+int onlyMerged;
 
-	/** Minimum overlap. */
-	static unsigned minOverlap = 20;
+/** Minimum overlap. */
+static unsigned minOverlap = 20;
 
-	/** Minimum alignment identity. */
-	static float minIdentity = 0.9;
+/** Minimum alignment identity. */
+static float minIdentity = 0.9;
 }
 
 static const char shortopts[] = "g:k:o:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-//enum { OPT_HELP = 1, OPT_VERSION };
-
-static const struct option longopts[] = {
-	{ "adj", no_argument, &opt::format, ADJ },
-	{ "dot", no_argument, &opt::format, DOT },
-	{ "dot-meancov", no_argument, &opt::format, DOT_MEANCOV },
-	{ "gfa", no_argument, &opt::format, GFA1 },
-	{ "gfa1", no_argument, &opt::format, GFA1 },
-	{ "gfa2", no_argument, &opt::format, GFA2 },
-	{ "gv", no_argument, &opt::format, DOT },
-	{ "sam", no_argument, &opt::format, SAM },
-	{ "graph", required_argument, NULL, 'g' },
-	{ "kmer",        required_argument, NULL, 'k' },
-	{ "merged",      no_argument,       &opt::onlyMerged, 1 },
-	{ "out",         required_argument, NULL, 'o' },
-	{ "path",        required_argument, NULL, 'p' },
-	{ "verbose",     no_argument,       NULL, 'v' },
-	{ "help",        no_argument,       NULL, OPT_HELP },
-	{ "version",     no_argument,       NULL, OPT_VERSION },
-	{ "db",          required_argument, NULL, OPT_DB },
-	{ "library",     required_argument, NULL, OPT_LIBRARY },
-	{ "strain",      required_argument, NULL, OPT_STRAIN },
-	{ "species",     required_argument, NULL, OPT_SPECIES },
-	{ NULL, 0, NULL, 0 }
+enum
+{
+	OPT_HELP = 1,
+	OPT_VERSION,
+	OPT_DB,
+	OPT_LIBRARY,
+	OPT_STRAIN,
+	OPT_SPECIES
 };
+// enum { OPT_HELP = 1, OPT_VERSION };
+
+static const struct option longopts[] = { { "adj", no_argument, &opt::format, ADJ },
+	                                      { "dot", no_argument, &opt::format, DOT },
+	                                      { "dot-meancov", no_argument, &opt::format, DOT_MEANCOV },
+	                                      { "gfa", no_argument, &opt::format, GFA1 },
+	                                      { "gfa1", no_argument, &opt::format, GFA1 },
+	                                      { "gfa2", no_argument, &opt::format, GFA2 },
+	                                      { "gv", no_argument, &opt::format, DOT },
+	                                      { "sam", no_argument, &opt::format, SAM },
+	                                      { "graph", required_argument, NULL, 'g' },
+	                                      { "kmer", required_argument, NULL, 'k' },
+	                                      { "merged", no_argument, &opt::onlyMerged, 1 },
+	                                      { "out", required_argument, NULL, 'o' },
+	                                      { "path", required_argument, NULL, 'p' },
+	                                      { "verbose", no_argument, NULL, 'v' },
+	                                      { "help", no_argument, NULL, OPT_HELP },
+	                                      { "version", no_argument, NULL, OPT_VERSION },
+	                                      { "db", required_argument, NULL, OPT_DB },
+	                                      { "library", required_argument, NULL, OPT_LIBRARY },
+	                                      { "strain", required_argument, NULL, OPT_STRAIN },
+	                                      { "species", required_argument, NULL, OPT_SPECIES },
+	                                      { NULL, 0, NULL, 0 } };
 
 /* A contig sequence. */
-struct Contig {
+struct Contig
+{
 	Contig(const string& comment, const string& seq)
-		: comment(comment), seq(seq) { }
-	Contig(const FastaRecord& o) : comment(o.comment), seq(o.seq) { }
+	  : comment(comment)
+	  , seq(seq)
+	{}
+	Contig(const FastaRecord& o)
+	  : comment(o.comment)
+	  , seq(o.seq)
+	{}
 	string comment;
 	string seq;
 };
@@ -144,7 +156,8 @@ typedef vector<Contig> Contigs;
 /** Return the sequence of the specified contig node. The sequence
  * may be ambiguous or reverse complemented.
  */
-static Sequence sequence(const Contigs& contigs, const ContigNode& id)
+static Sequence
+sequence(const Contigs& contigs, const ContigNode& id)
 {
 	if (id.ambiguous()) {
 		string s(id.ambiguousSequence());
@@ -160,22 +173,22 @@ static Sequence sequence(const Contigs& contigs, const ContigNode& id)
 /** Return a consensus sequence of a and b.
  * @return an empty string if a consensus could not be found
  */
-static string createConsensus(const Sequence& a, const Sequence& b)
+static string
+createConsensus(const Sequence& a, const Sequence& b)
 {
 	assert(a.length() == b.length());
 	if (a == b)
 		return a;
 	string s;
 	s.reserve(a.length());
-	for (string::const_iterator ita = a.begin(), itb = b.begin();
-			ita != a.end(); ++ita, ++itb) {
+	for (string::const_iterator ita = a.begin(), itb = b.begin(); ita != a.end(); ++ita, ++itb) {
 		bool mask = islower(*ita) || islower(*itb);
 		char ca = toupper(*ita), cb = toupper(*itb);
-		char c = ca == cb ? ca
-			: ca == 'N' ? cb
-			: cb == 'N' ? ca
-			: ambiguityIsSubset(ca, cb) ? ambiguityOr(ca, cb)
-			: 'x';
+		char c = ca == cb
+		             ? ca
+		             : ca == 'N'
+		                   ? cb
+		                   : cb == 'N' ? ca : ambiguityIsSubset(ca, cb) ? ambiguityOr(ca, cb) : 'x';
 		if (c == 'x')
 			return string("");
 		s += mask ? tolower(c) : c;
@@ -183,25 +196,28 @@ static string createConsensus(const Sequence& a, const Sequence& b)
 	return s;
 }
 
-typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance>> Graph;
 typedef graph_traits<Graph>::vertex_descriptor vertex_descriptor;
 
 /** Return the properties of the specified vertex, unless u is
  * ambiguous, in which case return the length of the ambiguous
  * sequence.
  */
-static inline
-ContigProperties get(vertex_bundle_t, const Graph& g, ContigNode u)
+static inline ContigProperties
+get(vertex_bundle_t, const Graph& g, ContigNode u)
 {
-	return u.ambiguous()
-		? ContigProperties(u.length() + opt::k - 1, 0)
-		: g[u];
+	return u.ambiguous() ? ContigProperties(u.length() + opt::k - 1, 0) : g[u];
 }
 
 /** Append the sequence of contig v to seq. */
-static void mergeContigs(const Graph& g, const Contigs& contigs,
-		vertex_descriptor u, vertex_descriptor v,
-		Sequence& seq, const ContigPath& path)
+static void
+mergeContigs(
+    const Graph& g,
+    const Contigs& contigs,
+    vertex_descriptor u,
+    vertex_descriptor v,
+    Sequence& seq,
+    const ContigPath& path)
 {
 	int d = get(edge_bundle, g, u, v).distance;
 	assert(d < 0);
@@ -235,14 +251,13 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 		unsigned matches = o.overlap_match;
 		const string& consensus = o.overlap_str;
 		float identity = (float)matches / consensus.size();
-		good = matches >= opt::minOverlap
-			&& identity >= opt::minIdentity;
+		good = matches >= opt::minOverlap && identity >= opt::minIdentity;
 		if (opt::verbose > 2)
-			cerr << matches << " / " << consensus.size()
-				<< " = " << identity
-				<< (matches < opt::minOverlap ? " (too few)"
-						: identity < opt::minIdentity ? " (too low)"
-						: " (good)") << '\n';
+			cerr << matches << " / " << consensus.size() << " = " << identity
+			     << (matches < opt::minOverlap
+			             ? " (too few)"
+			             : identity < opt::minIdentity ? " (too low)" : " (good)")
+			     << '\n';
 	}
 	if (good) {
 		assert(overlaps.size() == 1);
@@ -252,16 +267,18 @@ static void mergeContigs(const Graph& g, const Contigs& contigs,
 		seq += Sequence(s, o.overlap_h_pos + 1);
 	} else {
 		cerr << "warning: the head of " << get(vertex_name, g, v)
-			<< " does not match the tail of the previous contig\n"
-			<< ao << '\n' << bo << '\n' << path << endl;
+		     << " does not match the tail of the previous contig\n"
+		     << ao << '\n'
+		     << bo << '\n'
+		     << path << endl;
 		seq += 'n';
 		seq += s;
 	}
 }
 
 /** Return a FASTA comment for the specified path. */
-static void pathToComment(ostream& out,
-		const Graph& g, const ContigPath& path)
+static void
+pathToComment(ostream& out, const Graph& g, const ContigPath& path)
 {
 	out << get(vertex_name, g, path.front());
 	if (path.size() == 1)
@@ -274,20 +291,19 @@ static void pathToComment(ostream& out,
 }
 
 /** Merge the specified path. */
-static Contig mergePath(const Graph& g, const Contigs& contigs,
-		const ContigPath& path)
+static Contig
+mergePath(const Graph& g, const Contigs& contigs, const ContigPath& path)
 {
 	Sequence seq;
 	unsigned coverage = 0;
-	for (ContigPath::const_iterator it = path.begin();
-			it != path.end(); ++it) {
+	for (ContigPath::const_iterator it = path.begin(); it != path.end(); ++it) {
 		if (!it->ambiguous())
 			coverage += g[*it].coverage;
 		if (seq.empty()) {
 			seq = sequence(contigs, *it);
 		} else {
 			assert(it != path.begin());
-			mergeContigs(g, contigs, *(it-1), *it, seq, path);
+			mergeContigs(g, contigs, *(it - 1), *it, seq, path);
 		}
 	}
 	ostringstream ss;
@@ -302,8 +318,8 @@ typedef vector<ContigPath> ContigPaths;
 /** Read contig paths from the specified file.
  * @param ids [out] the string ID of the paths
  */
-static ContigPaths readPaths(const string& inPath,
-		vector<string>* ids = NULL)
+static ContigPaths
+readPaths(const string& inPath, vector<string>* ids = NULL)
 {
 	if (ids != NULL)
 		assert(ids->empty());
@@ -325,13 +341,16 @@ static ContigPaths readPaths(const string& inPath,
 
 		++count;
 		if (opt::verbose > 1 && count % 1000000 == 0)
-			cerr << "Read " << count << " paths. "
-				"Using " << toSI(getMemoryUsage())
-				<< "B of memory.\n";
+			cerr << "Read " << count
+			     << " paths. "
+			        "Using "
+			     << toSI(getMemoryUsage()) << "B of memory.\n";
 	}
 	if (opt::verbose > 0)
-		cerr << "Read " << count << " paths. "
-			"Using " << toSI(getMemoryUsage()) << "B of memory.\n";
+		cerr << "Read " << count
+		     << " paths. "
+		        "Using "
+		     << toSI(getMemoryUsage()) << "B of memory.\n";
 	if (!opt::db.empty())
 		addToDb(db, "Init_paths", count);
 	opt::pathCount = count;
@@ -341,12 +360,11 @@ static ContigPaths readPaths(const string& inPath,
 
 /** Finds all contigs used in each path in paths, and
  * marks them as seen in the vector seen. */
-static void seenContigs(vector<bool>& seen, const ContigPaths& paths)
+static void
+seenContigs(vector<bool>& seen, const ContigPaths& paths)
 {
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it)
-		for (ContigPath::const_iterator itc = it->begin();
-				itc != it->end(); ++itc)
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it)
+		for (ContigPath::const_iterator itc = it->begin(); itc != it->end(); ++itc)
 			if (itc->id() < seen.size())
 				seen[itc->id()] = true;
 }
@@ -354,14 +372,12 @@ static void seenContigs(vector<bool>& seen, const ContigPaths& paths)
 /** Mark contigs for removal. An empty path indicates that a contig
  * should be removed.
  */
-static void markRemovedContigs(vector<bool>& marked,
-		const vector<string>& pathIDs, const ContigPaths& paths)
+static void
+markRemovedContigs(vector<bool>& marked, const vector<string>& pathIDs, const ContigPaths& paths)
 {
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		if (it->empty()) {
-			size_t i = get(g_contigNames,
-					pathIDs[it - paths.begin()]);
+			size_t i = get(g_contigNames, pathIDs[it - paths.begin()]);
 			assert(i < marked.size());
 			marked[i] = true;
 		}
@@ -369,16 +385,18 @@ static void markRemovedContigs(vector<bool>& marked,
 }
 
 /** Output the updated overlap graph. */
-static void outputGraph(Graph& g,
-		const vector<string>& pathIDs, const ContigPaths& paths,
-		const string& commandLine)
+static void
+outputGraph(
+    Graph& g,
+    const vector<string>& pathIDs,
+    const ContigPaths& paths,
+    const string& commandLine)
 {
 	typedef graph_traits<Graph>::vertex_descriptor V;
 
 	// Add the path vertices.
 	g_contigNames.unlock();
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (!path.empty()) {
@@ -389,15 +407,14 @@ static void outputGraph(Graph& g,
 	g_contigNames.lock();
 
 	// Remove the vertices that are used in paths.
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		const ContigPath& path = *it;
 		const string& id = pathIDs[it - paths.begin()];
 		if (path.empty()) {
 			remove_vertex(find_vertex(id, false, g), g);
 		} else {
-			remove_vertex_if(g, path.begin(), path.end(),
-					not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+			remove_vertex_if(
+			    g, path.begin(), path.end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
 		}
 	}
 
@@ -414,7 +431,8 @@ static void outputGraph(Graph& g,
 		printGraphStats(cerr, g);
 }
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
 	opt::trimMasked = false;
 
@@ -422,7 +440,7 @@ int main(int argc, char** argv)
 	{
 		ostringstream ss;
 		char** last = argv + argc - 1;
-		copy(argv, last, ostream_iterator<const char *>(ss, " "));
+		copy(argv, last, ostream_iterator<const char*>(ss, " "));
 		ss << *last;
 		commandLine = ss.str();
 	}
@@ -431,33 +449,45 @@ int main(int argc, char** argv)
 		opt::metaVars.resize(3);
 
 	bool die = false;
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-			case '?': die = true; break;
-			case 'g': arg >> opt::graphPath; break;
-			case 'k': arg >> opt::k; break;
-			case 'o': arg >> opt::out; break;
-			case 'v': opt::verbose++; break;
-			case OPT_HELP:
-				cout << USAGE_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_VERSION:
-				cout << VERSION_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_DB:
-				arg >> opt::db; break;
-			case OPT_LIBRARY:
-				arg >> opt::metaVars[0]; break;
-			case OPT_STRAIN:
-				arg >> opt::metaVars[1]; break;
-			case OPT_SPECIES:
-				arg >> opt::metaVars[2]; break;
+		case '?':
+			die = true;
+			break;
+		case 'g':
+			arg >> opt::graphPath;
+			break;
+		case 'k':
+			arg >> opt::k;
+			break;
+		case 'o':
+			arg >> opt::out;
+			break;
+		case 'v':
+			opt::verbose++;
+			break;
+		case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
+		case OPT_DB:
+			arg >> opt::db;
+			break;
+		case OPT_LIBRARY:
+			arg >> opt::metaVars[0];
+			break;
+		case OPT_STRAIN:
+			arg >> opt::metaVars[1];
+			break;
+		case OPT_SPECIES:
+			arg >> opt::metaVars[2];
+			break;
 		}
 		if (optarg != NULL && !arg.eof()) {
-			cerr << PROGRAM ": invalid option: `-"
-				<< (char)c << optarg << "'\n";
+			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -468,7 +498,8 @@ int main(int argc, char** argv)
 	}
 
 	if (opt::out.empty()) {
-		cerr << PROGRAM ": " << "missing -o,--out option\n";
+		cerr << PROGRAM ": "
+		     << "missing -o,--out option\n";
 		die = true;
 	}
 
@@ -483,19 +514,12 @@ int main(int argc, char** argv)
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM
-			<< " --help' for more information.\n";
+		cerr << "Try `" << PROGRAM << " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
 	if (!opt::db.empty()) {
-		init(db,
-				opt::db,
-				opt::verbose,
-				PROGRAM,
-				opt::getCommand(argc, argv),
-				opt::metaVars
-		);
+		init(db, opt::db, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 		addToDb(db, "K", opt::k);
 	}
 
@@ -513,9 +537,10 @@ int main(int argc, char** argv)
 		fin >> g;
 		assert(fin.eof());
 		if (opt::verbose > 0)
-			cerr << "Read " << num_vertices(g) << " vertices. "
-				"Using " << toSI(getMemoryUsage())
-				<< "B of memory.\n";
+			cerr << "Read " << num_vertices(g)
+			     << " vertices. "
+			        "Using "
+			     << toSI(getMemoryUsage()) << "B of memory.\n";
 		if (!opt::db.empty()) {
 			addToDb(db, "Init_vertices", num_vertices(g));
 			addToDb(db, "Init_edges", num_edges(g));
@@ -531,12 +556,11 @@ int main(int argc, char** argv)
 		unsigned count = 0;
 		FastaReader in(contigFile, FastaReader::NO_FOLD_CASE);
 		for (FastaRecord rec; in >> rec;) {
-			if (!adjPath.empty()
-					&& g_contigNames.count(rec.id) == 0)
+			if (!adjPath.empty() && g_contigNames.count(rec.id) == 0)
 				continue;
 			if (adjPath.empty()) {
-				graph_traits<Graph>::vertex_descriptor
-					u = add_vertex(ContigProperties(rec.seq.length(), 0), g);
+				graph_traits<Graph>::vertex_descriptor u =
+				    add_vertex(ContigProperties(rec.seq.length(), 0), g);
 				put(vertex_name, g, u, rec.id);
 			}
 			assert(get(g_contigNames, rec.id) == contigs.size());
@@ -544,14 +568,16 @@ int main(int argc, char** argv)
 
 			++count;
 			if (opt::verbose > 1 && count % 1000000 == 0)
-				cerr << "Read " << count << " sequences. "
-					"Using " << toSI(getMemoryUsage())
-					<< "B of memory.\n";
+				cerr << "Read " << count
+				     << " sequences. "
+				        "Using "
+				     << toSI(getMemoryUsage()) << "B of memory.\n";
 		}
 		if (opt::verbose > 0)
-			cerr << "Read " << count << " sequences. "
-				"Using " << toSI(getMemoryUsage())
-				<< "B of memory.\n";
+			cerr << "Read " << count
+			     << " sequences. "
+			        "Using "
+			     << toSI(getMemoryUsage()) << "B of memory.\n";
 		if (!opt::db.empty())
 			addToDb(db, "Init_seq", count);
 		assert(in.eof());
@@ -571,12 +597,10 @@ int main(int argc, char** argv)
 	// Output those contigs that were not seen in a path.
 	Histogram lengthHistogram;
 	ofstream fout;
-	ostream& out = opt::out == "-" ? cout
-		: (fout.open(opt::out.c_str()), fout);
+	ostream& out = opt::out == "-" ? cout : (fout.open(opt::out.c_str()), fout);
 	assert_good(out, opt::out);
 	if (!opt::onlyMerged) {
-		for (Contigs::const_iterator it = contigs.begin();
-				it != contigs.end(); ++it) {
+		for (Contigs::const_iterator it = contigs.begin(); it != contigs.end(); ++it) {
 			ContigID id(it - contigs.begin());
 			if (!seen[id]) {
 				const Contig& contig = *it;
@@ -585,29 +609,23 @@ int main(int argc, char** argv)
 					out << ' ' << contig.comment;
 				out << '\n' << contig.seq << '\n';
 				if (opt::verbose > 0)
-					lengthHistogram.insert(
-						count_if(contig.seq.begin(), contig.seq.end(),
-							isACGT));
+					lengthHistogram.insert(count_if(contig.seq.begin(), contig.seq.end(), isACGT));
 			}
 		}
 	}
 
 	unsigned npaths = 0;
-	for (ContigPaths::const_iterator it = paths.begin();
-			it != paths.end(); ++it) {
+	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		const ContigPath& path = *it;
 		if (path.empty())
 			continue;
 		Contig contig = mergePath(g, contigs, path);
-		out << '>' << pathIDs[it - paths.begin()]
-			<< ' ' << contig.comment << '\n'
-			<< contig.seq << '\n';
+		out << '>' << pathIDs[it - paths.begin()] << ' ' << contig.comment << '\n'
+		    << contig.seq << '\n';
 		assert_good(out, opt::out);
 		npaths++;
 		if (opt::verbose > 0)
-			lengthHistogram.insert(
-					count_if(contig.seq.begin(), contig.seq.end(),
-						isACGT));
+			lengthHistogram.insert(count_if(contig.seq.begin(), contig.seq.end(), isACGT));
 	}
 
 	if (!opt::graphPath.empty())
@@ -617,7 +635,7 @@ int main(int argc, char** argv)
 		return 0;
 
 	float minCov = numeric_limits<float>::infinity(),
-		minCovUsed = numeric_limits<float>::infinity();
+	      minCovUsed = numeric_limits<float>::infinity();
 	for (unsigned i = 0; i < contigs.size(); i++) {
 		ContigProperties vp = g[ContigNode(i, false)];
 		if (vp.coverage == 0 || vp.length < opt::k)
@@ -628,18 +646,16 @@ int main(int argc, char** argv)
 			minCovUsed = min(minCovUsed, cov);
 	}
 
-	cerr << "The minimum coverage of single-end contigs is "
-		<< minCov << ".\n"
-		<< "The minimum coverage of merged contigs is "
-		<< minCovUsed << ".\n";
+	cerr << "The minimum coverage of single-end contigs is " << minCov << ".\n"
+	     << "The minimum coverage of merged contigs is " << minCovUsed << ".\n";
 	if (minCov < minCovUsed)
 		cerr << "Consider increasing the coverage threshold "
-			"parameter, c, to " << minCovUsed << ".\n";
+		        "parameter, c, to "
+		     << minCovUsed << ".\n";
 
 	if (opt::verbose > 0) {
 		const unsigned STATS_MIN_LENGTH = 200; // bp
-		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH)
-			<< '\t' << opt::out << '\n';
+		printContiguityStats(cerr, lengthHistogram, STATS_MIN_LENGTH) << '\t' << opt::out << '\n';
 	}
 	return 0;
 }
