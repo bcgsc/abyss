@@ -3,22 +3,22 @@
  * Written by Shaun Jackman <sjackman@bcgsc.ca>.
  */
 
+#include "config.h"
 #include "Common/Options.h"
 #include "ContigProperties.h"
 #include "Estimate.h"
 #include "FastaReader.h"
+#include "IOUtil.h"
+#include "Uncompress.h"
 #include "Graph/ContigGraph.h"
 #include "Graph/ContigGraphAlgorithms.h"
 #include "Graph/DirectedGraph.h"
 #include "Graph/GraphIO.h"
 #include "Graph/GraphUtil.h"
-#include "IOUtil.h"
-#include "Uncompress.h"
-#include "config.h"
-#include <algorithm>
 #include <boost/lambda/bind.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/ref.hpp>
+#include <algorithm>
 #include <cassert>
 #include <cctype>
 #include <climits> // for UINT_MAX
@@ -36,105 +36,102 @@ using namespace boost::lambda;
 #define PROGRAM "Overlap"
 
 static const char VERSION_MESSAGE[] =
-    PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-            "Written by Shaun Jackman.\n"
-            "\n"
-            "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
+PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+"Written by Shaun Jackman.\n"
+"\n"
+"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-    "Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... CONTIGS ADJ DIST\n"
-    "Find overlaps between blunt contigs that have negative distance\n"
-    "estimates. Add edges to the overlap graph.\n"
-    "\n"
-    " Options:\n"
-    "\n"
-    "  -k, --kmer=KMER_SIZE  k-mer size\n"
-    "  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
-    "                        default is 5 bases\n"
-    "      --scaffold        join contigs with Ns [default]\n"
-    "      --no-scaffold     do not scaffold\n"
-    "      --mask-repeat     join contigs at a simple repeat and mask\n"
-    "                        the repeat sequence [default]\n"
-    "      --no-merge-repeat don't join contigs at a repeat\n"
-    "      --SS              expect contigs to be oriented correctly\n"
-    "      --no-SS           no assumption about contig orientation [default]\n"
-    "  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
-    "      --adj             output the graph in ADJ format [default]\n"
-    "      --asqg            output the graph in ASQG format\n"
-    "      --dot             output the graph in GraphViz format\n"
-    "      --gfa             output the graph in GFA1 format\n"
-    "      --gfa1            output the graph in GFA1 format\n"
-    "      --gfa2            output the graph in GFA2 format\n"
-    "      --gv              output the graph in GraphViz format\n"
-    "      --sam             output the graph in SAM format\n"
-    "  -o, --out=FILE        write result to FILE\n"
-    "  -v, --verbose         display verbose output\n"
-    "      --help            display this help and exit\n"
-    "      --version         output version information and exit\n"
-    "\n"
-    "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+"Usage: " PROGRAM " -k<kmer> -o<out.fa> [OPTION]... CONTIGS ADJ DIST\n"
+"Find overlaps between blunt contigs that have negative distance\n"
+"estimates. Add edges to the overlap graph.\n"
+"\n"
+" Options:\n"
+"\n"
+"  -k, --kmer=KMER_SIZE  k-mer size\n"
+"  -m, --min=OVERLAP     require a minimum of OVERLAP bases\n"
+"                        default is 5 bases\n"
+"      --scaffold        join contigs with Ns [default]\n"
+"      --no-scaffold     do not scaffold\n"
+"      --mask-repeat     join contigs at a simple repeat and mask\n"
+"                        the repeat sequence [default]\n"
+"      --no-merge-repeat don't join contigs at a repeat\n"
+"      --SS              expect contigs to be oriented correctly\n"
+"      --no-SS           no assumption about contig orientation [default]\n"
+"  -g, --graph=FILE      write the contig adjacency graph to FILE\n"
+"      --adj             output the graph in ADJ format [default]\n"
+"      --asqg            output the graph in ASQG format\n"
+"      --dot             output the graph in GraphViz format\n"
+"      --gfa             output the graph in GFA1 format\n"
+"      --gfa1            output the graph in GFA1 format\n"
+"      --gfa2            output the graph in GFA2 format\n"
+"      --gv              output the graph in GraphViz format\n"
+"      --sam             output the graph in SAM format\n"
+"  -o, --out=FILE        write result to FILE\n"
+"  -v, --verbose         display verbose output\n"
+"      --help            display this help and exit\n"
+"      --version         output version information and exit\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-unsigned k; // used by ContigGraph
-static unsigned minimum_overlap = 5;
-static int mask = 1;
-static int scaffold = 1;
+	unsigned k; // used by ContigGraph
+	static unsigned minimum_overlap = 5;
+	static int mask = 1;
+	static int scaffold = 1;
 
-/** Run a strand-specific RNA-Seq assembly. */
-static int ss;
+	/** Run a strand-specific RNA-Seq assembly. */
+	static int ss;
 
-/** The acceptable error of a distance estimate. */
-unsigned distanceError = 6;
+	/** The acceptable error of a distance estimate. */
+	unsigned distanceError = 6;
 
-/** Write the contig adjacency graph to this file. */
-static string graphPath;
+	/** Write the contig adjacency graph to this file. */
+	static string graphPath;
 
-/** Write the new contigs to this file. */
-static string out;
+	/** Write the new contigs to this file. */
+	static string out;
 
-/** Output format */
-int format = ADJ; // used by ContigProperties
+ 	/** Output format */
+ 	int format = ADJ; // used by ContigProperties
 }
 
 static const char shortopts[] = "g:k:m:o:v";
 
-enum
-{
-	OPT_HELP = 1,
-	OPT_VERSION
-};
+enum { OPT_HELP = 1, OPT_VERSION };
 
-static const struct option longopts[] = { { "kmer", required_argument, NULL, 'k' },
-	                                      { "min", required_argument, NULL, 'm' },
-	                                      { "scaffold", no_argument, &opt::scaffold, 1 },
-	                                      { "no-scaffold", no_argument, &opt::scaffold, 0 },
-	                                      { "mask-repeat", no_argument, &opt::mask, 1 },
-	                                      { "no-merge-repeat", no_argument, &opt::mask, 0 },
-	                                      { "SS", no_argument, &opt::ss, 1 },
-	                                      { "no-SS", no_argument, &opt::ss, 0 },
-	                                      { "graph", required_argument, NULL, 'g' },
-	                                      { "adj", no_argument, &opt::format, ADJ },
-	                                      { "asqg", no_argument, &opt::format, ASQG },
-	                                      { "dot", no_argument, &opt::format, DOT },
-	                                      { "gfa", no_argument, &opt::format, GFA1 },
-	                                      { "gfa1", no_argument, &opt::format, GFA1 },
-	                                      { "gfa2", no_argument, &opt::format, GFA2 },
-	                                      { "gv", no_argument, &opt::format, DOT },
-	                                      { "sam", no_argument, &opt::format, SAM },
-	                                      { "out", required_argument, NULL, 'o' },
-	                                      { "verbose", no_argument, NULL, 'v' },
-	                                      { "help", no_argument, NULL, OPT_HELP },
-	                                      { "version", no_argument, NULL, OPT_VERSION },
-	                                      { NULL, 0, NULL, 0 } };
+static const struct option longopts[] = {
+	{ "kmer",    required_argument, NULL, 'k' },
+	{ "min",     required_argument, NULL, 'm' },
+	{ "scaffold", no_argument,      &opt::scaffold, 1 },
+	{ "no-scaffold", no_argument,   &opt::scaffold, 0 },
+	{ "mask-repeat",    no_argument, &opt::mask, 1 },
+	{ "no-merge-repeat", no_argument, &opt::mask, 0 },
+	{ "SS",            no_argument,       &opt::ss, 1 },
+	{ "no-SS",         no_argument,       &opt::ss, 0 },
+	{ "graph",         required_argument, NULL, 'g' },
+	{ "adj",           no_argument,       &opt::format, ADJ },
+	{ "asqg",          no_argument,       &opt::format, ASQG },
+	{ "dot",           no_argument,       &opt::format, DOT },
+	{ "gfa",           no_argument,       &opt::format, GFA1 },
+	{ "gfa1",          no_argument,       &opt::format, GFA1 },
+	{ "gfa2",          no_argument,       &opt::format, GFA2 },
+	{ "gv",            no_argument,       &opt::format, DOT },
+	{ "sam",           no_argument,       &opt::format, SAM },
+	{ "out",     required_argument, NULL, 'o' },
+	{ "verbose", no_argument,       NULL, 'v' },
+	{ "help",    no_argument,       NULL, OPT_HELP },
+	{ "version", no_argument,       NULL, OPT_VERSION },
+	{ NULL, 0, NULL, 0 }
+};
 
 /** Contig sequences. */
 static vector<string> g_contigs;
 
 /** Contig adjacency graph. */
-typedef ContigGraph<DirectedGraph<ContigProperties, Distance>> Graph;
+typedef ContigGraph<DirectedGraph<ContigProperties, Distance> > Graph;
 
-static struct
-{
+static struct {
 	unsigned overlap;
 	unsigned scaffold;
 	unsigned none;
@@ -145,15 +142,16 @@ static struct
 } stats;
 
 /** Return the sequence of the specified contig. */
-static string
-sequence(const ContigNode& id)
+static string sequence(const ContigNode& id)
 {
 	const string& seq = g_contigs[id.id()];
 	return id.sense() ? reverseComplement(seq) : seq;
 }
 
-static unsigned
-findOverlap(const Graph& g, const ContigNode& t_id, const ContigNode& h_id, bool& mask)
+static unsigned findOverlap(const Graph& g,
+		const ContigNode& t_id,
+		const ContigNode& h_id,
+		bool& mask)
 {
 	mask = false;
 	string t = sequence(t_id);
@@ -162,13 +160,16 @@ findOverlap(const Graph& g, const ContigNode& t_id, const ContigNode& h_id, bool
 	vector<unsigned> overlaps;
 	overlaps.reserve(len);
 	for (unsigned overlap = len; overlap >= 1; overlap--) {
-		if (t.substr(t.length() - overlap, overlap) == h.substr(0, overlap))
+		if (t.substr(t.length()-overlap, overlap)
+				== h.substr(0, overlap))
 			overlaps.push_back(overlap);
 	}
 
 	if (opt::verbose > 0) {
-		cout << get(vertex_name, g, t_id) << '\t' << get(vertex_name, g, h_id);
-		for (vector<unsigned>::const_iterator i = overlaps.begin(); i != overlaps.end(); ++i)
+		cout << get(vertex_name, g, t_id)
+			<< '\t' << get(vertex_name, g, h_id);
+		for (vector<unsigned>::const_iterator i = overlaps.begin();
+				i != overlaps.end(); ++i)
 			cout << '\t' << *i;
 		cout << '\n';
 	}
@@ -183,9 +184,10 @@ findOverlap(const Graph& g, const ContigNode& t_id, const ContigNode& h_id, bool
 		return 0;
 	}
 
-	if (overlaps.size() >= 3 && overlaps[0] - overlaps[1] == overlaps[1] - overlaps[2]) {
+	if (overlaps.size() >= 3
+			&& overlaps[0]-overlaps[1] == overlaps[1]-overlaps[2]) {
 		// Homopolymer run or motif.
-		if (overlaps[0] - overlaps[1] == 1)
+		if (overlaps[0]-overlaps[1] == 1)
 			stats.homopolymer++;
 		else
 			stats.motif++;
@@ -195,33 +197,31 @@ findOverlap(const Graph& g, const ContigNode& t_id, const ContigNode& h_id, bool
 	return overlaps[0];
 }
 
-static FastaRecord
-newContig(const Graph& g, const ContigNode& t, const ContigNode& v, int dist, const string& seq)
+static FastaRecord newContig(const Graph& g,
+		const ContigNode& t, const ContigNode& v,
+		int dist, const string& seq)
 {
 	ostringstream comment;
-	comment << seq.length() << " 0 " << get(vertex_name, g, t) << ' ' << get(vertex_name, g, v)
-	        << ' ' << dist;
+	comment << seq.length() << " 0 "
+		<< get(vertex_name, g, t) << ' '
+		<< get(vertex_name, g, v) << ' ' << dist;
 	return FastaRecord(createContigName(), comment.str(), seq);
 }
 
 /** An overlap of two sequences. */
-struct Overlap : public DistanceEst
-{
+struct Overlap : public DistanceEst {
 	unsigned overlap;
 	bool mask;
 
-	Overlap()
-	  : overlap(UINT_MAX)
-	  , mask(false)
-	{}
+	Overlap() : overlap(UINT_MAX), mask(false) { }
 	Overlap(int) { assert(false); }
 	Overlap(const DistanceEst& est, unsigned overlap, bool mask)
-	  : DistanceEst(est)
-	  , overlap(overlap)
-	  , mask(mask)
-	{}
+		: DistanceEst(est), overlap(overlap), mask(mask) { }
 
-	bool operator==(const Overlap& o) const { return overlap == o.overlap; }
+	bool operator==(const Overlap& o) const
+	{
+		return overlap == o.overlap;
+	}
 
 	operator Distance() const
 	{
@@ -231,33 +231,38 @@ struct Overlap : public DistanceEst
 
 	friend ostream& operator<<(ostream& out, const Overlap& o)
 	{
-		return out << "d=" << (o.overlap > 0 ? -(int)o.overlap : o.distance);
+		return out << "d="
+			<< (o.overlap > 0 ? -(int)o.overlap : o.distance);
 	}
 };
 
 /** Create a contig representing the gap between contigs u and v. */
-static FastaRecord
-createGapContig(const Graph& g, const ContigNode& u, const ContigNode& v, const Overlap& o)
+static FastaRecord createGapContig(const Graph& g,
+		const ContigNode& u, const ContigNode& v,
+		const Overlap& o)
 {
 	assert(opt::scaffold);
 	assert(o.overlap == 0);
 	stats.scaffold++;
 	int distance = o.distance;
 	if (opt::verbose > 0)
-		cout << get(vertex_name, g, u) << '\t' << get(vertex_name, g, v) << "\t(" << distance
-		     << ")\n";
+		cout << get(vertex_name, g, u)
+			<< '\t' << get(vertex_name, g, v)
+			<< "\t(" << distance << ")\n";
 	assert(distance < 100000);
-	string gap = distance <= 0 ? string("n") : string(distance, 'N');
+	string gap = distance <= 0 ? string("n")
+		: string(distance, 'N');
 	const string& useq = sequence(u);
 	const string& vseq = sequence(v);
 	unsigned overlap = opt::k - 1; // by convention
-	return newContig(
-	    g, u, v, distance, useq.substr(useq.length() - overlap) + gap + vseq.substr(0, overlap));
+	return newContig(g, u, v, distance,
+			useq.substr(useq.length() - overlap) + gap
+			+ vseq.substr(0, overlap));
 }
 
 /** The scaffold graph. Edges join two blunt contigs that are joined
  * by a distance estimate. */
-typedef ContigGraph<DirectedGraph<NoProperty, Overlap>> OverlapGraph;
+typedef ContigGraph<DirectedGraph<NoProperty, Overlap> > OverlapGraph;
 
 /**
  * Check for an overlap between the specified pair of contigs.
@@ -267,11 +272,9 @@ typedef ContigGraph<DirectedGraph<NoProperty, Overlap>> OverlapGraph;
  * @param g the scaffold graph
  * @return true if the contigs overlap
  */
-static bool
-checkEdgeForOverlap(
-    const Graph& goverlap,
-    OverlapGraph& g,
-    graph_traits<OverlapGraph>::edge_descriptor e)
+static bool checkEdgeForOverlap(const Graph& goverlap,
+		OverlapGraph& g,
+		graph_traits<OverlapGraph>::edge_descriptor e)
 {
 	typedef graph_traits<Graph>::vertex_descriptor V;
 	typedef graph_traits<Graph>::edge_descriptor E;
@@ -297,8 +300,9 @@ checkEdgeForOverlap(
 	}
 
 	bool mask = false;
-	unsigned overlap =
-	    ep.distance - (int)allowedError(ep.stdDev) <= 0 ? findOverlap(goverlap, u, v, mask) : 0;
+	unsigned overlap
+		= ep.distance - (int)allowedError(ep.stdDev) <= 0
+		? findOverlap(goverlap, u, v, mask) : 0;
 	if (mask && !opt::mask) {
 		// Ambiguous overlap.
 		return false;
@@ -316,39 +320,39 @@ checkEdgeForOverlap(
 	} else {
 		// Add the complementary edge.
 		assert(vc != u);
-		add_edge(vc, uc, ep, static_cast<OverlapGraph::base_type&>(g));
+		add_edge(vc, uc, ep,
+				static_cast<OverlapGraph::base_type&>(g));
 	}
 	return true;
 }
 
-static void
-findOverlap(
-    const Graph& g,
-    ContigID refID,
-    bool rc,
-    const ContigNode& pair,
-    const DistanceEst& est,
-    OverlapGraph& out)
+static void findOverlap(const Graph& g,
+		ContigID refID, bool rc,
+		const ContigNode& pair,
+		const DistanceEst& est,
+		OverlapGraph& out)
 {
-	if (refID == pair.id() || (est.distance >= 0 && !opt::scaffold))
+	if (refID == pair.id()
+			|| (est.distance >= 0 && !opt::scaffold))
 		return;
 	ContigNode ref(refID, false);
 	const ContigNode& t = rc ? pair : ref;
 	const ContigNode& h = rc ? ref : pair;
-	if (out_degree(t, g) > 0 || in_degree(h, g) > 0 || edge(t, h, out).second)
+	if (out_degree(t, g) > 0 || in_degree(h, g) > 0
+			|| edge(t, h, out).second)
 		return;
 
 	bool mask = false;
-	unsigned overlap =
-	    est.distance - (int)allowedError(est.stdDev) <= 0 ? findOverlap(g, t, h, mask) : 0;
+	unsigned overlap
+		= est.distance - (int)allowedError(est.stdDev) <= 0
+		? findOverlap(g, t, h, mask) : 0;
 	if (mask && !opt::mask)
 		return;
 	if (overlap > 0 || opt::scaffold)
 		add_edge(t, h, Overlap(est, overlap, mask), out);
 }
 
-static void
-readContigs(const char* contigPath)
+static void readContigs(const char *contigPath)
 {
 	FastaReader in(contigPath, FastaReader::FOLD_CASE);
 	for (FastaRecord rec; in >> rec;)
@@ -358,62 +362,49 @@ readContigs(const char* contigPath)
 	opt::colourSpace = isdigit(g_contigs[0][0]);
 }
 
-int
-main(int argc, char** argv)
+int main(int argc, char** argv)
 {
 	string commandLine;
 	{
 		ostringstream ss;
 		char** last = argv + argc - 1;
-		copy(argv, last, ostream_iterator<const char*>(ss, " "));
+		copy(argv, last, ostream_iterator<const char *>(ss, " "));
 		ss << *last;
 		commandLine = ss.str();
 	}
 
 	bool die = false;
-	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv,
+					shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-		case '?':
-			die = true;
-			break;
-		case 'g':
-			arg >> opt::graphPath;
-			break;
-		case 'k':
-			arg >> opt::k;
-			break;
-		case 'm':
-			arg >> opt::minimum_overlap;
-			break;
-		case 'o':
-			arg >> opt::out;
-			break;
-		case 'v':
-			opt::verbose++;
-			break;
-		case OPT_HELP:
-			cout << USAGE_MESSAGE;
-			exit(EXIT_SUCCESS);
-		case OPT_VERSION:
-			cout << VERSION_MESSAGE;
-			exit(EXIT_SUCCESS);
+			case '?': die = true; break;
+			case 'g': arg >> opt::graphPath; break;
+			case 'k': arg >> opt::k; break;
+			case 'm': arg >> opt::minimum_overlap; break;
+			case 'o': arg >> opt::out; break;
+			case 'v': opt::verbose++; break;
+			case OPT_HELP:
+				cout << USAGE_MESSAGE;
+				exit(EXIT_SUCCESS);
+			case OPT_VERSION:
+				cout << VERSION_MESSAGE;
+				exit(EXIT_SUCCESS);
 		}
 		if (optarg != NULL && !arg.eof()) {
-			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
+			cerr << PROGRAM ": invalid option: `-"
+				<< (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (opt::k <= 0) {
-		cerr << PROGRAM ": "
-		     << "missing -k,--kmer option\n";
+		cerr << PROGRAM ": " << "missing -k,--kmer option\n";
 		die = true;
 	}
 
 	if (opt::out.empty()) {
-		cerr << PROGRAM ": "
-		     << "missing -o,--out option\n";
+		cerr << PROGRAM ": " << "missing -o,--out option\n";
 		die = true;
 	}
 
@@ -428,7 +419,8 @@ main(int argc, char** argv)
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM << " --help' for more information.\n";
+		cerr << "Try `" << PROGRAM
+			<< " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -463,17 +455,22 @@ main(int argc, char** argv)
 		if (opt::verbose > 0)
 			printGraphStats(cout, scaffoldGraph);
 		remove_edge_if(
-		    !boost::lambda::bind(
-		        checkEdgeForOverlap, boost::cref(graph), boost::ref(scaffoldGraph), _1),
-		    static_cast<OverlapGraph::base_type&>(scaffoldGraph));
+				!boost::lambda::bind(checkEdgeForOverlap,
+					boost::cref(graph), boost::ref(scaffoldGraph),
+					_1),
+				static_cast<OverlapGraph::base_type&>(scaffoldGraph));
 	} else {
 		// dist graph format
 		for (EstimateRecord er; in >> er;) {
 			for (int sense = false; sense <= true; ++sense) {
-				typedef vector<pair<ContigNode, DistanceEst>> Estimates;
+				typedef vector<
+					pair<ContigNode, DistanceEst> > Estimates;
 				const Estimates& ests = er.estimates[sense];
-				for (Estimates::const_iterator it = ests.begin(); it != ests.end(); ++it)
-					findOverlap(graph, er.refID, sense, it->first, it->second, scaffoldGraph);
+				for (Estimates::const_iterator it = ests.begin();
+						it != ests.end(); ++it)
+					findOverlap(graph, er.refID, sense,
+							it->first, it->second,
+							scaffoldGraph);
 			}
 		}
 		assert(in.eof());
@@ -483,10 +480,14 @@ main(int argc, char** argv)
 	if (opt::verbose > 1)
 		cout << dot_writer(scaffoldGraph);
 
-	typedef graph_traits<OverlapGraph>::vertex_descriptor vertex_descriptor;
-	typedef graph_traits<OverlapGraph>::vertex_iterator vertex_iterator;
-	typedef graph_traits<OverlapGraph>::edge_descriptor edge_descriptor;
-	typedef graph_traits<OverlapGraph>::out_edge_iterator out_edge_iterator;
+	typedef graph_traits<OverlapGraph>::vertex_descriptor
+		vertex_descriptor;
+	typedef graph_traits<OverlapGraph>::vertex_iterator
+		vertex_iterator;
+	typedef graph_traits<OverlapGraph>::edge_descriptor
+		edge_descriptor;
+	typedef graph_traits<OverlapGraph>::out_edge_iterator
+		out_edge_iterator;
 
 	/** The overlapping edges (d<0) of scaffoldGraph. */
 	OverlapGraph overlapGraph(num_vertices(graph) / 2);
@@ -498,9 +499,11 @@ main(int argc, char** argv)
 	edges.reserve(numOverlaps);
 
 	// Create the set of canonical edges and the overlap subgraph.
-	std::pair<vertex_iterator, vertex_iterator> uit = vertices(scaffoldGraph);
+	std::pair<vertex_iterator, vertex_iterator>
+		uit = vertices(scaffoldGraph);
 	for (vertex_iterator u = uit.first; u != uit.second; ++u) {
-		std::pair<out_edge_iterator, out_edge_iterator> vit = out_edges(*u, scaffoldGraph);
+		std::pair<out_edge_iterator, out_edge_iterator>
+			vit = out_edges(*u, scaffoldGraph);
 		for (out_edge_iterator e = vit.first; e != vit.second; ++e) {
 			vertex_descriptor v = target(*e, scaffoldGraph);
 			assert(*u != v);
@@ -515,8 +518,10 @@ main(int argc, char** argv)
 	assert(edges.size() == numOverlaps);
 
 	// First, give priority to overlapping edges (not scaffolded).
-	for (Edges::const_iterator it = edges.begin(); it != edges.end(); ++it) {
-		const ContigNode &t = source(*it, overlapGraph), h = target(*it, overlapGraph);
+	for (Edges::const_iterator it = edges.begin();
+			it != edges.end(); ++it) {
+		const ContigNode& t = source(*it, overlapGraph),
+			  h = target(*it, overlapGraph);
 		if (!edge(t, h, overlapGraph).second) {
 			// This edge is scaffolded.
 			continue;
@@ -538,14 +543,17 @@ main(int argc, char** argv)
 
 	// Second, handle scaffolded edges.
 	g_contigNames.unlock();
-	for (Edges::const_iterator it = edges.begin(); it != edges.end(); ++it) {
-		const ContigNode &t = source(*it, scaffoldGraph), h = target(*it, scaffoldGraph);
+	for (Edges::const_iterator it = edges.begin();
+			it != edges.end(); ++it) {
+		const ContigNode& t = source(*it, scaffoldGraph),
+			  h = target(*it, scaffoldGraph);
 		if (!edge(t, h, scaffoldGraph).second) {
 			// This edge involved a vertex that has already been used
 			// and removed.
 			continue;
 		}
-		const Overlap& overlap = get(edge_bundle, scaffoldGraph, *it);
+		const Overlap& overlap = get(edge_bundle,
+				scaffoldGraph, *it);
 		if (overlap.overlap > 0) {
 			// This edge is not scaffolded.
 		} else if (contiguous_out(scaffoldGraph, t)) {
@@ -555,12 +563,14 @@ main(int argc, char** argv)
 				t1 = h ^ true;
 				h1 = t ^ true;
 			}
-			FastaRecord contig = createGapContig(graph, t1, h1, overlap);
+			FastaRecord contig = createGapContig(graph,
+					t1, h1, overlap);
 			out << contig;
 			assert(out.good());
 
 			// Add the new contig to the adjacency graph.
-			vertex_descriptor v = add_vertex(ContigProperties(contig.seq.length(), 0), graph);
+			vertex_descriptor v = add_vertex(
+					ContigProperties(contig.seq.length(), 0), graph);
 			put(vertex_name, graph, v, contig.id);
 			add_edge(t1, v, graph);
 			add_edge(v, h1, graph);
@@ -578,24 +588,13 @@ main(int argc, char** argv)
 		assert_good(fout, opt::graphPath);
 	}
 
-	cout << "Overlap: " << stats.overlap
-	     << "\n"
-	        "Scaffold: "
-	     << stats.scaffold
-	     << "\n"
-	        "No overlap: "
-	     << stats.none
-	     << "\n"
-	        "Insignificant (<"
-	     << opt::minimum_overlap << "bp): " << stats.tooshort
-	     << "\n"
-	        "Homopolymer: "
-	     << stats.homopolymer
-	     << "\n"
-	        "Motif: "
-	     << stats.motif
-	     << "\n"
-	        "Ambiguous: "
-	     << stats.ambiguous << "\n";
+	cout << "Overlap: " << stats.overlap << "\n"
+		"Scaffold: " << stats.scaffold << "\n"
+		"No overlap: " << stats.none << "\n"
+		"Insignificant (<" << opt::minimum_overlap << "bp): "
+		<< stats.tooshort << "\n"
+		"Homopolymer: " << stats.homopolymer << "\n"
+		"Motif: " << stats.motif << "\n"
+		"Ambiguous: " << stats.ambiguous << "\n";
 	return 0;
 }
