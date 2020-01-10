@@ -98,11 +98,9 @@ class Aligner
 	{
 		assert(opt::multimap == opt::IGNORE);
 		return count_if(
-		    m_target.begin(),
-		    m_target.end(),
-		    compose1(
-		        std::mem_fun_ref(&Position::isDuplicate),
-		        mem_var(&SeqPosHashMap::value_type::second)));
+		    m_target.begin(), m_target.end(), [](const std::pair<const Kmer, Position>& s) {
+			    return s.second.isDuplicate();
+		    });
 	}
 
   private:

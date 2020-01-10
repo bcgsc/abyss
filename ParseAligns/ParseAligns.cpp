@@ -532,7 +532,9 @@ main(int argc, char* const* argv)
 
 	ReadAlignMap alignTable(1);
 	if (optind < argc) {
-		for_each(argv + optind, argv + argc, bind2nd(ptr_fun(readAlignmentsFile), &alignTable));
+		for_each(argv + optind, argv + argc, [&alignTable](const std::string& s) {
+			readAlignmentsFile(s, &alignTable);
+		});
 	} else {
 		if (opt::verbose > 0)
 			cerr << "Reading from standard input..." << endl;

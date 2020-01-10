@@ -448,7 +448,8 @@ addPathOverlapEdges(
 
 	// Remove the single-end contigs that are in paths.
 	for (Paths::const_iterator it = paths.begin(); it != paths.end(); ++it)
-		remove_vertex_if(g, it->begin(), it->end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		remove_vertex_if(
+		    g, it->begin(), it->end(), [](const ContigNode& c) { return !c.ambiguous(); });
 
 	// Add the path edges.
 	for (Overlaps::const_iterator it = overlaps.begin(); it != overlaps.end(); ++it) {
@@ -681,9 +682,8 @@ main(int argc, char** argv)
 		for_each_if(
 		    paths.begin(),
 		    paths.end(),
-		    mem_fun_ref(&ContigPath::clear),
-		    compose1(
-		        bind2nd(equal_to<ContigPath::size_type>(), 1), mem_fun_ref(&ContigPath::size)));
+		    [](ContigPath& c) { return c.clear(); },
+		    [](const ContigPath& c) { return c.size() == 1; });
 		// Add the paths to the graph.
 		addPathOverlapEdges(g, paths, pathIDs, Overlaps());
 		break;

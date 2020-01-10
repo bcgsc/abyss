@@ -644,7 +644,8 @@ buildScaffoldLengthHistogram(Graph& g, const ContigPaths& paths)
 	// and add the lengths of the scaffolds.
 	for (ContigPaths::const_iterator it = paths.begin(); it != paths.end(); ++it) {
 		h.insert(addLength(g, it->begin(), it->end()));
-		remove_vertex_if(g, it->begin(), it->end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		remove_vertex_if(
+		    g, it->begin(), it->end(), [](const ContigNode& c) { return !c.ambiguous(); });
 	}
 
 	// Add the contigs that were not used in paths.

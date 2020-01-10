@@ -133,8 +133,10 @@ template<typename Graph, typename It, typename Predicate>
 void
 remove_vertex_if(Graph& g, It first, It last, Predicate p)
 {
-	for_each_if(first, last, bind1st(std::mem_fun(&Graph::clear_vertex), &g), p);
-	for_each_if(first, last, bind1st(std::mem_fun(&Graph::remove_vertex), &g), p);
+	for_each_if(
+	    first, last, [&g](const ContigNode& c) { return g.clear_vertex(c); }, p);
+	for_each_if(
+	    first, last, [&g](const ContigNode& c) { return g.remove_vertex(c); }, p);
 }
 
 /** Add the vertex and edge propeties of the path [first, last). */
@@ -204,7 +206,7 @@ assemble_if(Graph& g, OutIt out, Predicate pred0)
 		assert(path.front() != path.back());
 		merge(g, path.begin(), path.end());
 		remove_vertex_if(
-		    g, path.begin(), path.end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		    g, path.begin(), path.end(), [](const ContigNode& c) { return !c.ambiguous(); });
 		*out++ = path;
 	}
 	return out;
@@ -275,8 +277,8 @@ pruneTips_if(Graph& g, OutputIt result, Pred p)
 
 	/** Remove the tips. */
 	remove_vertex_if(g, tips.begin(), tips.end(), True<V>());
-	std::transform(tips.begin(), tips.end(), result, std::mem_fun_ref(&ContigNode::contigIndex));
-
+	std::transform(
+	    tips.begin(), tips.end(), result, [](const ContigNode& c) { return c.contigIndex(); });
 	return result;
 }
 

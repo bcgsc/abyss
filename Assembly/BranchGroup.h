@@ -150,13 +150,13 @@ class BranchGroup
 		// All the branches of the bubble have joined.
 		// Remove the last base, which is identical for every branch.
 		std::for_each(
-		    m_branches.begin(), m_branches.end(), std::mem_fun_ref(&BranchRecord::pop_back));
+		    m_branches.begin(), m_branches.end(), [](BranchRecord& b) { return b.pop_back(); });
 
 		// Sort the branches by coverage.
-		sort_by_transform(
-		    m_branches.begin(),
-		    m_branches.end(),
-		    std::mem_fun_ref(&BranchRecord::calculateBranchMultiplicity));
+		std::function<int(const BranchRecord&)> lambda = [](const BranchRecord& b) {
+			return b.calculateBranchMultiplicity();
+		};
+		sort_by_transform(m_branches.begin(), m_branches.end(), lambda);
 		reverse(m_branches.begin(), m_branches.end());
 
 		return m_status = BGS_JOINED;

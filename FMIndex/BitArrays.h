@@ -49,7 +49,8 @@ class BitArrays
 			m_data[c].SetBit(1, i);
 		}
 
-		std::for_each(m_data.begin(), m_data.end(), std::mem_fun_ref(&wat_array::BitArray::Build));
+		std::for_each(
+		    m_data.begin(), m_data.end(), [](wat_array::BitArray& b) { return b.Build(); });
 	}
 
 	/** Return the size of the string. */

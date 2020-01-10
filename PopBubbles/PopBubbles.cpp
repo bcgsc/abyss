@@ -213,11 +213,9 @@ popBubble(Graph& g, vertex_descriptor v, vertex_descriptor tail)
 		cout << " } -> \"" << get(vertex_name, g, tail) << "\"\n";
 	}
 #pragma omp critical(g_popped)
-	transform(
-	    sorted.begin() + 1,
-	    sorted.end(),
-	    back_inserter(g_popped),
-	    mem_fun_ref(&ContigNode::contigIndex));
+	transform(sorted.begin() + 1, sorted.end(), back_inserter(g_popped), [](const ContigNode& c) {
+		return c.contigIndex();
+	});
 }
 
 static struct
@@ -364,7 +362,9 @@ popSimpleBubble(Graph* pg, vertex_descriptor v)
 	}
 
 	vector<unsigned> lengths(nbranches);
-	transform(adj.first, adj.second, lengths.begin(), bind1st(ptr_fun(getLength), &g));
+	transform(adj.first, adj.second, lengths.begin(), [&g](const ContigNode& c) {
+		return getLength(&g, c);
+	});
 	unsigned minLength = *min_element(lengths.begin(), lengths.end());
 	unsigned maxLength = *max_element(lengths.begin(), lengths.end());
 	if (maxLength >= opt::maxLength) {
@@ -681,7 +681,9 @@ main(int argc, char** argv)
 
 	if (!opt::graphPath.empty()) {
 		// Remove the popped contigs from the adjacency graph.
-		for_each(g_popped.begin(), g_popped.end(), bind1st(ptr_fun(removeContig), &g));
+		for_each(g_popped.begin(), g_popped.end(), [&g](const ContigID& c) {
+			return removeContig(&g, c);
+		});
 
 		// Assemble unambiguous paths.
 		g_contigNames.unlock();

@@ -2,8 +2,8 @@
 #define PIPEMUX_H 1
 
 #include "Pipe.h"
+#include "Semaphore.h"
 #include <pthread.h>
-#include <semaphore.h>
 #include <vector>
 
 template<class T>

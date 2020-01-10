@@ -302,7 +302,7 @@ main(int argc, char** argv)
 		const ContigPath& path = *it;
 		merge(g, path.begin(), path.end());
 		remove_vertex_if(
-		    g, path.begin(), path.end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+		    g, path.begin(), path.end(), [](const ContigNode& c) { return !c.ambiguous(); });
 	}
 	if (opt::verbose > 0)
 		printGraphStats(cerr, g);

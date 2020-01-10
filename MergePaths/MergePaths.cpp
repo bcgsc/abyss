@@ -1517,10 +1517,11 @@ align(
 	}
 
 	ContigPath consensus;
-	for (ContigPath::const_iterator it1 =
-	         find_if(path1.begin(), path1.end(), bind2nd(equal_to<ContigNode>(), pivot));
+	for (ContigPath::const_iterator it1 = find_if(
+	         path1.begin(), path1.end(), [&pivot](const ContigNode& c) { return c == pivot; });
 	     it1 != path1.end();
-	     it1 = find_if(it1 + 1, path1.end(), bind2nd(equal_to<ContigNode>(), pivot))) {
+	     it1 =
+	         find_if(it1 + 1, path1.end(), [&pivot](const ContigNode& c) { return c == pivot; })) {
 		if (&*it1 == &*it2) {
 			// We are aligning a path to itself, and this is the
 			// trivial alignment, which we'll ignore.

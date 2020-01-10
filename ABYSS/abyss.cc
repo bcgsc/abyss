@@ -62,10 +62,9 @@ assemble(const string& pathIn, const string& pathOut)
 
 	if (!pathIn.empty())
 		AssemblyAlgorithms::loadSequences(&g, pathIn.c_str());
-	for_each(
-	    opt::inFiles.begin(),
-	    opt::inFiles.end(),
-	    bind1st(ptr_fun(AssemblyAlgorithms::loadSequences<SequenceCollectionHash>), &g));
+	for_each(opt::inFiles.begin(), opt::inFiles.end(), [&g](std::string s) {
+		AssemblyAlgorithms::loadSequences(&g, s);
+	});
 	size_t numLoaded = g.size();
 	if (!opt::db.empty())
 		addToDb(db, "loadedKmer", numLoaded);

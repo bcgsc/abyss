@@ -414,7 +414,7 @@ outputGraph(
 			remove_vertex(find_vertex(id, false, g), g);
 		} else {
 			remove_vertex_if(
-			    g, path.begin(), path.end(), not1(std::mem_fun_ref(&ContigNode::ambiguous)));
+			    g, path.begin(), path.end(), [](const ContigNode& c) { return !c.ambiguous(); });
 		}
 	}
 
