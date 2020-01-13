@@ -99,7 +99,7 @@ static const char USAGE_MESSAGE[] =
                   "  -n, --num-locks=N          number of write locks on bloom filter [1000]\n"
                   "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
                   "                             quality is less than the threshold\n"
-                  "  -t, --bloom-type=STR       'konnector' or 'rolling-hash' [konnector]\n"
+                  "  -t, --bloom-type=STR       'konnector', 'rolling-hash', or 'counting' [konnector]\n"
                   "      --standard-quality     zero quality is `!' (33)\n"
                   "                             default for FASTQ and SAM files\n"
                   "      --illumina-quality     zero quality is `@' (64)\n"
