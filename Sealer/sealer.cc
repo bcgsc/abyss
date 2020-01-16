@@ -71,7 +71,6 @@ static const char USAGE_MESSAGE[] =
 "      --print-flanks           outputs flank files\n"
 "  -S, --input-scaffold=FILE    load scaffold from FILE\n"
 "  -L, --flank-length=N         length of flanks to be used as pseudoreads [100]\n"
-"  -D, --flank-distance=N       distance of flank from gap [0]\n"
 "  -G, --max-gap-length=N       max gap size to fill in bp [800]; runtime increases\n"
 "                               exponentially with respect to this parameter\n"
 "  -j, --threads=N              use N parallel threads [1]\n"
