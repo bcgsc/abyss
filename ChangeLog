@@ -1,3 +1,20 @@
+2020-01-30  Johnathan Wong <jowong@bcgsc.ca>
+
+	* Release version 2.2.4
+
+	General:
+	* Refactor deprecated functions in clang-8
+
+	Sealer:
+	* Remove unsupported -D option from help page
+
+	abyss-bloom:
+	* Add counting Bloom Filter instruction to help page
+
+	abyss-bloom-dbg:
+	* Report coverage information of unitigs
+
+
 2019-09-20  Johnathan Wong <jowong@bcgsc.ca>
 
 	* Release version 2.2.3

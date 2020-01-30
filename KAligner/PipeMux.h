@@ -2,16 +2,19 @@
 #define PIPEMUX_H 1
 
 #include "Pipe.h"
-#include <semaphore.h>
+#include "Semaphore.h"
 #include <pthread.h>
 #include <vector>
 
-template <class T>
-class PipeMux {
+template<class T>
+class PipeMux
+{
   public:
-  	/** Default constructor. */
-  	PipeMux(size_t pipe_size = 1)
-		: m_index(0), m_entry_num(0), m_pipe_size(pipe_size)
+	/** Default constructor. */
+	PipeMux(size_t pipe_size = 1)
+	  : m_index(0)
+	  , m_entry_num(0)
+	  , m_pipe_size(pipe_size)
 	{
 		pthread_rwlock_init(&m_rwlock_vecs, NULL);
 		pthread_mutex_init(&m_mutex_index, NULL);
@@ -94,7 +97,8 @@ class PipeMux {
 	}
 
 	/** Checks that the PipeMux is empty. */
-	bool empty() {
+	bool empty()
+	{
 		pthread_rwlock_rdlock(&m_rwlock_vecs);
 		bool isEmpty = m_pipes.empty();
 		pthread_rwlock_unlock(&m_rwlock_vecs);
@@ -128,11 +132,11 @@ class PipeMux {
 		}
 		assert(i < m_pipes.size());
 		delete m_pipes[i];
-		m_pipes.erase(m_pipes.begin()+i);
+		m_pipes.erase(m_pipes.begin() + i);
 		assert(i < m_mutex_pipes.size());
 		pthread_mutex_destroy(m_mutex_pipes[i]);
 		delete m_mutex_pipes[i];
-		m_mutex_pipes.erase(m_mutex_pipes.begin()+i);
+		m_mutex_pipes.erase(m_mutex_pipes.begin() + i);
 		// Make sure the index points to the next element.
 		pthread_mutex_lock(&m_mutex_index);
 		m_index = m_index == m_pipes.size() ? 0 : m_index;
@@ -140,7 +144,6 @@ class PipeMux {
 
 		pthread_rwlock_unlock(&m_rwlock_vecs);
 	}
-
 };
 
 #endif

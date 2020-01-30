@@ -91,6 +91,24 @@ addKmersToBloom(const Sequence& seq, BloomT& bloom)
 }
 
 /**
+ * Returns the sum of all kmer multiplicities in `seq` by querying `bloom`
+ */
+template<typename CountingBloomT>
+inline static unsigned
+getSeqAbsoluteKmerCoverage(const Sequence& seq, const CountingBloomT& bloom)
+{
+	const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	assert(seq.length() >= k);
+	unsigned coverage = 0;
+	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end();
+	     ++it) {
+		coverage += bloom.minCount(*it);
+	}
+	return coverage;
+}
+
+/**
  * Translate a DNA sequence to an equivalent path in the
  * de Bruijn graph.
  */
@@ -170,6 +188,8 @@ struct ContigRecord
 	size_t contigID;
 	/** length of contig (bp) */
 	unsigned length;
+	/** coverage of contig */
+	unsigned coverage;
 	/** FASTA ID of seeding read */
 	std::string readID;
 	/** Type of sequence used to seed contig (branch k-mer or full read) */
@@ -433,6 +453,8 @@ trimSeq(Sequence& seq, const BloomT& goodKmerSet)
 inline static void
 printContig(
     const Sequence& seq,
+    unsigned length,
+    unsigned coverage,
     size_t contigID,
     const std::string& readID,
     unsigned k,
@@ -448,6 +470,7 @@ printContig(
 
 	/* add FASTA comment indicating extended read id */
 	std::ostringstream comment;
+	comment << length << ' ' << coverage << ' ';
 	comment << "read:" << readID;
 	assert(id.good());
 	contig.id = id.str();
@@ -510,11 +533,12 @@ hasBluntEnd(const Sequence& seq, const GraphT& graph, const AssemblyParams& para
  * Output a contig sequence if it is not redundant, i.e. it has not already
  * been generated from a different read / thread of execution.
  */
-template<typename AssembledKmerSetT, typename AssemblyStreamsT>
+template<typename SolidKmerSetT, typename AssembledKmerSetT, typename AssemblyStreamsT>
 inline static void
 outputContig(
     const Path<Vertex>& contigPath,
     ContigRecord& rec,
+    SolidKmerSetT& solidKmerSet,
     AssembledKmerSetT& assembledKmerSet,
     KmerHash& contigEndKmers,
     const AssemblyParams& params,
@@ -572,15 +596,17 @@ outputContig(
 	if (!redundant) {
 #pragma omp critical(fasta)
 		{
+			rec.length = seq.length();
+			rec.coverage = getSeqAbsoluteKmerCoverage(seq, solidKmerSet);
+
 			/* add contig to output FASTA */
-			printContig(seq, counters.contigID, rec.readID, params.k, streams.out);
+			printContig(seq, rec.length, rec.coverage, counters.contigID, rec.readID, params.k, streams.out);
 
 			/* add contig to checkpoint FASTA file */
 			if (params.checkpointsEnabled())
-				printContig(seq, counters.contigID, rec.readID, params.k, streams.checkpointOut);
+				printContig(seq, rec.length, rec.coverage, counters.contigID, rec.readID, params.k, streams.checkpointOut);
 
 			rec.contigID = counters.contigID;
-			rec.length = seq.length();
 
 			counters.contigID++;
 			counters.basesAssembled += seq.length();
@@ -842,7 +868,7 @@ processRead(
 
 			/* output contig to FASTA file */
 			outputContig(
-			    contigPath, contigRec, assembledKmerSet, contigEndKmers, params, counters, streams);
+			    contigPath, contigRec, solidKmerSet, assembledKmerSet, contigEndKmers, params, counters, streams);
 		}
 
 		/* mark contig k-mers as visited */

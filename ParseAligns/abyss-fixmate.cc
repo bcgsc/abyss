@@ -1,3 +1,6 @@
+#include "ContigID.h"
+#include "DataBase/DB.h"
+#include "DataBase/Options.h"
 #include "Histogram.h"
 #include "IOUtil.h"
 #include "MemoryUtil.h"
@@ -5,8 +8,8 @@
 #include "StringUtil.h"
 #include "Uncompress.h"
 #include "UnorderedMap.h"
-#include "ContigID.h"
 #include <algorithm>
+#include <boost/unordered_map.hpp>
 #include <climits>
 #include <cstdlib>
 #include <fstream>
@@ -14,9 +17,6 @@
 #include <getopt.h>
 #include <iomanip>
 #include <iostream>
-#include <boost/unordered_map.hpp>
-#include "DataBase/Options.h"
-#include "DataBase/DB.h"
 
 using namespace std;
 
@@ -25,47 +25,47 @@ using namespace std;
 DB db;
 
 static const char VERSION_MESSAGE[] =
-PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
-"Written by Shaun Jackman.\n"
-"\n"
-"Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
+    PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
+            "Written by Shaun Jackman.\n"
+            "\n"
+            "Copyright 2014 Canada's Michael Smith Genome Sciences Centre\n";
 
 static const char USAGE_MESSAGE[] =
-"Usage: " PROGRAM " [OPTION]... [FILE]...\n"
-"Write read pairs that map to the same contig to the file SAME.\n"
-"Write read pairs that map to different contigs to stdout.\n"
-"Alignments may be in FILE(s) or standard input.\n"
-"\n"
-" Options:\n"
-"\n"
-"      --no-qname        set the qname to * [default]\n"
-"      --qname           do not alter the qname\n"
-"      --all             print all alignments\n"
-"      --diff            print alignments that align to different\n"
-"                        contigs [default]\n"
-"  -l, --min-align=N     the minimal alignment size [1]\n"
-"  -s, --same=SAME       write properly-paired reads to this file\n"
-"  -h, --hist=FILE       write the fragment size histogram to FILE\n"
-"  -c, --cov=FILE        write the physical coverage to FILE\n"
-"  -v, --verbose         display verbose output\n"
-"      --help            display this help and exit\n"
-"      --version         output version information and exit\n"
-"      --db=FILE         specify path of database repository in FILE\n"
-"      --library=NAME    specify library NAME for sqlite\n"
-"      --strain=NAME     specify strain NAME for sqlite\n"
-"      --species=NAME    specify species NAME for sqlite\n"
-"\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+    "Usage: " PROGRAM " [OPTION]... [FILE]...\n"
+    "Write read pairs that map to the same contig to the file SAME.\n"
+    "Write read pairs that map to different contigs to stdout.\n"
+    "Alignments may be in FILE(s) or standard input.\n"
+    "\n"
+    " Options:\n"
+    "\n"
+    "      --no-qname        set the qname to * [default]\n"
+    "      --qname           do not alter the qname\n"
+    "      --all             print all alignments\n"
+    "      --diff            print alignments that align to different\n"
+    "                        contigs [default]\n"
+    "  -l, --min-align=N     the minimal alignment size [1]\n"
+    "  -s, --same=SAME       write properly-paired reads to this file\n"
+    "  -h, --hist=FILE       write the fragment size histogram to FILE\n"
+    "  -c, --cov=FILE        write the physical coverage to FILE\n"
+    "  -v, --verbose         display verbose output\n"
+    "      --help            display this help and exit\n"
+    "      --version         output version information and exit\n"
+    "      --db=FILE         specify path of database repository in FILE\n"
+    "      --library=NAME    specify library NAME for sqlite\n"
+    "      --strain=NAME     specify strain NAME for sqlite\n"
+    "      --species=NAME    specify species NAME for sqlite\n"
+    "\n"
+    "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 namespace opt {
-	string db;
-	dbVars metaVars;
-	static string fragPath;
-	static string histPath;
-	static string covPath;
-	static int qname;
-	static int verbose;
-	static int print_all;
+string db;
+dbVars metaVars;
+static string fragPath;
+static string histPath;
+static string covPath;
+static int qname;
+static int verbose;
+static int print_all;
 }
 
 // for sqlite params
@@ -74,28 +74,35 @@ static vector<int> vals;
 
 static const char shortopts[] = "h:c:l:s:v";
 
-enum { OPT_HELP = 1, OPT_VERSION, OPT_DB, OPT_LIBRARY, OPT_STRAIN, OPT_SPECIES };
-
-static const struct option longopts[] = {
-	{ "qname",     no_argument,       &opt::qname, 1 },
-	{ "no-qname",  no_argument,       &opt::qname, 0 },
-	{ "all",       no_argument,       &opt::print_all, 1 },
-	{ "diff",      no_argument,       &opt::print_all, 0 },
-	{ "min-align", required_argument, NULL, 'l' },
-	{ "hist",      required_argument, NULL, 'h' },
-	{ "cov",       required_argument, NULL, 'c' },
-	{ "same",      required_argument, NULL, 's' },
-	{ "verbose",   no_argument,       NULL, 'v' },
-	{ "help",      no_argument,       NULL, OPT_HELP },
-	{ "version",   no_argument,       NULL, OPT_VERSION },
-	{ "db",        required_argument, NULL, OPT_DB },
-	{ "library",   required_argument, NULL, OPT_LIBRARY },
-	{ "strain",    required_argument, NULL, OPT_STRAIN },
-	{ "species",   required_argument, NULL, OPT_SPECIES },
-	{ NULL, 0, NULL, 0 }
+enum
+{
+	OPT_HELP = 1,
+	OPT_VERSION,
+	OPT_DB,
+	OPT_LIBRARY,
+	OPT_STRAIN,
+	OPT_SPECIES
 };
 
-static struct {
+static const struct option longopts[] = { { "qname", no_argument, &opt::qname, 1 },
+	                                      { "no-qname", no_argument, &opt::qname, 0 },
+	                                      { "all", no_argument, &opt::print_all, 1 },
+	                                      { "diff", no_argument, &opt::print_all, 0 },
+	                                      { "min-align", required_argument, NULL, 'l' },
+	                                      { "hist", required_argument, NULL, 'h' },
+	                                      { "cov", required_argument, NULL, 'c' },
+	                                      { "same", required_argument, NULL, 's' },
+	                                      { "verbose", no_argument, NULL, 'v' },
+	                                      { "help", no_argument, NULL, OPT_HELP },
+	                                      { "version", no_argument, NULL, OPT_VERSION },
+	                                      { "db", required_argument, NULL, OPT_DB },
+	                                      { "library", required_argument, NULL, OPT_LIBRARY },
+	                                      { "strain", required_argument, NULL, OPT_STRAIN },
+	                                      { "species", required_argument, NULL, OPT_SPECIES },
+	                                      { NULL, 0, NULL, 0 } };
+
+static struct
+{
 	size_t alignments;
 	size_t bothUnaligned;
 	size_t oneUnaligned;
@@ -106,9 +113,10 @@ static struct {
 static ofstream g_fragFile;
 static Histogram g_histogram;
 static ofstream g_covFile;
-static vector< vector<int> > g_contigCov;
+static vector<vector<int>> g_contigCov;
 
-static void incrementRange(SAMRecord& a)
+static void
+incrementRange(SAMRecord& a)
 {
 	unsigned inx = get(g_contigNames, a.rname);
 	g_contigCov[inx][a.pos]++;
@@ -119,14 +127,12 @@ static void incrementRange(SAMRecord& a)
 	g_contigCov[inx][end]--;
 }
 
-static void handlePair(SAMRecord& a0, SAMRecord& a1)
+static void
+handlePair(SAMRecord& a0, SAMRecord& a1)
 {
-	if ((a0.isRead1() && a1.isRead1())
-			|| (a0.isRead2() && a1.isRead2())) {
-		cerr << "error: duplicate read ID `" << a0.qname
-			<< (a0.isRead1() ? "/1" : "")
-			<< (a0.isRead2() ? "/2" : "")
-			<< "'\n";
+	if ((a0.isRead1() && a1.isRead1()) || (a0.isRead2() && a1.isRead2())) {
+		cerr << "error: duplicate read ID `" << a0.qname << (a0.isRead1() ? "/1" : "")
+		     << (a0.isRead2() ? "/2" : "") << "'\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -175,7 +181,8 @@ typedef boost::unordered_map<string, SAMRecord> Alignments;
 typedef boost::unordered_map<string, SAMAlignment> Alignments;
 #endif
 
-static void printProgress(const Alignments& map)
+static void
+printProgress(const Alignments& map)
 {
 	if (opt::verbose == 0)
 		return;
@@ -189,16 +196,15 @@ static void printProgress(const Alignments& map)
 		prevBuckets = buckets;
 		size_t size = map.size();
 		cerr << "Read " << stats.alignments << " alignments. "
-			<< "Hash load: " << size << " / " << buckets
-			<< " = " << (float)size / buckets
-			<< " using " << toSI(getMemoryUsage()) << "B." << endl;
+		     << "Hash load: " << size << " / " << buckets << " = " << (float)size / buckets
+		     << " using " << toSI(getMemoryUsage()) << "B." << endl;
 	}
 }
 
-static void handleAlignment(SAMRecord& sam, Alignments& map)
+static void
+handleAlignment(SAMRecord& sam, Alignments& map)
 {
-	pair<Alignments::iterator, bool> it = map.insert(
-			make_pair(sam.qname, sam));
+	pair<Alignments::iterator, bool> it = map.insert(make_pair(sam.qname, sam));
 	if (!it.second) {
 #if SAM_SEQ_QUAL
 		SAMRecord& a0 = it.first->second;
@@ -222,7 +228,8 @@ static void handleAlignment(SAMRecord& sam, Alignments& map)
 	printProgress(map);
 }
 
-static void assert_eof(istream& in)
+static void
+assert_eof(istream& in)
 {
 	if (in.eof())
 		return;
@@ -234,21 +241,26 @@ static void assert_eof(istream& in)
 }
 
 /** Print physical coverage in wiggle format. */
-static void printCov(string file)
+static void
+printCov(string file)
 {
 	ofstream out(file.c_str());
 	for (unsigned i = 0; i < g_contigCov.size(); i++) {
 		out << "variableStep\tchrom=" << get(g_contigNames, i) << '\n';
 		int prev = g_contigCov[i][0];
-		if (prev != 0) out << "0\t" << prev << '\n';
+		if (prev != 0)
+			out << "0\t" << prev << '\n';
 		for (unsigned j = 1; j < g_contigCov[i].size(); j++) {
 			prev += g_contigCov[i][j];
-			if (prev != 0) out << j << "\t" << prev << '\n';
+			if (prev != 0)
+				out << j << "\t" << prev << '\n';
 		}
 	}
 }
 
-void parseTag(string line) {
+void
+parseTag(string line)
+{
 	stringstream ss(line);
 	string tag;
 	char type[2];
@@ -269,10 +281,11 @@ void parseTag(string line) {
 	assert(length > 0);
 	assert(id.size() > 0);
 	put(g_contigNames, g_contigCov.size(), id);
-	g_contigCov.push_back(vector<int>(length));	
+	g_contigCov.push_back(vector<int>(length));
 }
 
-static void readAlignments(istream& in, Alignments* pMap)
+static void
+readAlignments(istream& in, Alignments* pMap)
 {
 	for (SAMRecord sam; in >> ws;) {
 		if (in.peek() == '@') {
@@ -294,7 +307,8 @@ static void readAlignments(istream& in, Alignments* pMap)
 	assert_eof(in);
 }
 
-static void readAlignmentsFile(string path, Alignments* pMap)
+static void
+readAlignmentsFile(string path, Alignments* pMap)
 {
 	if (opt::verbose > 0)
 		cerr << "Reading `" << path << "'..." << endl;
@@ -305,103 +319,118 @@ static void readAlignmentsFile(string path, Alignments* pMap)
 }
 
 /** Return the specified number formatted as a percent. */
-static string percent(size_t x, size_t n)
+static string
+percent(size_t x, size_t n)
 {
 	ostringstream ss;
 	ss << setw((int)log10(n) + 1) << x;
 	if (x > 0)
-		ss << "  " << setprecision(3) << (float)100*x/n << '%';
+		ss << "  " << setprecision(3) << (float)100 * x / n << '%';
 	return ss.str();
 }
 
 /** Print statistics of the specified histogram. h not passed by
-  * reference because we want to make a copy
+ * reference because we want to make a copy
  **/
-static void printHistogramStats(Histogram h)
+static void
+printHistogramStats(Histogram h)
 {
 	unsigned n_orig = h.size();
 	h.eraseNegative();
 	h.removeNoise();
 	h.removeOutliers();
 	h = h.trimFraction(0.0001);
-	cerr << "Stats mean: " << setprecision(4) << h.mean() << " "
-		"median: " << setprecision(4) << h.median() << " "
-		"sd: " << setprecision(4) << h.sd() << " "
-		"n: " << h.size() << " "
-		"min: " << h.minimum() << " "
-		"max: " << h.maximum() << " "
-		"ignored: " << n_orig - h.size() << '\n'
-		<< h.barplot() << endl;
+	cerr << "Stats mean: " << setprecision(4) << h.mean()
+	     << " "
+	        "median: "
+	     << setprecision(4) << h.median()
+	     << " "
+	        "sd: "
+	     << setprecision(4) << h.sd()
+	     << " "
+	        "n: "
+	     << h.size()
+	     << " "
+	        "min: "
+	     << h.minimum()
+	     << " "
+	        "max: "
+	     << h.maximum()
+	     << " "
+	        "ignored: "
+	     << n_orig - h.size() << '\n'
+	     << h.barplot() << endl;
 	if (!opt::db.empty()) {
-		vals = make_vector<int>()
-			<< (int)round(h.mean())
-			<< h.median()
-			<< (int)round(h.sd())
-			<< h.size()
-			<< h.minimum()
-			<< h.maximum()
-			<< n_orig-h.size();
+		vals = make_vector<int>() << (int)round(h.mean()) << h.median() << (int)round(h.sd())
+		                          << h.size() << h.minimum() << h.maximum() << n_orig - h.size();
 
-		keys = make_vector<string>()
-			<< "mean"
-			<< "median"
-			<< "sd"
-			<< "n"
-			<< "min"
-			<< "max"
-			<< "ignored";
+		keys = make_vector<string>() << "mean"
+		                             << "median"
+		                             << "sd"
+		                             << "n"
+		                             << "min"
+		                             << "max"
+		                             << "ignored";
 
-		for (unsigned i=0; i<vals.size(); i++)
+		for (unsigned i = 0; i < vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
 }
 
-int main(int argc, char* const* argv)
+int
+main(int argc, char* const* argv)
 {
 	opt::metaVars.resize(3);
 
 	bool die = false;
-	for (int c; (c = getopt_long(argc, argv,
-					shortopts, longopts, NULL)) != -1;) {
+	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
 		switch (c) {
-			case '?': die = true; break;
-			case 'l':
-				arg >> opt::minAlign;
-				break;
-			case 's': arg >> opt::fragPath; break;
-			case 'h': arg >> opt::histPath; break;
-			case 'c': arg >> opt::covPath; break;
-			case 'v': opt::verbose++; break;
-			case OPT_HELP:
-				cout << USAGE_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_VERSION:
-				cout << VERSION_MESSAGE;
-				exit(EXIT_SUCCESS);
-			case OPT_DB:
-				arg >> opt::db;
-				break;
-			case OPT_LIBRARY:
-				arg >> opt::metaVars[0];
-				break;
-			case OPT_STRAIN:
-				arg >> opt::metaVars[1];
-				break;
-			case OPT_SPECIES:
-				arg >> opt::metaVars[2];
-				break;
+		case '?':
+			die = true;
+			break;
+		case 'l':
+			arg >> opt::minAlign;
+			break;
+		case 's':
+			arg >> opt::fragPath;
+			break;
+		case 'h':
+			arg >> opt::histPath;
+			break;
+		case 'c':
+			arg >> opt::covPath;
+			break;
+		case 'v':
+			opt::verbose++;
+			break;
+		case OPT_HELP:
+			cout << USAGE_MESSAGE;
+			exit(EXIT_SUCCESS);
+		case OPT_VERSION:
+			cout << VERSION_MESSAGE;
+			exit(EXIT_SUCCESS);
+		case OPT_DB:
+			arg >> opt::db;
+			break;
+		case OPT_LIBRARY:
+			arg >> opt::metaVars[0];
+			break;
+		case OPT_STRAIN:
+			arg >> opt::metaVars[1];
+			break;
+		case OPT_SPECIES:
+			arg >> opt::metaVars[2];
+			break;
 		}
 		if (optarg != NULL && !arg.eof()) {
-			cerr << PROGRAM ": invalid option: `-"
-				<< (char)c << optarg << "'\n";
+			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
 			exit(EXIT_FAILURE);
 		}
 	}
 
 	if (die) {
-		cerr << "Try `" << PROGRAM
-			<< " --help' for more information.\n";
+		cerr << "Try `" << PROGRAM << " --help' for more information.\n";
 		exit(EXIT_FAILURE);
 	}
 
@@ -411,18 +440,13 @@ int main(int argc, char* const* argv)
 	}
 
 	if (!opt::db.empty())
-		init(db,
-			opt::db,
-			opt::verbose,
-			PROGRAM,
-			opt::getCommand(argc, argv),
-			opt::metaVars
-		);
+		init(db, opt::db, opt::verbose, PROGRAM, opt::getCommand(argc, argv), opt::metaVars);
 
 	Alignments alignments(1);
 	if (optind < argc) {
-		for_each(argv + optind, argv + argc,
-				bind2nd(ptr_fun(readAlignmentsFile), &alignments));
+		for_each(argv + optind, argv + argc, [&alignments](const std::string& s) {
+			readAlignmentsFile(s, &alignments);
+		});
 	} else {
 		if (opt::verbose > 0)
 			cerr << "Reading from standard input..." << endl;
@@ -435,8 +459,7 @@ int main(int argc, char* const* argv)
 
 	// Print the unpaired alignments.
 	if (opt::print_all) {
-		for (Alignments::iterator it = alignments.begin();
-				it != alignments.end(); it++) {
+		for (Alignments::iterator it = alignments.begin(); it != alignments.end(); it++) {
 #if SAM_SEQ_QUAL
 			SAMRecord& a0 = it->second;
 #else
@@ -450,49 +473,52 @@ int main(int argc, char* const* argv)
 
 	unsigned numRF = g_histogram.count(INT_MIN, 0);
 	unsigned numFR = g_histogram.count(1, INT_MAX);
-	size_t sum = alignments.size()
-		+ stats.bothUnaligned + stats.oneUnaligned
-		+ numFR + numRF + stats.numFF
-		+ stats.numDifferent;
-	cerr <<
-		"Mateless   " << percent(alignments.size(), sum) << "\n"
-		"Unaligned  " << percent(stats.bothUnaligned, sum) << "\n"
-		"Singleton  " << percent(stats.oneUnaligned, sum) << "\n"
-		"FR         " << percent(numFR, sum) << "\n"
-		"RF         " << percent(numRF, sum) << "\n"
-		"FF         " << percent(stats.numFF, sum) << "\n"
-		"Different  " << percent(stats.numDifferent, sum) << "\n"
-		"Total      " << sum << endl;
+	size_t sum = alignments.size() + stats.bothUnaligned + stats.oneUnaligned + numFR + numRF +
+	             stats.numFF + stats.numDifferent;
+	cerr << "Mateless   " << percent(alignments.size(), sum)
+	     << "\n"
+	        "Unaligned  "
+	     << percent(stats.bothUnaligned, sum)
+	     << "\n"
+	        "Singleton  "
+	     << percent(stats.oneUnaligned, sum)
+	     << "\n"
+	        "FR         "
+	     << percent(numFR, sum)
+	     << "\n"
+	        "RF         "
+	     << percent(numRF, sum)
+	     << "\n"
+	        "FF         "
+	     << percent(stats.numFF, sum)
+	     << "\n"
+	        "Different  "
+	     << percent(stats.numDifferent, sum)
+	     << "\n"
+	        "Total      "
+	     << sum << endl;
 
 	if (!opt::db.empty()) {
-		vals = make_vector<int>()
-			<< alignments.size()
-			<< stats.bothUnaligned
-			<< stats.oneUnaligned
-			<< numFR
-			<< numRF
-			<< stats.numFF
-			<< stats.numDifferent
-			<< sum;
+		vals = make_vector<int>() << alignments.size() << stats.bothUnaligned << stats.oneUnaligned
+		                          << numFR << numRF << stats.numFF << stats.numDifferent << sum;
 
-		keys = make_vector<string>()
-			<< "Mateless"
-			<< "Unaligned"
-			<< "Singleton"
-			<< "FR"
-			<< "RF"
-			<< "FF"
-			<< "Different"
-			<< "Total";
+		keys = make_vector<string>() << "Mateless"
+		                             << "Unaligned"
+		                             << "Singleton"
+		                             << "FR"
+		                             << "RF"
+		                             << "FF"
+		                             << "Different"
+		                             << "Total";
 
-		for (unsigned i=0; i<vals.size(); i++)
+		for (unsigned i = 0; i < vals.size(); i++)
 			addToDb(db, keys[i], vals[i]);
 	}
 
 	if (alignments.size() == sum) {
 		cerr << PROGRAM ": error: All reads are mateless. This "
-			"can happen when first and second read IDs do not match."
-			<< endl;
+		                "can happen when first and second read IDs do not match."
+		     << endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -525,9 +551,9 @@ int main(int argc, char* const* argv)
 
 	if (stats.numFF > numFR && stats.numFF > numRF) {
 		cerr << PROGRAM ": error: The mate pairs of this library are "
-			"oriented forward-forward (FF), which is not supported "
-			"by ABySS."
-			<< endl;
+		                "oriented forward-forward (FF), which is not supported "
+		                "by ABySS."
+		     << endl;
 		exit(EXIT_FAILURE);
 	}
 

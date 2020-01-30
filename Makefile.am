@@ -69,8 +69,16 @@ clean-local:
 clang-format:
 	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
 	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	ABYSS/abyss.cc Assembly/BranchGroup.h  FMIndex/BitArrays.h  FilterGraph/FilterGraph.cc \
+	Graph/ContigGraphAlgorithms.h  KAligner/Aligner.h  KAligner/PipeMux.h  Layout/layout.cc \
+	MergePaths/MergeContigs.cpp MergePaths/MergePaths.cpp  ParseAligns/ParseAligns.cpp \
+	ParseAligns/abyss-fixmate.cc PathOverlap/PathOverlap.cpp  PopBubbles/PopBubbles.cpp  Scaffold/scaffold.cc \
 	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do clang-format -style=file $$i >$$i.fixed; done
 	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
 	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
+	ABYSS/abyss.cc Assembly/BranchGroup.h  FMIndex/BitArrays.h  FilterGraph/FilterGraph.cc \
+	Graph/ContigGraphAlgorithms.h  KAligner/Aligner.h  KAligner/PipeMux.h  Layout/layout.cc \
+	MergePaths/MergeContigs.cpp MergePaths/MergePaths.cpp  ParseAligns/ParseAligns.cpp \
+	ParseAligns/abyss-fixmate.cc PathOverlap/PathOverlap.cpp  PopBubbles/PopBubbles.cpp  Scaffold/scaffold.cc \
 	Unittest/BloomDBG/HashAgnosticCascadingBloomTest.cpp; do diff -su $$i $$i.fixed && rm -f $$i.fixed; done
 	if ls *.fixed; then exit 1; fi
