@@ -548,7 +548,7 @@ class Edge
   protected:
 
 	/** Copy constructors */
-	DirectedGraph(const DirectedGraph& d) = default;
+	DirectedGraph(const DirectedGraph&) = default;
 	DirectedGraph(DirectedGraph&&) = default;
 	DirectedGraph& operator=(const DirectedGraph&) = default;
 	DirectedGraph& operator=(DirectedGraph&&) = default;
