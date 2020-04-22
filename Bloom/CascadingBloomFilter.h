@@ -6,7 +6,7 @@
 #define CascadingBLOOMFILTER_H 1
 
 #include "Bloom/Bloom.h"
-#include "BloomFilter.h"
+#include "KonnectorBloomFilter.h"
 #include <vector>
 
 /** A Cascading Bloom filter. */
@@ -22,13 +22,13 @@ class CascadingBloomFilter
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
-			m_data.push_back(new Konnector::BloomFilter(n, hashSeed));
+			m_data.push_back(new KonnectorBloomFilter(n));
 	}
 
 	/** Destructor */
 	~CascadingBloomFilter()
 	{
-		typedef std::vector<Konnector::BloomFilter*>::iterator Iterator;
+		typedef std::vector<KonnectorBloomFilter*>::iterator Iterator;
 		for (Iterator i = m_data.begin(); i != m_data.end(); i++) {
 			assert(*i != NULL);
 			delete *i;
@@ -91,7 +91,7 @@ class CascadingBloomFilter
 	}
 
 	/** Get the Bloom filter for a given level */
-	Konnector::BloomFilter& getBloomFilter(unsigned level)
+	KonnectorBloomFilter& getBloomFilter(unsigned level)
 	{
 		assert(m_data.at(level) != NULL);
 		return *m_data.at(level);
@@ -112,7 +112,7 @@ class CascadingBloomFilter
 
   private:
 	size_t m_hashSeed;
-	std::vector<Konnector::BloomFilter*> m_data;
+	std::vector<KonnectorBloomFilter*> m_data;
 
 };
 

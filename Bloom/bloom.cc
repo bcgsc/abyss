@@ -3,10 +3,8 @@
  */
 
 #include "Bloom/Bloom.h"
-#include "Bloom/BloomFilter.h"
-#include "Bloom/BloomFilterWindow.h"
+#include "Bloom/KonnectorBloomFilter.h"
 #include "Bloom/CascadingBloomFilter.h"
-#include "Bloom/CascadingBloomFilterWindow.h"
 #include "Bloom/HashAgnosticCascadingBloom.h"
 #include "Bloom/RollingBloomDBGVisitor.h"
 #include "BloomDBG/BloomIO.h"
@@ -83,8 +81,6 @@ static const char USAGE_MESSAGE[] =
                   "  -B, --buffer-size=N        size of I/O buffer for each thread, in bytes "
                   "[100000]\n"
                   "  -j, --threads=N            use N parallel threads [1]\n"
-                  "  -h, --hash-seed=N          seed for hash function (only works with\n"
-                  "                             `-t konnector') [0]\n"
                   "  -H, --num-hashes=N         number of hash functions (only works with\n"
                   "                             `-t rolling-hash') [1]\n"
                   "  -l, --levels=N             build a cascading bloom filter with N levels\n"
@@ -212,14 +208,6 @@ KmerProperties fastaProperties;
  */
 KmerProperties bloomProperties;
 
-/** Index of bloom filter window.
-  ("M" for -w option) */
-unsigned windowIndex = 0;
-
-/** Number of windows in complete bloom filter.
-  ("N" for -w option) */
-unsigned windows = 0;
-
 /* Method for similarity or distance calculation.
  -m option
  */
@@ -239,7 +227,7 @@ vector<FilePath> rootFastas;
 OutputFormat format = FASTA;
 }
 
-static const char shortopts[] = "a:A:b:B:d:f:h:H:j:k:l:L:m:n:q:rR:vt:w:";
+static const char shortopts[] = "a:A:b:B:d:f:H:j:k:l:L:m:n:q:rR:vt:";
 
 enum
 {
@@ -255,7 +243,6 @@ static const struct option longopts[] = {
 	{ "bloom-type", required_argument, NULL, 't' },
 	{ "buffer-size", required_argument, NULL, 'B' },
 	{ "depth", required_argument, NULL, 'd' },
-	{ "hash-seed", required_argument, NULL, 'h' },
 	{ "num-hashes", required_argument, NULL, 'H' },
 	{ "threads", required_argument, NULL, 'j' },
 	{ "kmer", required_argument, NULL, 'k' },
@@ -275,7 +262,6 @@ static const struct option longopts[] = {
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "help", no_argument, NULL, OPT_HELP },
 	{ "version", no_argument, NULL, OPT_VERSION },
-	{ "window", required_argument, NULL, 'w' },
 	{ "method", required_argument, NULL, 'm' },
 	{ "inverse", required_argument, NULL, 'r' },
 	{ "root", required_argument, NULL, 'R' },
@@ -527,12 +513,11 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
 
-	if (opt::windows == 0) {
 
 		if (opt::levels == 1) {
-			Konnector::BloomFilter bloom(bits, opt::hashSeed);
+			KonnectorBloomFilter bloom(bits);
 #ifdef _OPENMP
-			ConcurrentBloomFilter<Konnector::BloomFilter> cbf(bloom, opt::numLocks, opt::hashSeed);
+			ConcurrentBloomFilter<KonnectorBloomFilter> cbf(bloom, opt::numLocks);
 			loadFilters(cbf, argc, argv);
 #else
 			loadFilters(bloom, argc, argv);
@@ -540,44 +525,19 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 			printBloomStats(cerr, bloom);
 			writeBloom(bloom, outputPath);
 		} else {
-			CascadingBloomFilter cascadingBloom(bits, opt::levels, opt::hashSeed);
+			CascadingBloomFilter cascadingBloom(bits, opt::levels);
 			initBloomFilterLevels(cascadingBloom);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter> cbf(
-			    cascadingBloom, opt::numLocks, opt::hashSeed);
+			    cascadingBloom, opt::numLocks);
 			loadFilters(cbf, argc, argv);
 #else
 			loadFilters(cascadingBloom, argc, argv);
 #endif
 			printCascadingBloomStats(cerr, cascadingBloom);
 			writeBloom(cascadingBloom, outputPath);
+		
 		}
-
-	} else {
-
-		size_t bitsPerWindow = bits / opt::windows;
-		size_t startBitPos = (opt::windowIndex - 1) * bitsPerWindow;
-		size_t endBitPos;
-
-		if (opt::windowIndex < opt::windows)
-			endBitPos = opt::windowIndex * bitsPerWindow - 1;
-		else
-			endBitPos = bits - 1;
-
-		if (opt::levels == 1) {
-			BloomFilterWindow bloom(bits, startBitPos, endBitPos, opt::hashSeed);
-			loadFilters(bloom, argc, argv);
-			printBloomStats(cerr, bloom);
-			writeBloom(bloom, outputPath);
-		} else {
-			CascadingBloomFilterWindow cascadingBloom(
-			    bits, startBitPos, endBitPos, opt::levels, opt::hashSeed);
-			initBloomFilterLevels(cascadingBloom);
-			loadFilters(cascadingBloom, argc, argv);
-			printCascadingBloomStats(cerr, cascadingBloom);
-			writeBloom(cascadingBloom, outputPath);
-		}
-	}
 }
 
 /** Build a rolling-hash based Bloom filter (used by pre 2.2.0 `abyss-bloom-dbg`) */
@@ -638,9 +598,6 @@ build(int argc, char** argv)
 		case 'B':
 			arg >> opt::bufferSize;
 			break;
-		case 'h':
-			arg >> opt::hashSeed;
-			break;
 		case 'H':
 			arg >> opt::numHashes;
 			break;
@@ -675,11 +632,6 @@ build(int argc, char** argv)
 			arg >> str;
 			opt::bloomType = strToBloomType(str);
 		} break;
-		case 'w':
-			arg >> opt::windowIndex;
-			arg >> expect("/");
-			arg >> opt::windows;
-			break;
 		}
 		if (optarg != NULL && (!arg.eof() || arg.fail())) {
 			cerr << PROGRAM ": invalid option: `-" << (char)c << optarg << "'\n";
@@ -725,13 +677,6 @@ build(int argc, char** argv)
 	size_t bits = opt::bloomSize * 8;
 	size_t bytes = opt::bloomSize;
 
-	if (opt::windows != 0 && bits / opt::levels % opt::windows != 0) {
-		cerr << PROGRAM ": (b / l) % w == 0 must be true, where "
-		     << "b is bloom filter size (-b), "
-		     << "l is number of levels (-l), and "
-		     << "w is number of windows (-w)\n";
-		dieWithUsageError();
-	}
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
@@ -776,7 +721,7 @@ combine(int argc, char** argv, BitwiseOp readOp)
 	string outputPath(argv[optind]);
 	optind++;
 
-	Konnector::BloomFilter bloom;
+	KonnectorBloomFilter bloom;
 
 	for (int i = optind; i < argc; i++) {
 		string path(argv[i]);
@@ -829,7 +774,7 @@ info(int argc, char** argv)
 		dieWithUsageError();
 	}
 
-	Konnector::BloomFilter bloom;
+	KonnectorBloomFilter bloom;
 	string path = argv[optind];
 
 	if (opt::verbose)
@@ -876,9 +821,9 @@ compare(int argc, char** argv)
 		std::cerr << "Computing distance for 2"
 		          << " samples...\n";
 	// Get both paths and open istreams
-	Konnector::BloomFilter bloomA;
+	KonnectorBloomFilter bloomA;
 	string pathA(argv[optind]);
-	Konnector::BloomFilter bloomB;
+	KonnectorBloomFilter bloomB;
 	string pathB(argv[optind + 1]);
 	if (opt::verbose)
 		std::cerr << "Loading bloom filters from " << pathA << " and " << pathB << "...\n";
@@ -1156,7 +1101,7 @@ int
 memberOf(int argc, char** argv)
 {
 	// Initalise bloom and get globals
-	Konnector::BloomFilter bloom;
+	KonnectorBloomFilter bloom;
 	parseGlobalOpts(argc, argv);
 	// Arg parser to get `m' option in case set
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
@@ -1237,11 +1182,11 @@ int
 calcLeftTrim(
     const Sequence& seq,
     unsigned k,
-    const Konnector::BloomFilter& bloom,
+    const KonnectorBloomFilter& bloom,
     size_t minBranchLen)
 {
 	// Boost graph interface for Bloom filter
-	DBGBloom<Konnector::BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	// if this is the first k-mer we have found in
 	// Bloom filter, starting from the left end
@@ -1312,7 +1257,7 @@ trim(int argc, char** argv)
 	if (opt::verbose)
 		cerr << "Loading bloom filter from `" << bloomPath << "'...\n";
 
-	Konnector::BloomFilter bloom;
+	KonnectorBloomFilter bloom;
 	istream* in = openInputStream(bloomPath);
 	assert_good(*in, bloomPath);
 	bloom.read(*in);
