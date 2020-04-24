@@ -140,7 +140,8 @@ public:
 	 */
 	void getHashes(hash_t hashes[]) const
 	{
-		for (unsigned i = 0; i < m_numHashes; ++i)
+		hashes[0] = m_hash;
+		for (unsigned i = 1; i < m_numHashes; ++i)
 			hashes[i] = NTE64(m_hash, m_k, i);
 	}
 
