@@ -1,0 +1,9 @@
+2020-01-21  Johnathan Wong <jowong@bcgsc.ca>
+
+	* Release version 2.1.0
+	* Added support for RNA sequences
+	* stHashIterator is now able to produce multiple hashes for each seed
+
+2017-03-08  Hamid Mohamadi <hmohamadi@bcgsc.ca>
+
+	* Automake version
