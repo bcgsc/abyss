@@ -1,9 +1,32 @@
 #include "BloomDBG/RollingHashIterator.h"
+#include "vendor/nthash/ntHashIterator.hpp"
 
 #include <gtest/gtest.h>
 #include <string>
 
 using namespace std;
+
+TEST(RollingHashIterator, ntHashIterator)
+{
+	const unsigned k = 5;
+	const unsigned numHashes = 3;
+	const char* seq = "GCAATGT";
+
+	/** hash forward sequence */
+
+	RollingHashIterator it(seq, numHashes, k);
+	ntHashIterator it2(seq, numHashes, k);
+	while (it2 != it2.end()) 
+	{
+		for (size_t i = 0; i < numHashes; ++i) {
+			std::cerr << (*it)[i] << std::endl;
+			std::cerr << (*it2)[i] << std::endl;
+			ASSERT_EQ((*it)[i], (*it2)[i]);
+		}
+		++it;
+		++it2;
+	}
+}
 
 TEST(RollingHashIterator, reverseComplement)
 {
