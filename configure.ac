@@ -314,7 +314,6 @@ AC_CONFIG_FILES([
 	BloomDBG/Makefile
 	DataBase/Makefile
 	vendor/Makefile
-	vendor/nthash/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
