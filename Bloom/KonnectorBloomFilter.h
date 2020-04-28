@@ -46,6 +46,36 @@ class KonnectorBloomFilter : public BloomFilter
 
 	/** Return the estimated false positive rate */
 	double FPR() const { return getFPR(); }
+	
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	bool contains(vector<unsigned long long> const& precomputed) const
+	{
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			uint64_t normalizedValue = precomputed.at(i) % m_size;
+			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
+			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	bool contains(const unsigned long long precomputed[]) const
+	{
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			uint64_t normalizedValue = precomputed[i] % m_size;
+			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
+			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
+				return false;
+			}
+		}
+		return true;
+	}
 
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
