@@ -5,8 +5,9 @@
 # error ConcurrentBloomFilter class requires a compiler that supports OpenMP
 #endif
 
-#include "config.h"
 #include "BloomDBG/RollingHashIterator.h"
+#include "config.h"
+
 #include <vector>
 #include <omp.h>
 
