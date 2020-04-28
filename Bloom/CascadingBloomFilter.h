@@ -20,7 +20,7 @@ class CascadingBloomFilter
 	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CascadingBloomFilter(size_t n, size_t max_count, unsigned k) :
+	CascadingBloomFilter(size_t n, size_t max_count, unsigned k)
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
