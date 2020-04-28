@@ -19,7 +19,7 @@ class CascadingBloomFilter
 	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CascadingBloomFilter(size_t n, size_t max_count, unsigned k, size_t hashSeed=0) : m_hashSeed(hashSeed)
+	CascadingBloomFilter(size_t n, size_t max_count, unsigned k) :
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
@@ -134,7 +134,6 @@ class CascadingBloomFilter
 	}
 
   private:
-	size_t m_hashSeed;
 	std::vector<KonnectorBloomFilter*> m_data;
 
 };
