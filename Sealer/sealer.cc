@@ -46,7 +46,6 @@
 #endif
 
 using namespace std;
-using Konnector::BloomFilter;
 #if USESEQAN
 using namespace seqan;
 #endif
@@ -1030,7 +1029,7 @@ int main(int argc, char** argv)
 		opt::k = opt::kvector.at(i);
 		Kmer::setLength(opt::k);
 
-		BloomFilter* bloom;
+		KonnectorBloomFilter* bloom;
 		CascadingBloomFilter* cascadingBloom = NULL;
 
 		if (!opt::bloomFilterPaths.empty() && i < opt::bloomFilterPaths.size()) {
@@ -1038,7 +1037,7 @@ int main(int argc, char** argv)
 			temp = "Loading bloom filter from `" + opt::bloomFilterPaths.at(i) + "'...\n";
 			printLog(logStream, temp);
 
-			bloom = new BloomFilter();
+			bloom = new KonnectorBloomFilter();
 
 			const char* inputPath = opt::bloomFilterPaths.at(i).c_str();
 			ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
@@ -1068,7 +1067,7 @@ int main(int argc, char** argv)
 			cerr << "Bloom filter FPR: " << setprecision(3)
 				<< 100 * bloom->FPR() << "%\n";
 
-		DBGBloom<BloomFilter> g(*bloom);
+		DBGBloom<KonnectorBloomFilter> g(*bloom);
 
 		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
 		printLog(logStream, temp);

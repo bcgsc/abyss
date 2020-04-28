@@ -6,7 +6,10 @@
 #ifndef KONNECTORBLOOMFILTER_H
 #define KONNECTORBLOOMFILTER_H 1
 
+      #include <execinfo.h>
+
 #include "Bloom/Bloom.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include "Common/Kmer.h"
 #include "Common/IOUtil.h"
 #include "Common/BitUtil.h"
@@ -15,6 +18,8 @@
 #include <iostream>
 #include <boost/dynamic_bitset.hpp>
 #include "vendor/btl_bloomfilter/BloomFilter.hpp"
+
+  #define BT_BUF_SIZE 100
 
 /** A Bloom filter. */
 class KonnectorBloomFilter : public BloomFilter
@@ -47,6 +52,42 @@ class KonnectorBloomFilter : public BloomFilter
 	{
 		return getFPR();
 	}
+	
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	bool contains(vector<size_t> const& precomputed) const
+	{
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			uint64_t normalizedValue = precomputed.at(i) % m_size;
+			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
+			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	bool contains(const size_t precomputed[]) const
+	{
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			uint64_t normalizedValue = precomputed[i] % m_size;
+			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
+			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/** Return whether the specified bit is set. */
+	bool operator[](const size_t precomputed[]) const
+	{
+		return contains(precomputed);
+	}
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
@@ -58,20 +99,49 @@ class KonnectorBloomFilter : public BloomFilter
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return (*this)[Bloom::hash(key, 0)];
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		return contains(*it);
 	}
+	
+
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	void insert(const size_t precomputed[])
+	{
+
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
+			__sync_or_and_fetch(
+			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
+		}
+	}
+	
+	void insert(vector<size_t> const& precomputed)
+	{
+
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed.at(i) % m_size;
+			__sync_or_and_fetch(
+			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
+		}
+	}
+
 
 	/** Add the object with the specified index to this set. */
 	void insert(size_t i)
 	{
 		size_t foo [1] = { i };
-		BloomFilter::insert(foo);
+		insert(foo);
 	}
 
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		insert(Bloom::hash(key, 0));
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		insert(*it);
 	}
 
 	/** Operator for reading a bloom filter from a stream. */

@@ -33,7 +33,6 @@
 #endif
 
 using namespace std;
-using Konnector::BloomFilter;
 
 #define PROGRAM "konnector"
 
@@ -145,7 +144,7 @@ const unsigned g_trimLen = 3;
  * the --extend and --dup-bloom-size options
  * are in effect.
  */
-BloomFilter g_dupBloom;
+KonnectorBloomFilter g_dupBloom;
 
 namespace opt {
 
@@ -339,8 +338,8 @@ static const struct option longopts[] = {
  * Return true if the Bloom filter contains all of the
  * "good" kmers in the given sequence.
  */
-static inline bool isSeqRedundant(const BloomFilter& assembledKmers,
-	const BloomFilter& goodKmers, Sequence seq)
+static inline bool isSeqRedundant(const KonnectorBloomFilter& assembledKmers,
+	const KonnectorBloomFilter& goodKmers, Sequence seq)
 {
 	flattenAmbiguityCodes(seq, false);
 	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
@@ -353,8 +352,8 @@ static inline bool isSeqRedundant(const BloomFilter& assembledKmers,
 /**
  * Load the kmers of a given sequence into a Bloom filter.
  */
-static inline void addKmers(BloomFilter& bloom,
-	const BloomFilter& goodKmers, unsigned k,
+static inline void addKmers(KonnectorBloomFilter& bloom,
+	const KonnectorBloomFilter& goodKmers, unsigned k,
 	const Sequence& seq)
 {
 	if (containsAmbiguityCodes(seq)) {
@@ -1105,7 +1104,7 @@ int main(int argc, char** argv)
 	if (opt::dupBloomSize > 0)
 		g_dupBloom.resize(opt::dupBloomSize * 8);
 
-	BloomFilter* bloom;
+	KonnectorBloomFilter* bloom;
 	CascadingBloomFilter* cascadingBloom = NULL;
 
 	if (!opt::inputBloomPath.empty()) {
@@ -1114,7 +1113,7 @@ int main(int argc, char** argv)
 			std::cerr << "Loading bloom filter from `"
 				<< opt::inputBloomPath << "'...\n";
 
-		bloom = new BloomFilter();
+		bloom = new KonnectorBloomFilter();
 
 		const char* inputPath = opt::inputBloomPath.c_str();
 		ifstream inputBloom(inputPath, ios_base::in | ios_base::binary);
@@ -1169,7 +1168,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<BloomFilter> g(*bloom);
+	DBGBloom<KonnectorBloomFilter> g(*bloom);
 
 	/*
 	 * read pairs that were successfully connected

@@ -6,6 +6,7 @@
 #endif
 
 #include "config.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include <vector>
 #include <omp.h>
 
@@ -55,7 +56,8 @@ public:
 	/** Return whether the object is present in this set. */
 	bool operator[](const Bloom::key_type& key) const
 	{
-		return *this[Bloom::hash(key, m_hashSeed) % m_bloom.size()];
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		return m_bloom[*it];
 	}
 
 	/** Add the object with the specified index to this set. */
@@ -70,7 +72,16 @@ public:
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)
 	{
-		insert(Bloom::hash(key, m_hashSeed) % m_bloom.size());
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		m_bloom.insert(*it);
+	}
+	
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	void insert(const size_t precomputed[])
+	{
+		m_bloom.insert(precomputed);
 	}
 
 private:

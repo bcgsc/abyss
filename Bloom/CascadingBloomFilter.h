@@ -7,6 +7,7 @@
 
 #include "Bloom/Bloom.h"
 #include "KonnectorBloomFilter.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include <vector>
 
 /** A Cascading Bloom filter. */
@@ -68,7 +69,8 @@ class CascadingBloomFilter
 	bool operator[](const Bloom::key_type& key) const
 	{
 		assert(m_data.back() != NULL);
-		return (*m_data.back())[Bloom::hash(key, m_hashSeed) % m_data.back()->size()];
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		return (*m_data.back())[*it];
 	}
 
 	/** Add the object with the specified index to this multiset. */
@@ -83,11 +85,32 @@ class CascadingBloomFilter
 		}
 	}
 
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	void insert(const size_t precomputed[])
+	{
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_data.size(); ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*m_data[i])[precomputed]) {
+				m_data[i]->insert(precomputed);
+				break;
+			}
+		}
+	}
 	/** Add the object to this Cascading multiset. */
 	void insert(const Bloom::key_type& key)
 	{
 		assert(m_data.back() != NULL);
-		insert(Bloom::hash(key, m_hashSeed) % m_data.back()->size());
+		RollingHashIterator it(key.str().c_str(), 1, key.length());
+		for (unsigned i = 0; i < m_data.size(); ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*m_data[i])[*it]) {
+				m_data[i]->insert(*it);
+				break;
+			}
+		}
 	}
 
 	/** Get the Bloom filter for a given level */
