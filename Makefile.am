@@ -66,7 +66,7 @@ clean-local:
 	rm -f README.html
 
 clang-format:
-	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h \
+	for i in Bloom/RollingBloomDBGVisitor.h Bloom/bloom.cc  BloomDBG/BloomIO.h Bloom/KonnectorBloomFilter.h \
 	BloomDBG/Checkpoint.h  BloomDBG/HashAgnosticCascadingBloom.h BloomDBG/bloom-dbg.* \
 	ABYSS/abyss.cc Assembly/BranchGroup.h  FMIndex/BitArrays.h  FilterGraph/FilterGraph.cc \
 	Graph/ContigGraphAlgorithms.h  KAligner/Aligner.h  KAligner/PipeMux.h  Layout/layout.cc \
