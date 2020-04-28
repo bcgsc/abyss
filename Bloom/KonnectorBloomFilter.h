@@ -1,58 +1,51 @@
-  
+
 /**
  * Konnector Bloom Filter compatability layer
- * Copyright 2020 Johnahtan WOng
+ * Copyright 2020 Johnahtan Wong
  */
 #ifndef KONNECTORBLOOMFILTER_H
 #define KONNECTORBLOOMFILTER_H 1
 
-      #include <execinfo.h>
+#include <execinfo.h>
 
 #include "Bloom/Bloom.h"
 #include "BloomDBG/RollingHashIterator.h"
-#include "Common/Kmer.h"
-#include "Common/IOUtil.h"
 #include "Common/BitUtil.h"
-#include <algorithm>
-#include <vector>
-#include <iostream>
-#include <boost/dynamic_bitset.hpp>
+#include "Common/IOUtil.h"
+#include "Common/Kmer.h"
 #include "vendor/btl_bloomfilter/BloomFilter.hpp"
+#include <algorithm>
+#include <boost/dynamic_bitset.hpp>
+#include <iostream>
+#include <vector>
 
-  #define BT_BUF_SIZE 100
+#define BT_BUF_SIZE 100
 
 /** A Bloom filter. */
 class KonnectorBloomFilter : public BloomFilter
 {
   public:
+	/** Constructor. */
+	KonnectorBloomFilter()
+	  : BloomFilter()
+	{}
 
 	/** Constructor. */
-	KonnectorBloomFilter() : BloomFilter(){}
+	KonnectorBloomFilter(size_t n, unsigned k)
+	  : BloomFilter{ n, 1, k }
+	{}
 
-	/** Constructor. */
-	KonnectorBloomFilter(size_t n, unsigned k) : BloomFilter{n, 1, k}
-	{
-	}
-
-	~KonnectorBloomFilter()
-	{
-	}
+	~KonnectorBloomFilter() {}
 
 	/** Return the size of the bit array. */
 	size_t size() const { return getFilterSize(); }
 
 	/** Return the population count, i.e. the number of set bits. */
-	size_t popcount() const
-	{
-		return  getPop();
-	}
+	size_t popcount() const { return getPop(); }
 
 	/** Return the estimated false positive rate */
-	double FPR() const
-	{
-		return getFPR();
-	}
-	
+	double FPR() const { return getFPR(); }
+
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
 	 */
@@ -82,17 +75,14 @@ class KonnectorBloomFilter : public BloomFilter
 		}
 		return true;
 	}
-	
+
 	/** Return whether the specified bit is set. */
-	bool operator[](const size_t precomputed[]) const
-	{
-		return contains(precomputed);
-	}
+	bool operator[](const size_t precomputed[]) const { return contains(precomputed); }
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
 	{
-		size_t foo [1] = { i };
+		size_t foo[1] = { i };
 		return contains(foo);
 	}
 
@@ -102,7 +92,6 @@ class KonnectorBloomFilter : public BloomFilter
 		RollingHashIterator it(key.str().c_str(), 1, key.length());
 		return contains(*it);
 	}
-	
 
 	/*
 	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
@@ -117,7 +106,7 @@ class KonnectorBloomFilter : public BloomFilter
 			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
 		}
 	}
-	
+
 	void insert(vector<size_t> const& precomputed)
 	{
 
@@ -129,11 +118,10 @@ class KonnectorBloomFilter : public BloomFilter
 		}
 	}
 
-
 	/** Add the object with the specified index to this set. */
 	void insert(size_t i)
 	{
-		size_t foo [1] = { i };
+		size_t foo[1] = { i };
 		insert(foo);
 	}
 
@@ -219,7 +207,7 @@ class KonnectorBloomFilter : public BloomFilter
 				resize(m_incomingSize);
 			} else {
 				std::cerr << "error: can't union/intersect bloom filters with "
-					<< "different sizes\n";
+				          << "different sizes\n";
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -244,10 +232,7 @@ class KonnectorBloomFilter : public BloomFilter
 	}
 
   protected:
-
 	size_t m_incomingSize;
-
 };
-
 
 #endif
