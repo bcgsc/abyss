@@ -3,9 +3,9 @@
  */
 
 #include "Bloom/Bloom.h"
-#include "Bloom/KonnectorBloomFilter.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "Bloom/HashAgnosticCascadingBloom.h"
+#include "Bloom/KonnectorBloomFilter.h"
 #include "Bloom/RollingBloomDBGVisitor.h"
 #include "BloomDBG/BloomIO.h"
 #include "BloomDBG/RollingBloomDBG.h"
@@ -55,9 +55,9 @@ static const char USAGE_MESSAGE[] =
     "Usage 1: " PROGRAM
     " build [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <READS_FILE_1> [READS_FILE_2]...\n"
     "Usage 2: " PROGRAM " union [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> <BLOOM_FILE_1> "
-                        "<BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
+    "<BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
     "Usage 3: " PROGRAM " intersect [GLOBAL_OPTS] [COMMAND_OPTS] <OUTPUT_BLOOM_FILE> "
-                        "<BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
+    "<BLOOM_FILE_1> <BLOOM_FILE_2> [BLOOM_FILE_3]...\n"
     "Usage 4: " PROGRAM " info [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
     "Usage 5: " PROGRAM " compare [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE_1> <BLOOM_FILE_2>\n"
     "Usage 6: " PROGRAM " graph [GLOBAL_OPTS] [COMMAND_OPTS] <BLOOM_FILE>\n"
@@ -95,7 +95,8 @@ static const char USAGE_MESSAGE[] =
                   "  -n, --num-locks=N          number of write locks on bloom filter [1000]\n"
                   "  -q, --trim-quality=N       trim bases from the ends of reads whose\n"
                   "                             quality is less than the threshold\n"
-                  "  -t, --bloom-type=STR       'konnector', 'rolling-hash', or 'counting' [konnector]\n"
+                  "  -t, --bloom-type=STR       'konnector', 'rolling-hash', or 'counting' "
+                  "[konnector]\n"
                   "      --standard-quality     zero quality is `!' (33)\n"
                   "                             default for FASTQ and SAM files\n"
                   "      --illumina-quality     zero quality is `@' (64)\n"
@@ -512,31 +513,28 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 	// fits within the memory limit (specified by -b)
 	bits /= opt::levels;
 
-
-		if (opt::levels == 1) {
-			KonnectorBloomFilter bloom(bits, opt::k);
+	if (opt::levels == 1) {
+		KonnectorBloomFilter bloom(bits, opt::k);
 #ifdef _OPENMP
-			ConcurrentBloomFilter<KonnectorBloomFilter> cbf(bloom, opt::numLocks);
-			loadFilters(cbf, argc, argv);
+		ConcurrentBloomFilter<KonnectorBloomFilter> cbf(bloom, opt::numLocks);
+		loadFilters(cbf, argc, argv);
 #else
-			loadFilters(bloom, argc, argv);
+		loadFilters(bloom, argc, argv);
 #endif
-			printBloomStats(cerr, bloom);
-			writeBloom(bloom, outputPath);
-		} else {
-			CascadingBloomFilter cascadingBloom(bits, opt::levels, opt::k);
-			initBloomFilterLevels(cascadingBloom);
+		printBloomStats(cerr, bloom);
+		writeBloom(bloom, outputPath);
+	} else {
+		CascadingBloomFilter cascadingBloom(bits, opt::levels, opt::k);
+		initBloomFilterLevels(cascadingBloom);
 #ifdef _OPENMP
-			ConcurrentBloomFilter<CascadingBloomFilter> cbf(
-			    cascadingBloom, opt::numLocks);
-			loadFilters(cbf, argc, argv);
+		ConcurrentBloomFilter<CascadingBloomFilter> cbf(cascadingBloom, opt::numLocks);
+		loadFilters(cbf, argc, argv);
 #else
-			loadFilters(cascadingBloom, argc, argv);
+		loadFilters(cascadingBloom, argc, argv);
 #endif
-			printCascadingBloomStats(cerr, cascadingBloom);
-			writeBloom(cascadingBloom, outputPath);
-		
-		}
+		printCascadingBloomStats(cerr, cascadingBloom);
+		writeBloom(cascadingBloom, outputPath);
+	}
 }
 
 /** Build a rolling-hash based Bloom filter (used by pre 2.2.0 `abyss-bloom-dbg`) */
@@ -675,7 +673,6 @@ build(int argc, char** argv)
 	// bloom filter size in bits and bytes
 	size_t bits = opt::bloomSize * 8;
 	size_t bytes = opt::bloomSize;
-
 
 	if (argc - optind < 2) {
 		cerr << PROGRAM ": missing arguments\n";
