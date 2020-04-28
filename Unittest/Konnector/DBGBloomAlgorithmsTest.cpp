@@ -6,7 +6,6 @@
 #include <string>
 
 using namespace std;
-using Konnector::BloomFilter;
 
 /*
  * Tests for getStartKmerPos() function, which does
@@ -46,9 +45,9 @@ protected:
 
 TEST_F(GetStartKmerPosTest, FullReadMatch)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, testRead.seq);
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 	const unsigned numMatchesThreshold = 1;
 
 	EXPECT_EQ(5U, getStartKmerPos(testRead, k, FORWARD, g,
@@ -57,18 +56,18 @@ TEST_F(GetStartKmerPosTest, FullReadMatch)
 
 TEST_F(GetStartKmerPosTest, FullReadMismatch)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	// Leave the bloom filter empty to generate a mismatch
 	// for every kmer in the read.
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 	EXPECT_EQ(NO_MATCH, getStartKmerPos(testRead, k, FORWARD, g));
 }
 
 TEST_F(GetStartKmerPosTest, NumMatchesThreshold)
 {
 	const string& seq = testRead.seq;
-	BloomFilter bloom(bloomFilterSize);
-	DBGBloom<BloomFilter> g(bloom);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 101101
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -108,8 +107,8 @@ TEST_F(GetStartKmerPosTest, NumMatchesThreshold)
 TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 {
 	const string& seq = testRead.seq;
-	BloomFilter bloom(bloomFilterSize);
-	DBGBloom<BloomFilter> g(bloom);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 011011
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -155,9 +154,9 @@ protected:
 
 TEST_F(CorrectSingleBaseErrorTest, SingleError)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, correctRead.seq);
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -170,9 +169,9 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 
 TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, correctRead.seq);
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -185,9 +184,9 @@ TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
 
 TEST_F(CorrectSingleBaseErrorTest, NoError)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, singleErrorRead.seq);
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -197,10 +196,10 @@ TEST_F(CorrectSingleBaseErrorTest, NoError)
 
 TEST_F(CorrectSingleBaseErrorTest, SkipFalsePositive)
 {
-	BloomFilter bloom(bloomFilterSize);
+	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, correctRead.seq);
 	Bloom::loadSeq(bloom, k, simulatedFalsePositive);
-	DBGBloom<BloomFilter> g(bloom);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;

@@ -4,7 +4,6 @@
 #include <gtest/gtest.h>
 
 using namespace std;
-using Konnector::BloomFilter;
 
 // workaround: opt::k must be defined because
 // it is used by write_dot(..)
@@ -54,8 +53,8 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	read2.id = "read/2";
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
-	BloomFilter bloom(1000);
-	DBGBloom<BloomFilter> g(bloom);
+	KonnectorBloomFilter bloom(1000, k);
+	DBGBloom<KonnectorBloomFilter> g(bloom);
 
 	Bloom::loadSeq(bloom, k, read1.seq);
 	Bloom::loadSeq(bloom, k, read2.seq);

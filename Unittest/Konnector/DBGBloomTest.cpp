@@ -1,11 +1,10 @@
 #include "Konnector/DBGBloom.h"
 #include "Bloom/CascadingBloomFilter.h"
-#include "Bloom/BloomFilter.h"
+#include "Bloom/KonnectorBloomFilter.h"
 
 #include <gtest/gtest.h>
 #include <string>
 
-using Konnector::BloomFilter;
 
 TEST(DBGBloom, BloomFilterPolymorphism)
 {
@@ -17,7 +16,7 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	 Kmer kmer2("ACC");
 	  Kmer kmer3("CCA");
 
-	CascadingBloomFilter countingBloom(bits, 2);
+	CascadingBloomFilter countingBloom(bits, 2, 3);
 
 	countingBloom.insert(kmer1);
 	countingBloom.insert(kmer1);
@@ -44,9 +43,9 @@ TEST(DBGBloom, BloomFilterPolymorphism)
 	ei++;
 	EXPECT_TRUE(ei == ei_end);
 
-	boost::graph_traits< DBGBloom<BloomFilter> >::out_edge_iterator ei2, ei_end2;
+	boost::graph_traits< DBGBloom<KonnectorBloomFilter> >::out_edge_iterator ei2, ei_end2;
 
-	DBGBloom<BloomFilter> graph2(countingBloom.getBloomFilter(1));
+	DBGBloom<KonnectorBloomFilter> graph2(countingBloom.getBloomFilter(1));
 
 	// test that the same edges exist in non-counting
 	// bloom filter
