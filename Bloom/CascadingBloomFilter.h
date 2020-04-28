@@ -6,8 +6,9 @@
 #define CascadingBLOOMFILTER_H 1
 
 #include "Bloom/Bloom.h"
-#include "KonnectorBloomFilter.h"
+#include "Bloom/KonnectorBloomFilter.h"
 #include "BloomDBG/RollingHashIterator.h"
+
 #include <vector>
 
 /** A Cascading Bloom filter. */
