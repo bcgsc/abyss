@@ -9,7 +9,6 @@
 #include "Konnector/DBGBloom.h"
 #include "Konnector/DBGBloomAlgorithms.h"
 #include "Bloom/CascadingBloomFilter.h"
-#include "Bloom/CascadingBloomFilter.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
