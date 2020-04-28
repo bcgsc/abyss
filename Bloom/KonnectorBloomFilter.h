@@ -109,11 +109,21 @@ class KonnectorBloomFilter : public BloomFilter
 
 	/** Return whether the specified bit is set. */
 	bool operator[](const size_t precomputed[]) const { return contains(precomputed); }
+	
+	/** Return whether the specified bit is set. */
+	bool operator[](const unsigned long long precomputed[]) const { return contains(precomputed); }
 
 	/** Return whether the specified bit is set. */
 	bool operator[](size_t i) const
 	{
 		size_t foo[1] = { i };
+		return contains(foo);
+	}
+
+	/** Return whether the specified bit is set. */
+	bool operator[](unsigned long long i) const
+	{
+		unsigned long long foo[1] = { i };
 		return contains(foo);
 	}
 
@@ -138,7 +148,30 @@ class KonnectorBloomFilter : public BloomFilter
 		}
 	}
 
+	void insert(const unsigned long long precomputed[])
+	{
+
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed[i] % m_size;
+			__sync_or_and_fetch(
+			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
+		}
+	}
+
+
 	void insert(vector<size_t> const& precomputed)
+	{
+
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_hashNum; ++i) {
+			size_t normalizedValue = precomputed.at(i) % m_size;
+			__sync_or_and_fetch(
+			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
+		}
+	}
+	
+	void insert(vector<unsigned long long> const& precomputed)
 	{
 
 		// iterates through hashed values adding it to the filter
@@ -155,6 +188,13 @@ class KonnectorBloomFilter : public BloomFilter
 		size_t foo[1] = { i };
 		insert(foo);
 	}
+	
+	/** Add the object with the specified index to this set. */
+	void insert(unsigned long long i)
+	{
+		unsigned long long foo[1] = { i };
+		insert(foo);
+	}	
 
 	/** Add the object to this set. */
 	void insert(const Bloom::key_type& key)

@@ -56,6 +56,16 @@ class CascadingBloomFilter
 	{
 		return (double)popcount() / size();
 	}
+	
+	/** Return whether the element with this index has count >=
+	 * max_count.
+	 */
+	bool operator[](unsigned long long i) const
+	{
+		assert(m_data.back() != NULL);
+		return (*m_data.back())[i];
+	}
+
 
 	/** Return whether the element with this index has count >=
 	 * max_count.
@@ -73,6 +83,18 @@ class CascadingBloomFilter
 		RollingHashIterator it(key.str().c_str(), 1, key.length());
 		return (*m_data.back())[*it];
 	}
+	
+	/** Add the object with the specified index to this multiset. */
+	void insert(unsigned long long index)
+	{
+		for (unsigned i = 0; i < m_data.size(); ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*m_data[i])[index]) {
+				m_data[i]->insert(index);
+				break;
+			}
+		}
+	}
 
 	/** Add the object with the specified index to this multiset. */
 	void insert(size_t index)
@@ -81,6 +103,21 @@ class CascadingBloomFilter
 			assert(m_data.at(i) != NULL);
 			if (!(*m_data[i])[index]) {
 				m_data[i]->insert(index);
+				break;
+			}
+		}
+	}
+	
+	/*
+	 * Accepts a list of precomputed hash values. Faster than rehashing each time.
+	 */
+	void insert(const unsigned long long precomputed[])
+	{
+		// iterates through hashed values adding it to the filter
+		for (unsigned i = 0; i < m_data.size(); ++i) {
+			assert(m_data.at(i) != NULL);
+			if (!(*m_data[i])[precomputed]) {
+				m_data[i]->insert(precomputed);
 				break;
 			}
 		}
