@@ -1132,7 +1132,7 @@ int main(int argc, char** argv)
 		// of levels in cascading Bloom filter.
 
 		size_t bits = opt::bloomSize * 8 / opt::minCoverage;
-		cascadingBloom = new CascadingBloomFilter(bits, opt::minCoverage);
+		cascadingBloom = new CascadingBloomFilter(bits, opt::minCoverage, opt::k);
 #ifdef _OPENMP
 		ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 		for (int i = optind; i < argc; i++)

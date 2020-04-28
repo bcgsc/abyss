@@ -30,7 +30,7 @@ class KonnectorBloomFilter : public BloomFilter
 	KonnectorBloomFilter() : BloomFilter(){}
 
 	/** Constructor. */
-	KonnectorBloomFilter(size_t n) : BloomFilter{n, 1, 0}
+	KonnectorBloomFilter(size_t n, unsigned k) : BloomFilter{n, 1, k}
 	{
 	}
 

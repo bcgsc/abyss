@@ -9,6 +9,7 @@
 #include "Konnector/DBGBloom.h"
 #include "Konnector/DBGBloomAlgorithms.h"
 #include "Bloom/CascadingBloomFilter.h"
+#include "Bloom/CascadingBloomFilter.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
@@ -1049,7 +1050,7 @@ int main(int argc, char** argv)
 			printLog(logStream, "Building bloom filter\n");
 
 			size_t bits = opt::bloomSize * 8 / 2;
-			cascadingBloom = new CascadingBloomFilter(bits, opt::max_count);
+			cascadingBloom = new CascadingBloomFilter(bits, opt::max_count, opt::k);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter> cbf(*cascadingBloom, 1000);
 			for (int i = optind; i < argc; i++)

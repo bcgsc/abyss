@@ -100,7 +100,6 @@ static const char USAGE_MESSAGE[] =
                   "                             default for FASTQ and SAM files\n"
                   "      --illumina-quality     zero quality is `@' (64)\n"
                   "                             default for qseq and export files\n"
-                  "  -w, --window M/N           build a bloom filter for subwindow M of N\n"
                   "\n"
                   " Options for `" PROGRAM " union': (none)\n"
                   " Options for `" PROGRAM " intersect': (none)\n"
@@ -515,7 +514,7 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 
 
 		if (opt::levels == 1) {
-			KonnectorBloomFilter bloom(bits);
+			KonnectorBloomFilter bloom(bits, opt::k);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<KonnectorBloomFilter> cbf(bloom, opt::numLocks);
 			loadFilters(cbf, argc, argv);
@@ -525,7 +524,7 @@ buildKonnectorBloom(size_t bits, string outputPath, int argc, char** argv)
 			printBloomStats(cerr, bloom);
 			writeBloom(bloom, outputPath);
 		} else {
-			CascadingBloomFilter cascadingBloom(bits, opt::levels);
+			CascadingBloomFilter cascadingBloom(bits, opt::levels, opt::k);
 			initBloomFilterLevels(cascadingBloom);
 #ifdef _OPENMP
 			ConcurrentBloomFilter<CascadingBloomFilter> cbf(

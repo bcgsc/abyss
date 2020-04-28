@@ -19,11 +19,11 @@ class CascadingBloomFilter
 	CascadingBloomFilter() {}
 
 	/** Constructor */
-	CascadingBloomFilter(size_t n, size_t max_count, size_t hashSeed=0) : m_hashSeed(hashSeed)
+	CascadingBloomFilter(size_t n, size_t max_count, unsigned k, size_t hashSeed=0) : m_hashSeed(hashSeed)
 	{
 		m_data.reserve(max_count);
 		for (unsigned i = 0; i < max_count; i++)
-			m_data.push_back(new KonnectorBloomFilter(n));
+			m_data.push_back(new KonnectorBloomFilter(n, k));
 	}
 
 	/** Destructor */
