@@ -18,7 +18,6 @@ abyss_sealer_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 abyss_sealer_SOURCES = sealer.cc \
-	$(top_srcdir)/Bloom/BloomFilter.h \
 	$(top_srcdir)/Bloom/CascadingBloomFilter.h \
 	$(top_srcdir)/Konnector/DBGBloom.h \
 	$(top_srcdir)/Konnector/DBGBloomAlgorithms.h \
