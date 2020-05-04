@@ -2,7 +2,10 @@
 #define CONNECTPAIRS_H
 
 #include "DBGBloomAlgorithms.h"
+#include "RollingBloomDBGVertexSet.h"
 #include "Bloom/CascadingBloomFilter.h"
+#include "BloomDBG/RollingBloomDBG.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include "DataLayer/FastaInterleave.h"
 #include "Graph/BidirectionalBFS.h"
 #include "Graph/ConstrainedBidiBFSVisitor.h"
@@ -172,26 +175,33 @@ struct ConnectPairsParams {
 
 };
 
-static inline void colorPath(HashGraph<Kmer>& graph, unsigned k,
+
+static inline void colorPath(HashGraph<RollingBloomDBGVertex>& graph, unsigned k,
 	const Sequence& seq, const std::string& color,
 	bool addEdges = true)
 {
-	KmerIterator it(seq, k);
-	if (it != it.end()) {
-		graph.set_vertex_color(*it, color);
-		Kmer prev = *it;
-		++it;
-		for(; it != it.end(); prev=*it, ++it) {
-			if (addEdges)
-				add_edge(prev, *it, graph);
-			graph.set_vertex_color(*it, color);
+	RollingHashIterator it(seq, 1, k);
+	if (it != RollingHashIterator::end()) {
+		RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
+		graph.set_vertex_color(curr, color);
+		RollingBloomDBGVertex prev = curr;
+		++it; // ask shaun if this code is correct
+		for (; it != RollingHashIterator::end(); prev = RollingBloomDBGVertex(it.kmer().c_str(), it.rollingHash()), ++it) {
+			RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
+			if (addEdges) {
+				add_edge(prev, curr, graph);
+			}
+			graph.set_vertex_color(curr, color);				
+				
+				
 		}
 	}
 }
 
+
 /** Write a color-coded traversal graph to a DOT file. */
 static inline void writeDot(
-	HashGraph<Kmer>& traversalGraph,
+	HashGraph<RollingBloomDBGVertex>& traversalGraph,
 	unsigned k,
 	const FastaRecord& read1,
 	const FastaRecord& read2,
@@ -313,13 +323,16 @@ static inline ConnectPairsResult connectPairs(
 	minPathLen = std::max(minPathLen, (unsigned)std::max(
 				pRead1->seq.length() - k + 1 - startKmerPos,
 				pRead2->seq.length() - k + 1 - goalKmerPos));
-
-	ConstrainedBidiBFSVisitor<Graph> visitor(g, startKmer, goalKmer,
+	RollingHash startRollingHash(startKmer.str().c_str(), 1, k);
+	RollingHash goalRollingHash(goalKmer.str().c_str(), 1, k);
+	RollingBloomDBGVertex startRBDBGV(startKmer.str().c_str(), startRollingHash);
+	RollingBloomDBGVertex goalRBDBGV(goalKmer.str().c_str(), goalRollingHash);
+	ConstrainedBidiBFSVisitor<Graph> visitor(g, startRBDBGV, goalRBDBGV,
 			params.maxPaths, minPathLen, maxPathLen, params.maxBranches,
 			params.maxCost, params.memLimit);
-	bidirectionalBFS(g, startKmer, goalKmer, visitor);
+	bidirectionalBFS(g, startRBDBGV, goalRBDBGV, visitor);
 
-	std::vector< Path<Kmer> > paths;
+	std::vector< Path<RollingBloomDBGVertex> > paths;
 	result.pathResult = visitor.pathsToGoal(paths);
 	result.searchCost = visitor.getSearchCost();
 	result.numNodesVisited = visitor.getNumNodesVisited();
@@ -340,7 +353,7 @@ static inline ConnectPairsResult connectPairs(
 			unsigned trimLeft = pRead1->seq.length() - startKmerPos;
 			unsigned trimRight = pRead2->seq.length() - goalKmerPos;
 			for (unsigned i = 0; i < paths.size(); i++) {
-				Sequence connectingSeq = pathToSeq(paths[i]);
+				Sequence connectingSeq = pathToSeq(paths[i], k);
 				/*
 				 * If the input reads overlap, we must fail because
 				 * there's no way to preserve the original read
@@ -359,7 +372,7 @@ static inline ConnectPairsResult connectPairs(
 			seqPrefix = pRead1->seq.substr(0, startKmerPos);
 			seqSuffix = reverseComplement(pRead2->seq.substr(0, goalKmerPos));
 			for (unsigned i = 0; i < paths.size(); i++)
-				result.connectingSeqs.push_back(pathToSeq(paths[i]));
+				result.connectingSeqs.push_back(pathToSeq(paths[i], k));
 		}
 
 		unsigned readPairLength = read1.seq.length() + read2.seq.length();
@@ -424,7 +437,7 @@ static inline ConnectPairsResult connectPairs(
 	/* write traversal graph to dot file (-d option) */
 
 	if (!params.dotPath.empty()) {
-		HashGraph<Kmer> traversalGraph;
+		HashGraph<RollingBloomDBGVertex> traversalGraph;
 		visitor.getTraversalGraph(traversalGraph);
 		writeDot(traversalGraph, k, read1, read2, params, result);
 	}
@@ -480,14 +493,17 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	/* longest branch of Bloom filter false positives */
 	const unsigned fpTrim = 5;
 
-	Kmer head(seq.substr(startKmerPos, k));
-	std::vector<Kmer> buds = trueBranches(head, dir, g, trimLen, fpTrim);
+	//Kmer head(seq.substr(startKmerPos, k));
+	RollingHash headHash(seq.substr(startKmerPos, k).c_str(), 1, k);
+	RollingBloomDBGVertex head(seq.substr(startKmerPos, k).c_str(), headHash);
+
+	std::vector<RollingBloomDBGVertex> buds = trueBranches(head, dir, g, trimLen, fpTrim);
 
 	/* more than two branches -- not a simple bubble */
 	if (buds.size() != 2)
 		return false;
 
-	Path<Kmer> path1, path2;
+	Path<RollingBloomDBGVertex> path1, path2;
 	if (dir == FORWARD) {
 		path1.push_back(head);
 		path2.push_back(head);
@@ -512,7 +528,7 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	if (path1.size() != k+2 || path2.size() != k+2)
 		return false;
 
-	Kmer head1, head2;
+	RollingBloomDBGVertex head1, head2;
 	if (dir == FORWARD) {
 		head1 = path1.back();
 		head2 = path2.back();
@@ -527,7 +543,7 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 		return false;
 
 	NWAlignment alignment;
-	alignPair(pathToSeq(path1), pathToSeq(path2), alignment);
+	alignPair(pathToSeq(path1, k), pathToSeq(path2, k), alignment);
 	Sequence& consensus = alignment.match_align;
 
 	if (dir == FORWARD) {
@@ -563,15 +579,15 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	return true;
 }
 
-Path<Kmer> seqToPath(const Sequence& seq, unsigned k)
+
+Path<RollingBloomDBGVertex> seqToPath(const Sequence& seq, unsigned k)
 {
 	assert(seq.length() >= k);
-	Path<Kmer> path;
+	Path<RollingBloomDBGVertex> path;
 	Sequence seqCopy = seq;
 	flattenAmbiguityCodes(seqCopy);
-	for (unsigned i = 0; i < seq.length() - k + 1; ++i) {
-		std::string kmerStr = seq.substr(i, k);
-		path.push_back(Kmer(kmerStr));
+	for (RollingHashIterator it(seq, 1, k); it != RollingHashIterator::end(); ++it) {
+		path.push_back(RollingBloomDBGVertex(it.kmer().c_str(), it.rollingHash()));
 	}
 	return path;
 }
@@ -683,14 +699,16 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		std::string::npos)
 		return ES_NO_START_KMER;
 
-	Kmer startKmer(kmerStr);
-	Path<Kmer> path;
+
+	RollingHash startKmerHash(kmerStr.c_str(), 1, k);
+	RollingBloomDBGVertex startKmer(kmerStr.c_str(), startKmerHash);
+	Path<RollingBloomDBGVertex> path;
 	path.push_back(startKmer);
 	PathExtensionResult pathResult = std::make_pair(0, ER_DEAD_END);
 
 	/* track visited kmers to avoid traversing cycles in an infinite loop */
 
-	KmerSet visited(k);
+	RollingBloomDBGVertexSet visited(k);
 	visited.loadSeq(seq);
 
 	/* extend through unambiguous paths and simple bubbles */
@@ -730,14 +748,14 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 
 		/* check for cycle */
 		path.erase(path.begin(), path.begin() + overlappingKmers);
-		for (Path<Kmer>::iterator it = path.begin();
+		for (Path<RollingBloomDBGVertex>::iterator it = path.begin();
 			it != path.end(); ++it) {
-			if (visited.containsKmer(*it)) {
+			if (visited.containsRollingBloomDBGVertex(*it)) {
 				pathResult.second = ER_CYCLE;
 				path.erase(it, path.end());
 				break;
 			}
-			visited.addKmer(*it);
+			visited.addRollingBloomDBGVertex(*it);
 		}
 
 		/*
@@ -745,7 +763,7 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 		 */
 		if (path.size() > 0 && pathResult.first > 0)
 		{
-			std::string pathSeq = pathToSeq(path);
+			std::string pathSeq = pathToSeq(path, k);
 			if (preserveSeq)
 				overlaySeq(pathSeq.substr(k), seq,
 					seq.length(), maskNew);
@@ -770,21 +788,24 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 					seq = seq.substr(0, maxLen);
 
 				/* check for cycle */
-				for (unsigned i = startKmerPos + 1;
-					i < seq.length() - k + 1; ++i) {
+				unsigned i = startKmerPos + 1;
+				std::string seqSubstr = seq.substr(i);
+				RollingHashIterator it(seqSubstr, 1, k);
+				for (; i < seq.length() - k + 1; ++i) {
 					std::string kmerStr = seq.substr(i, k);
 					size_t pos = kmerStr.find_first_not_of("AGCTagct");
 					if (pos != std::string::npos) {
 						i += pos;
 						continue;
 					}
-					Kmer kmer(kmerStr);
-					if (visited.containsKmer(kmer)) {
+					RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
+					if (visited.containsRollingBloomDBGVertex(curr)) {
 						pathResult.second = ER_CYCLE;
 						seq.erase(i);
 						break;
 					}
-					visited.addKmer(kmer);
+					visited.addRollingBloomDBGVertex(curr);
+					++it;
 				}
 
 				/* set up for another round of extension */
@@ -792,7 +813,9 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 					done = false;
 					startKmerPos = seq.length() - k;
 					path.clear();
-					path.push_back(Kmer(seq.substr(startKmerPos)));
+					RollingHash startKmerHash(seq.substr(startKmerPos).c_str(), 1, k);
+					RollingBloomDBGVertex startKmer(seq.substr(startKmerPos).c_str(), startKmerHash);//later
+					path.push_back(startKmer);
 				}
 			}
 		}
@@ -869,12 +892,13 @@ static inline bool trimRead(FastqRecord& read,
 	unsigned matchLen = 0;
 	unsigned maxMatchLen = 0;
 	unsigned maxMatchStart = UNSET;
-
+	RollingHashIterator it(seq, 1, k);
 	for (unsigned i = 0; i < seq.length() - k + 1; ++i) {
 		std::string kmerStr = seq.substr(i, k);
 		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
 		if (pos != std::string::npos ||
-			!vertex_exists(Kmer(kmerStr), g)) {
+			!vertex_exists(curr, g)) {
 			if (matchStart != UNSET &&
 				matchLen > maxMatchLen) {
 				maxMatchLen = matchLen;
@@ -882,13 +906,16 @@ static inline bool trimRead(FastqRecord& read,
 			}
 			matchStart = UNSET;
 			matchLen = 0;
-			if (pos != std::string::npos)
+			if (pos != std::string::npos) {
 				i += pos;
+				continue;
+			}
 		} else {
 			if (matchStart == UNSET)
 				matchStart = i;
 			matchLen++;
 		}
+		++it;
 	}
 	if (matchStart != UNSET && matchLen > maxMatchLen) {
 		maxMatchStart = matchStart;

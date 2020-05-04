@@ -7,7 +7,8 @@
 
 #include "konnector.h"
 #include "Bloom/CascadingBloomFilter.h"
-#include "DBGBloom.h"
+#include "BloomDBG/RollingBloomDBG.h"
+//#include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
 #include "Align/alignGlobal.h"
@@ -1168,7 +1169,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<KonnectorBloomFilter> g(*bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(*bloom);
 
 	/*
 	 * read pairs that were successfully connected

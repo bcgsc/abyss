@@ -157,6 +157,12 @@ public:
 
 		return 0;
 	}
+	
+	friend std::ostream& operator<<(std::ostream& out, const RollingBloomDBGVertex& o)
+	{
+		return out << o.m_kmer.c_str();
+	}
+
 
 };
 
@@ -506,6 +512,15 @@ in_degree(const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descript
 	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	std::pair<Iit, Iit> it = in_edges(u, g);
 	return std::distance(it.first, it.second);
+}
+
+template <typename BloomT>
+static inline
+typename graph_traits<RollingBloomDBG<BloomT> >::degree_size_type
+degree(const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+	const RollingBloomDBG<BloomT>& g)
+{
+	return in_degree(u, g) + out_degree(u, g);
 }
 
 // PropertyGraph
