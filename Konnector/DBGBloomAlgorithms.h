@@ -92,6 +92,7 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 	unsigned maxMatchPos = 0;
 	int i;
 	if (dir == FORWARD) {
+		RollingHashIterator it(seq, 1, k, true);
 		for (i = startPos; i != endPos; i += inc) {
 			assert(i >= 0 && i <= (int)(seq.length() - k + 1));
 			std::string kmerStr = seq.substr(i, k);
@@ -113,6 +114,12 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 				matchCount++;
 				if (matchCount >= numMatchesThreshold)
 					return i;
+			}
+			if (kmerStr.find_first_not_of("AGCTagct") == std::string::npos) {
+				std::cerr << "Forward" << std::endl;
+				std::cerr << (*it)[0] << std::endl;
+				std::cerr << currRollingHash.getHashSeed() << std::endl;
+				--it;
 			}
 		}
 	} else {
@@ -139,6 +146,9 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 					return i;
 			}
 			if (kmerStr.find_first_not_of("AGCTagct") == std::string::npos) {
+				std::cerr << "Reverse" << std::endl;
+				std::cerr << (*it)[0] << std::endl;
+				std::cerr << it.rollingHash().getHashSeed() << std::endl;
 				++it;
 			}
 		}
