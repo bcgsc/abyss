@@ -22,6 +22,7 @@ AC_CHECK_TOOL(GHC, ghc)
 AM_CONDITIONAL([HAVE_GHC], ["$GHC" --version])
 AC_CHECK_PROG(PANDOC, pandoc, yes)
 AM_CONDITIONAL([HAVE_PANDOC], [test x"$PANDOC" = x"yes"])
+AM_PROG_AR
 
 # Checks for header files.
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
