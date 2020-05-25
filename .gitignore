@@ -2,6 +2,7 @@ Makefile
 Makefile.in
 README.html
 aclocal.m4
+ar-lib
 autom4te.cache
 config.guess
 config.h
