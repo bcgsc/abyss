@@ -68,6 +68,7 @@ public:
 	 */
 	void reset(const std::string& kmer)
 	{
+		//std::cerr << 1 << std::endl;
 		/* compute initial hash values for forward and reverse-complement k-mer */
 		NTC64(kmer.c_str(), m_k, m_hash1, m_rcHash1);
 
@@ -89,6 +90,7 @@ public:
 	{
 		NTC64(kmer[0], charIn, m_k, m_hash1, m_rcHash1);
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
+		//std::cerr << 2 << std::endl;
 
 		if (!MaskedKmer::mask().empty()) {
 			// TODO: copying the k-mer and shifting is very inefficient;
@@ -109,6 +111,7 @@ public:
 	 */
 	void rollLeft(char charIn, const char* kmer)
 	{
+		//std::cerr << 2 << std::endl;
 		NTC64L(kmer[m_k-1], charIn, m_k, m_hash1, m_rcHash1);
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
 
@@ -172,18 +175,29 @@ public:
 	 * change first base
 	 * @param base new value for the base
 	 */
-	void setLastBase(char* kmer, extDirection dir, char base)
+	void setLastBase(const char* kmer, extDirection dir, char base)
 	{
-		if (dir == SENSE) {
-			/* roll left to remove old last char */
-			NTC64L(kmer[m_k-1], 'A', m_k, m_hash1, m_rcHash1);
-			/* roll right to add new last char */
-			NTC64('A', base, m_k, m_hash1, m_rcHash1);
+		//std::cerr << 3 << std::endl;
+		if (!prev) {
+			if (dir == SENSE) {
+				/* roll left to remove old last char */
+				NTC64L(kmer[m_k-1], 'A', m_k, m_hash1, m_rcHash1);
+				/* roll right to add new last char */
+				NTC64('A', base, m_k, m_hash1, m_rcHash1);
+			} else {
+				/* roll right to remove old first char */
+				NTC64(kmer[0], 'A', m_k, m_hash1, m_rcHash1);
+				/* roll left to add new first char */
+				NTC64L('A', base, m_k, m_hash1, m_rcHash1);
+			}
 		} else {
-			/* roll right to remove old first char */
-			NTC64(kmer[0], 'A', m_k, m_hash1, m_rcHash1);
-			/* roll left to add new first char */
-			NTC64L('A', base, m_k, m_hash1, m_rcHash1);
+			m_hash1 = m_prevHash1;
+			m_rcHash1 = m_prevRCHash1;
+			if (dir == SENSE) {
+				NTC64(m_oldFirstChar, base, m_k, m_hash1, m_rcHash1);
+			} else {
+				NTC64L(m_oldLastChar, base, m_k, m_hash1, m_rcHash1);
+			}
 		}
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
 
@@ -203,6 +217,33 @@ public:
 	{
 		std::swap(m_hash1, m_rcHash1);
 	}
+	
+	/**
+	 * Get the forward hash value for the current k-mer.
+	 */
+	size_t getForwardHash() const
+	{
+		return (size_t)m_hash1;
+	}
+
+	/**
+	 * Get the reverse complement hash value for the current k-mer.
+	 */
+	size_t getRCHash() const
+	{
+		return (size_t)m_rcHash1;
+	}
+	
+	
+	void savePrev(char oldFirstChar, char oldLastChar)
+	{
+		m_prevHash1 = m_hash1;
+		m_prevRCHash1 = m_rcHash1;
+		prev = true;
+		m_oldFirstChar = oldFirstChar;
+		m_oldLastChar = oldLastChar;
+	}
+
 
 private:
 
@@ -217,6 +258,15 @@ private:
 	hash_t m_rcHash1;
 	/** current canonical hash value */
 	hash_t m_hash;
+	/** value of first hash function for current k-mer */
+	hash_t m_prevHash1;
+	/** value of first hash function for current k-mer, after
+	 * reverse-complementing */
+	hash_t m_prevRCHash1;
+	bool prev = false;
+	char m_oldFirstChar;
+	char m_oldLastChar;
+
 };
 
 #endif
