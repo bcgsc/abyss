@@ -81,6 +81,18 @@ public:
 	{
 		return *(m_kmer.get() + pos);
 	}
+	
+	/** Get the first base (ACGT)*/
+	char getFirstBase() const
+	{
+		return *(m_kmer.get());
+	}
+
+	/** Get the last base (ACGT)*/
+	char getLastBase() const
+	{
+		return *(m_kmer.get() + Kmer::length() - 1);
+	}
 
 	/**
 	 * Return true if k-mer is in its lexicographically smallest orientation
@@ -113,6 +125,7 @@ public:
 
 	void reverseComplement()
 	{
+		std::cerr << (char*)m_kmer.get() << std::endl;
 		const unsigned k = Kmer::length();
 		for (unsigned i = 0; i < k/2; ++i) {
 			const char tmp = complementBaseChar(m_kmer.get()[i]);
