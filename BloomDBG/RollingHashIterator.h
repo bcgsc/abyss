@@ -109,7 +109,7 @@ private:
 		const std::string& spacedSeed = MaskedKmer::mask();
 
 		//while(m_pos < m_seq.length() - m_k + 1) {
-		while(m_pos != std::numeric_limits<std::size_t>::max()) {
+		while(m_pos < m_seq.length() - m_k + 1) {
 
 			/* skip k-mers with non-ACGT chars in unmasked positions */
 
@@ -159,13 +159,14 @@ private:
 				/* we don't have hash values for the
 				 * preceding k-mer, so we must compute
 				 * the hash values from scratch */
+				//std::cerr << m_pos << std::endl;
 				m_rollingHash.reset(m_seq.substr(m_pos, m_k));
 				m_rollNextHash = true;
 			} else {
 				/* compute new hash values based on
 				 * hash values of preceding k-mer */
 				assert(m_pos < m_seq.length() - m_k);
-				m_rollingHash.rollLeft(m_seq[m_pos], m_seq.c_str() + m_pos - 1);
+				m_rollingHash.rollLeft(m_seq[m_pos], m_seq.c_str() + m_pos + 1);
 			}
 			m_rollingHash.getHashes(m_hashes);
 			return;
@@ -245,6 +246,8 @@ public:
 			m_badCharPos.push_back(i);
 			i = m_seq.find_first_not_of(ACGT_CHARS, i + 1);
 		}
+		//std::cerr << "num bad bases" <<std::endl;
+		//std::cerr << m_badCharPos.size() <<std::endl;
 
 		/* find first "good" k-mer in sequence */
 		prev();
@@ -280,6 +283,7 @@ public:
 	/** pre-decrement operator */
 	RollingHashIterator& operator--()
 	{
+		//std::cerr << m_pos << std::endl;
 		--m_pos;
 		prev();
 		return *this;
