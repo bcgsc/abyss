@@ -85,6 +85,11 @@ public:
 		if (!m_kmer.isCanonical())
 			reverseComplement();
 	}
+	
+	void savePrev()
+	{
+		m_rollingHash.savePrev(m_kmer.getFirstBase(), m_kmer.getLastBase());
+	}
 
 	/**
 	 * Comparison operator that takes spaced seed bitmask into account.
@@ -94,10 +99,14 @@ public:
 		/* do fast comparison first */
 		if (m_rollingHash != o.m_rollingHash)
 			return false;
+		
+		if (m_rollingHash.getForwardHash() != o.m_rollingHash.getForwardHash()) {
+			return false;
+		}
 
-		return compare(o) == 0;
+		return true;
 	}
-
+	
 	/**
 	 * Inequality operator that takes spaced seed bitmask into account.
 	 */
@@ -262,8 +271,12 @@ struct adjacency_iterator
 	adjacency_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(SENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)){
+			++m_i;
+			next();
+		}
 	}
 
 	const vertex_descriptor& operator*() const
@@ -326,11 +339,15 @@ struct out_edge_iterator
 	out_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(SENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)) {
+			++m_i;
+			next();
+		}
 	}
 
-	edge_descriptor operator*() const
+	const edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
 		return edge_descriptor(m_u, m_v.clone());
@@ -390,11 +407,15 @@ struct in_edge_iterator
 	in_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(ANTISENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)) {
+			++m_i;
+			next();
+		}
 	}
 
-	edge_descriptor operator*() const
+	const edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
 		return edge_descriptor(m_v.clone(), m_u);
