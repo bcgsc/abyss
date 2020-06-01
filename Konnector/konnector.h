@@ -13,6 +13,7 @@
 #include "Align/alignGlobal.h"
 #include "Graph/DefaultColorMap.h"
 #include "Graph/DotIO.h"
+#include "Common/Sense.h"
 #include "Common/Sequence.h"
 #include "Common/KmerSet.h"
 #include <algorithm>
@@ -310,8 +311,11 @@ static inline ConnectPairsResult connectPairs(
 		result.foundGoalKmer = true;
 	}
 
-	Kmer startKmer(pRead1->seq.substr(startKmerPos, k));
-	Kmer goalKmer(pRead2->seq.substr(goalKmerPos, k));
+	std::string startKmerStr = pRead1->seq.substr(startKmerPos, k);
+	std::string goalKmerstr = pRead2->seq.substr(goalKmerPos, k);
+	
+	RollingBloomDBGVertex startKmer(startKmerStr.c_str(), RollingHash(startKmerStr.c_str(), 1, k));
+	RollingBloomDBGVertex goalKmer(goalKmerstr.c_str(), RollingHash(goalKmerstr.c_str(), 1, k));
 	goalKmer.reverseComplement();
 
 	unsigned maxPathLen = params.maxMergedSeqLen - k + 1 - startKmerPos - goalKmerPos;
@@ -323,14 +327,10 @@ static inline ConnectPairsResult connectPairs(
 	minPathLen = std::max(minPathLen, (unsigned)std::max(
 				pRead1->seq.length() - k + 1 - startKmerPos,
 				pRead2->seq.length() - k + 1 - goalKmerPos));
-	RollingHash startRollingHash(startKmer.str().c_str(), 1, k);
-	RollingHash goalRollingHash(goalKmer.str().c_str(), 1, k);
-	RollingBloomDBGVertex startRBDBGV(startKmer.str().c_str(), startRollingHash);
-	RollingBloomDBGVertex goalRBDBGV(goalKmer.str().c_str(), goalRollingHash);
-	ConstrainedBidiBFSVisitor<Graph> visitor(g, startRBDBGV, goalRBDBGV,
+	ConstrainedBidiBFSVisitor<Graph> visitor(g, startKmer, goalKmer,
 			params.maxPaths, minPathLen, maxPathLen, params.maxBranches,
 			params.maxCost, params.memLimit);
-	bidirectionalBFS(g, startRBDBGV, goalRBDBGV, visitor);
+	bidirectionalBFS(g, startKmer, goalKmer, visitor);
 
 	std::vector< Path<RollingBloomDBGVertex> > paths;
 	result.pathResult = visitor.pathsToGoal(paths);
@@ -433,7 +433,6 @@ static inline ConnectPairsResult connectPairs(
 
 		assert(result.connectingSeqs.size() == result.mergedSeqs.size());
 	}
-
 	/* write traversal graph to dot file (-d option) */
 
 	if (!params.dotPath.empty()) {
@@ -446,7 +445,6 @@ static inline ConnectPairsResult connectPairs(
 # pragma omp critical(cerr)
 	std::cerr << result;
 #endif
-
 	return result;
 }
 
@@ -494,8 +492,9 @@ static inline bool extendSeqThroughBubble(Sequence& seq,
 	const unsigned fpTrim = 5;
 
 	//Kmer head(seq.substr(startKmerPos, k));
-	RollingHash headHash(seq.substr(startKmerPos, k).c_str(), 1, k);
-	RollingBloomDBGVertex head(seq.substr(startKmerPos, k).c_str(), headHash);
+	//std::string headStr = seq.substr(startKmerPos, k);
+	//RollingHash headHash(seq.substr(startKmerPos, k).c_str(), 1, k);
+	RollingBloomDBGVertex head(headKmer.c_str(), RollingHash(headKmer.c_str(), 1, k));
 
 	std::vector<RollingBloomDBGVertex> buds = trueBranches(head, dir, g, trimLen, fpTrim);
 
@@ -813,8 +812,8 @@ static inline ExtendSeqResult extendSeq(Sequence& seq, Direction dir,
 					done = false;
 					startKmerPos = seq.length() - k;
 					path.clear();
-					RollingHash startKmerHash(seq.substr(startKmerPos).c_str(), 1, k);
-					RollingBloomDBGVertex startKmer(seq.substr(startKmerPos).c_str(), startKmerHash);//later
+					std::string startKmerStr = seq.substr(startKmerPos);
+					RollingBloomDBGVertex startKmer(startKmerStr.c_str(), RollingHash(startKmerStr.c_str(), 1, k));//later
 					path.push_back(startKmer);
 				}
 			}
@@ -892,12 +891,22 @@ static inline bool trimRead(FastqRecord& read,
 	unsigned matchLen = 0;
 	unsigned maxMatchLen = 0;
 	unsigned maxMatchStart = UNSET;
-	RollingHashIterator it(seq, 1, k);
+
+	RollingBloomDBGVertex curr;
+	bool reset = true;
 	for (unsigned i = 0; i < seq.length() - k + 1; ++i) {
 		std::string kmerStr = seq.substr(i, k);
 		size_t pos = kmerStr.find_first_not_of("AGCTagct");
-		RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
-		if (pos != std::string::npos ||
+		bool foundNonATCG = pos != std::string::npos;
+		if (!foundNonATCG) {
+			if (reset) {
+				reset = false;
+				curr = RollingBloomDBGVertex(kmerStr.c_str(), RollingHash(kmerStr.c_str(), 1, k));
+			} else {
+				curr.shift(SENSE, kmerStr.at(k - 1));
+			}
+		}
+		if (foundNonATCG ||
 			!vertex_exists(curr, g)) {
 			if (matchStart != UNSET &&
 				matchLen > maxMatchLen) {
@@ -906,8 +915,9 @@ static inline bool trimRead(FastqRecord& read,
 			}
 			matchStart = UNSET;
 			matchLen = 0;
-			if (pos != std::string::npos) {
+			if (foundNonATCG) {
 				i += pos;
+				reset = true;
 				continue;
 			}
 		} else {
@@ -915,7 +925,7 @@ static inline bool trimRead(FastqRecord& read,
 				matchStart = i;
 			matchLen++;
 		}
-		++it;
+		//++it;
 	}
 	if (matchStart != UNSET && matchLen > maxMatchLen) {
 		maxMatchStart = matchStart;

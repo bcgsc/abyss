@@ -29,15 +29,8 @@ pathToSeq(const Path<RollingBloomDBGVertex>& path, unsigned k)
 	seq.resize(path.size() + k - 1, 'N');
 
 	for (size_t i = 0; i < path.size(); ++i) {
-		std::string kmer(path.at(i).kmer().c_str());
+		std::string kmer = path.at(i).kmer().c_str();
 		for (size_t j = 0; j < k; ++j) {
-			if (seq.at(i + j) != 'N' && seq.at(i + j) != kmer.at(j)) {
-				std::cerr << "warning: inconsistent DBG path detected "
-							 "at position "
-						  << i + j << ": " << seq.substr(0, i + j) << " (orig base: '"
-						  << seq.at(i + j) << "'"
-						  << ", new base: '" << kmer.at(j) << "')" << std::endl;
-			}
 			seq.at(i + j) = kmer.at(j);
 		}
 	}
@@ -91,68 +84,46 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 	unsigned maxMatchLen = 0;
 	unsigned maxMatchPos = 0;
 	int i;
+	RollingHashIterator it;
 	if (dir == FORWARD) {
-		RollingHashIterator it(seq, 1, k, true);
-		for (i = startPos; i != endPos; i += inc) {
-			assert(i >= 0 && i <= (int)(seq.length() - k + 1));
-			std::string kmerStr = seq.substr(i, k);
-			RollingHash currRollingHash(kmerStr.c_str(), 1, k);
-			RollingBloomDBGVertex curr(kmerStr.c_str(), currRollingHash);
-			if (kmerStr.find_first_not_of("AGCTagct")
-				!= std::string::npos ||
-				!vertex_exists(curr, g)) {
-				if (matchCount > maxMatchLen) {
-					assert(i - inc >= 0 &&
-						i - inc < (int)(seq.length() - k + 1));
-					maxMatchPos = i - inc;
-					maxMatchLen = matchCount;
-				}
-				if (anchorToEnd)
-					break;
-				matchCount = 0;
-			} else {
-				matchCount++;
-				if (matchCount >= numMatchesThreshold)
-					return i;
-			}
-			if (kmerStr.find_first_not_of("AGCTagct") == std::string::npos) {
-				std::cerr << "Forward" << std::endl;
-				std::cerr << (*it)[0] << std::endl;
-				std::cerr << currRollingHash.getHashSeed() << std::endl;
-				--it;
-			}
-		}
+		it = RollingHashIterator(seq, 1, k, true);
 	} else {
-		RollingHashIterator it(seq, 1, k);
-		for (i = startPos; i != endPos; i += inc) {
-			assert(i >= 0 && i <= (int)(seq.length() - k + 1));
-			std::string kmerStr = seq.substr(i, k);
-			RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
-			if (kmerStr.find_first_not_of("AGCTagct")
-				!= std::string::npos ||
-				!vertex_exists(curr, g)) {
-				if (matchCount > maxMatchLen) {
-					assert(i - inc >= 0 &&
-						i - inc < (int)(seq.length() - k + 1));
-					maxMatchPos = i - inc;
-					maxMatchLen = matchCount;
-				}
-				if (anchorToEnd)
-					break;
-				matchCount = 0;
-			} else {
-				matchCount++;
-				if (matchCount >= numMatchesThreshold)
-					return i;
+		it = RollingHashIterator(seq, 1, k);
+	}
+	for (i = startPos; i != endPos; i += inc) {
+		assert(i >= 0 && i <= (int)(seq.length() - k + 1));
+		std::string kmerStr = seq.substr(i, k);
+		RollingBloomDBGVertex curr;
+		if (it != RollingHashIterator::end()) {
+			curr = RollingBloomDBGVertex (it.kmer().c_str(), it.rollingHash());
+		}
+		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		bool foundNonATCG = pos != std::string::npos;
+		if (foundNonATCG ||
+			!vertex_exists(curr, g)) {
+			if (matchCount > maxMatchLen) {
+				assert(i - inc >= 0 &&
+					i - inc < (int)(seq.length() - k + 1));
+				maxMatchPos = i - inc;
+				maxMatchLen = matchCount;
 			}
-			if (kmerStr.find_first_not_of("AGCTagct") == std::string::npos) {
-				std::cerr << "Reverse" << std::endl;
-				std::cerr << (*it)[0] << std::endl;
-				std::cerr << it.rollingHash().getHashSeed() << std::endl;
+			if (anchorToEnd)
+				break;
+			matchCount = 0;
+		} else {
+			matchCount++;
+			if (matchCount >= numMatchesThreshold)
+				return i;
+		}
+		if (!foundNonATCG) {
+			if (dir == FORWARD) {
+				--it; 
+			} else {
 				++it;
 			}
 		}
 	}
+
 	/* handle case where first/last kmer in seq is a match */
 	if (matchCount > maxMatchLen) {
 		assert(i - inc >= 0 &&
