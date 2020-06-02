@@ -8,7 +8,6 @@
 #include "konnector.h"
 #include "Bloom/CascadingBloomFilter.h"
 #include "BloomDBG/RollingBloomDBG.h"
-//#include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
 #include "Align/alignGlobal.h"
