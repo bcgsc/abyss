@@ -155,7 +155,7 @@ public:
 
 template<typename Graph>
 static inline bool correctSingleBaseError(const Graph& g, unsigned k,
-		FastaRecord& read, size_t& correctedPos, bool rc = false)
+		FastaRecord& read, size_t& correctedPos)
 {
 	if (read.seq.length() < k)
 		return false;
