@@ -6,9 +6,9 @@
 #include "config.h"
 
 #include "Konnector/konnector.h"
-#include "Konnector/DBGBloom.h"
 #include "Konnector/DBGBloomAlgorithms.h"
 #include "Bloom/CascadingBloomFilter.h"
+#include "BloomDBG/RollingBloomDBG.h"
 
 #include "Align/alignGlobal.h"
 #include "Common/IOUtil.h"
@@ -1067,7 +1067,7 @@ int main(int argc, char** argv)
 			cerr << "Bloom filter FPR: " << setprecision(3)
 				<< 100 * bloom->FPR() << "%\n";
 
-		DBGBloom<KonnectorBloomFilter> g(*bloom);
+		RollingBloomDBG<KonnectorBloomFilter> g(*bloom);
 
 		temp = "Starting K run with k = " + IntToString(opt::k) + "\n";
 		printLog(logStream, temp);
