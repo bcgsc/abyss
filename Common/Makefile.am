@@ -28,6 +28,7 @@ libcommon_a_SOURCES = \
 	MemoryUtil.h \
 	Options.cpp Options.h \
 	PMF.h \
+	RollingBloomDBGVertexSet.h \
 	SAM.h \
 	Sense.h \
 	Sequence.cpp Sequence.h \
