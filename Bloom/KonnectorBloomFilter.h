@@ -52,14 +52,8 @@ class KonnectorBloomFilter : public BloomFilter
 	 */
 	bool contains(vector<unsigned long long> const& precomputed) const
 	{
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed.at(i) % m_size;
-			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
-			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
-				return false;
-			}
-		}
-		return true;
+		unsigned long long normalizedValue = precomputed.at(0) % m_size;
+		return (m_filter[normalizedValue / bitsPerChar] & bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	/*
@@ -67,14 +61,8 @@ class KonnectorBloomFilter : public BloomFilter
 	 */
 	bool contains(const unsigned long long precomputed[]) const
 	{
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed[i] % m_size;
-			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
-			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
-				return false;
-			}
-		}
-		return true;
+		unsigned long long normalizedValue = precomputed[0] % m_size;
+		return (m_filter[normalizedValue / bitsPerChar] & bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	/*
@@ -82,14 +70,8 @@ class KonnectorBloomFilter : public BloomFilter
 	 */
 	bool contains(vector<size_t> const& precomputed) const
 	{
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed.at(i) % m_size;
-			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
-			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
-				return false;
-			}
-		}
-		return true;
+		size_t normalizedValue = precomputed.at(0) % m_size;
+		return (m_filter[normalizedValue / bitsPerChar] & bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	/*
@@ -97,14 +79,8 @@ class KonnectorBloomFilter : public BloomFilter
 	 */
 	bool contains(const size_t precomputed[]) const
 	{
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			uint64_t normalizedValue = precomputed[i] % m_size;
-			unsigned char bit = bitMask[normalizedValue % bitsPerChar];
-			if ((m_filter[normalizedValue / bitsPerChar] & bit) != bit) {
-				return false;
-			}
-		}
-		return true;
+		size_t normalizedValue = precomputed[0] % m_size;
+		return (m_filter[normalizedValue / bitsPerChar] & bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	/** Return whether the specified bit is set. */
@@ -139,61 +115,45 @@ class KonnectorBloomFilter : public BloomFilter
 	 */
 	void insert(const size_t precomputed[])
 	{
-
-		// iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			size_t normalizedValue = precomputed[i] % m_size;
-			__sync_or_and_fetch(
-			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
-		}
+		size_t normalizedValue = precomputed[0] % m_size;
+		__sync_or_and_fetch(
+			&m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	void insert(const unsigned long long precomputed[])
 	{
-
-		// iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			size_t normalizedValue = precomputed[i] % m_size;
-			__sync_or_and_fetch(
-			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
-		}
+		unsigned long long normalizedValue = precomputed[0] % m_size;
+		__sync_or_and_fetch(
+			&m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
 	}
 
 
 	void insert(vector<size_t> const& precomputed)
 	{
-
-		// iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			size_t normalizedValue = precomputed.at(i) % m_size;
-			__sync_or_and_fetch(
-			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
-		}
+		size_t normalizedValue = precomputed.at(0) % m_size;
+		__sync_or_and_fetch(
+			&m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
 	}
 	
 	void insert(vector<unsigned long long> const& precomputed)
 	{
-
-		// iterates through hashed values adding it to the filter
-		for (unsigned i = 0; i < m_hashNum; ++i) {
-			size_t normalizedValue = precomputed.at(i) % m_size;
-			__sync_or_and_fetch(
-			    &m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
-		}
+		unsigned long long normalizedValue = precomputed.at(0) % m_size;
+		__sync_or_and_fetch(
+			&m_filter[normalizedValue / bitsPerChar], bitMask[normalizedValue % bitsPerChar]);
 	}
 
 	/** Add the object with the specified index to this set. */
 	void insert(size_t i)
 	{
-		size_t foo[1] = { i };
-		insert(foo);
+		size_t arr[1] = { i };
+		insert(arr);
 	}
 	
 	/** Add the object with the specified index to this set. */
 	void insert(unsigned long long i)
 	{
-		unsigned long long foo[1] = { i };
-		insert(foo);
+		unsigned long long arr[1] = { i };
+		insert(arr);
 	}	
 
 	/** Add the object to this set. */
