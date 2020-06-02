@@ -7,7 +7,8 @@
 
 #include "konnector.h"
 #include "Bloom/CascadingBloomFilter.h"
-#include "DBGBloom.h"
+#include "BloomDBG/RollingBloomDBG.h"
+//#include "DBGBloom.h"
 #include "DBGBloomAlgorithms.h"
 
 #include "Align/alignGlobal.h"
@@ -342,7 +343,7 @@ static inline bool isSeqRedundant(const KonnectorBloomFilter& assembledKmers,
 	const KonnectorBloomFilter& goodKmers, Sequence seq)
 {
 	flattenAmbiguityCodes(seq, false);
-	for (KmerIterator it(seq, opt::k); it != KmerIterator::end(); ++it) {
+	for (RollingHashIterator it(seq, 1, opt::k); it != RollingHashIterator::end(); ++it) {
 		if (goodKmers[*it] && !assembledKmers[*it])
 			return false;
 	}
@@ -361,20 +362,17 @@ static inline void addKmers(KonnectorBloomFilter& bloom,
 		Sequence rcFlattened = reverseComplement(seq);
 		flattenAmbiguityCodes(flattened, false);
 		flattenAmbiguityCodes(rcFlattened, false);
-		for (KmerIterator it(flattened, k);
-			it != KmerIterator::end();++it) {
+		for (RollingHashIterator it(flattened, 1, k); it != RollingHashIterator::end(); ++it) {
 			if (goodKmers[*it])
 				bloom.insert(*it);
 		}
-		for (KmerIterator it(rcFlattened, k);
-			it != KmerIterator::end(); ++it) {
+		for (RollingHashIterator it(rcFlattened, 1, k); it != RollingHashIterator::end(); ++it) {
 			if (goodKmers[*it])
 				bloom.insert(*it);
 		}
 		return;
 	} else {
-		for (KmerIterator it(seq, k);
-			it != KmerIterator::end(); ++it) {
+		for (RollingHashIterator it(seq, 1, k); it != RollingHashIterator::end(); ++it) {
 			if (goodKmers[*it])
 				bloom.insert(*it);
 		}
@@ -1168,7 +1166,7 @@ int main(int argc, char** argv)
 		assert_good(traceStream, opt::tracefilePath);
 	}
 
-	DBGBloom<KonnectorBloomFilter> g(*bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(*bloom);
 
 	/*
 	 * read pairs that were successfully connected

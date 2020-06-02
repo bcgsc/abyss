@@ -7,7 +7,8 @@
 
 #include "Common/Kmer.h"
 #include "Common/KmerIterator.h"
-#include "DBGBloom.h"
+#include "BloomDBG/RollingBloomDBG.h"
+#include "BloomDBG/RollingHashIterator.h"
 #include "Common/StringUtil.h"
 #include "Common/Sequence.h"
 #include "DataLayer/FastaReader.h"
@@ -17,13 +18,23 @@
 #include <algorithm> // for std::max
 #define NO_MATCH UINT_MAX
 
-static inline Sequence pathToSeq(Path<Kmer> path)
+
+
+inline static Sequence
+pathToSeq(const Path<RollingBloomDBGVertex>& path, unsigned k)
 {
-	Sequence seq;
 	assert(path.size() > 0);
-	seq.append(path[0].str());
-	for (unsigned i = 1; i < path.size(); i++)
-		seq.append(1, path[i].getLastBaseChar());
+
+	Sequence seq;
+	seq.resize(path.size() + k - 1, 'N');
+
+	for (size_t i = 0; i < path.size(); ++i) {
+		std::string kmer = path.at(i).kmer().c_str();
+		for (size_t j = 0; j < k; ++j) {
+			seq.at(i + j) = kmer.at(j);
+		}
+	}
+
 	return seq;
 }
 
@@ -73,12 +84,23 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 	unsigned maxMatchLen = 0;
 	unsigned maxMatchPos = 0;
 	int i;
+	RollingHashIterator it;
+	if (dir == FORWARD) {
+		it = RollingHashIterator(seq, 1, k, true);
+	} else {
+		it = RollingHashIterator(seq, 1, k);
+	}
 	for (i = startPos; i != endPos; i += inc) {
 		assert(i >= 0 && i <= (int)(seq.length() - k + 1));
 		std::string kmerStr = seq.substr(i, k);
-		if (kmerStr.find_first_not_of("AGCTagct")
-			!= std::string::npos ||
-			!vertex_exists(Kmer(kmerStr), g)) {
+		RollingBloomDBGVertex curr;
+		if (it != RollingHashIterator::end()) {
+			curr = RollingBloomDBGVertex (it.kmer().c_str(), it.rollingHash());
+		}
+		size_t pos = kmerStr.find_first_not_of("AGCTagct");
+		bool foundNonATCG = pos != std::string::npos;
+		if (foundNonATCG ||
+			!vertex_exists(curr, g)) {
 			if (matchCount > maxMatchLen) {
 				assert(i - inc >= 0 &&
 					i - inc < (int)(seq.length() - k + 1));
@@ -93,7 +115,15 @@ static inline unsigned getStartKmerPos(const Sequence& seq,
 			if (matchCount >= numMatchesThreshold)
 				return i;
 		}
+		if (!foundNonATCG) {
+			if (dir == FORWARD) {
+				--it; 
+			} else {
+				++it;
+			}
+		}
 	}
+
 	/* handle case where first/last kmer in seq is a match */
 	if (matchCount > maxMatchLen) {
 		assert(i - inc >= 0 &&
@@ -148,10 +178,10 @@ static inline bool correctSingleBaseError(const Graph& g, unsigned k,
 				continue;
 			overlapStr[changePos] = bases[j];
 			size_t score = 0;
-			for (KmerIterator it(overlapStr, k, rc); it != KmerIterator::end();
-					it++)
-			{
-				if (vertex_exists(*it, g))
+
+			for (RollingHashIterator it(overlapStr, 1, k); it != RollingHashIterator::end(); ++it) {
+				RollingBloomDBGVertex curr(it.kmer().c_str(), it.rollingHash());
+				if (vertex_exists(curr, g))
 					score++;
 			}
 			if (score > minScore)
