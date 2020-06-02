@@ -81,6 +81,18 @@ public:
 	{
 		return *(m_kmer.get() + pos);
 	}
+	
+	/** Get the first base (ACGT)*/
+	char getFirstBase() const
+	{
+		return *(m_kmer.get());
+	}
+
+	/** Get the last base (ACGT)*/
+	char getLastBase() const
+	{
+		return *(m_kmer.get() + Kmer::length() - 1);
+	}
 
 	/**
 	 * Return true if k-mer is in its lexicographically smallest orientation
