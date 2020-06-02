@@ -172,7 +172,7 @@ public:
 	 * change first base
 	 * @param base new value for the base
 	 */
-	void setLastBase(char* kmer, extDirection dir, char base)
+	void setLastBase(const char* kmer, extDirection dir, char base)
 	{
 		if (dir == SENSE) {
 			/* roll left to remove old last char */
@@ -184,6 +184,30 @@ public:
 			NTC64(kmer[0], 'A', m_k, m_hash1, m_rcHash1);
 			/* roll left to add new first char */
 			NTC64L('A', base, m_k, m_hash1, m_rcHash1);
+		}
+		m_hash = canonicalHash(m_hash1, m_rcHash1);
+
+		if (!MaskedKmer::mask().empty())
+			m_hash = maskHash(m_hash1, m_rcHash1, MaskedKmer::mask().c_str(),
+				kmer, m_k);
+	}
+	
+	/**
+	 * Change the hash value to reflect a change in the first/last base of
+	 * the k-mer using the previous state.
+	 * @param kmer point to the k-mer char array
+	 * @param dir if SENSE, change last base; if ANTISENSE,
+	 * change first base
+	 * @param base new value for the base
+	 */
+	void smartSetLastBase(const char* kmer, extDirection dir, char base)
+	{
+		m_hash1 = m_prevHash1;
+		m_rcHash1 = m_prevRCHash1;
+		if (dir == SENSE) {
+			NTC64(m_oldFirstChar, base, m_k, m_hash1, m_rcHash1);
+		} else {
+			NTC64L(m_oldLastChar, base, m_k, m_hash1, m_rcHash1);
 		}
 		m_hash = canonicalHash(m_hash1, m_rcHash1);
 
@@ -203,6 +227,32 @@ public:
 	{
 		std::swap(m_hash1, m_rcHash1);
 	}
+	
+	/**
+	 * Get the forward hash value for the current k-mer.
+	 */
+	size_t getForwardHash() const
+	{
+		return (size_t)m_hash1;
+	}
+
+	/**
+	 * Get the reverse complement hash value for the current k-mer.
+	 */
+	size_t getRCHash() const
+	{
+		return (size_t)m_rcHash1;
+	}
+	
+	
+	void savePrev(char oldFirstChar, char oldLastChar)
+	{
+		m_prevHash1 = m_hash1;
+		m_prevRCHash1 = m_rcHash1;
+		m_oldFirstChar = oldFirstChar;
+		m_oldLastChar = oldLastChar;
+	}
+
 
 private:
 
@@ -217,6 +267,14 @@ private:
 	hash_t m_rcHash1;
 	/** current canonical hash value */
 	hash_t m_hash;
+	/** value of first hash function for current k-mer */
+	hash_t m_prevHash1;
+	/** value of first hash function for current k-mer, after
+	 * reverse-complementing */
+	hash_t m_prevRCHash1;
+	char m_oldFirstChar;
+	char m_oldLastChar;
+
 };
 
 #endif
