@@ -68,6 +68,12 @@ public:
 		m_rollingHash.setLastBase(kmer().c_str(), dir, base);
 		kmer().setLastBase(dir, base);
 	}
+	
+	void smartSetLastBase(extDirection dir, char base)
+	{
+		m_rollingHash.smartSetLastBase(kmer().c_str(), dir, base);
+		kmer().setLastBase(dir, base);
+	}
 
 	void reverseComplement()
 	{
@@ -85,6 +91,11 @@ public:
 		if (!m_kmer.isCanonical())
 			reverseComplement();
 	}
+	
+	void savePrev()
+	{
+		m_rollingHash.savePrev(m_kmer.getFirstBase(), m_kmer.getLastBase());
+	}
 
 	/**
 	 * Comparison operator that takes spaced seed bitmask into account.
@@ -94,10 +105,14 @@ public:
 		/* do fast comparison first */
 		if (m_rollingHash != o.m_rollingHash)
 			return false;
+		
+		if (m_rollingHash.getForwardHash() != o.m_rollingHash.getForwardHash()) {
+			return false;
+		}
 
-		return compare(o) == 0;
+		return true;
 	}
-
+	
 	/**
 	 * Inequality operator that takes spaced seed bitmask into account.
 	 */
@@ -157,6 +172,12 @@ public:
 
 		return 0;
 	}
+	
+	friend std::ostream& operator<<(std::ostream& out, const RollingBloomDBGVertex& o)
+	{
+		return out << o.m_kmer.c_str();
+	}
+
 
 };
 
@@ -241,7 +262,7 @@ struct adjacency_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.setLastBase(SENSE, BASE_CHARS[m_i]);
+			m_v.smartSetLastBase(SENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -256,8 +277,12 @@ struct adjacency_iterator
 	adjacency_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(SENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)){
+			++m_i;
+			next();
+		}
 	}
 
 	const vertex_descriptor& operator*() const
@@ -306,7 +331,7 @@ struct out_edge_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.setLastBase(SENSE, BASE_CHARS[m_i]);
+			m_v.smartSetLastBase(SENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -320,11 +345,15 @@ struct out_edge_iterator
 	out_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(SENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)) {
+			++m_i;
+			next();
+		}
 	}
 
-	edge_descriptor operator*() const
+	const edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
 		return edge_descriptor(m_u, m_v.clone());
@@ -370,7 +399,7 @@ struct in_edge_iterator
 	void next()
 	{
 		for (; m_i < NUM_BASES; ++m_i) {
-			m_v.setLastBase(ANTISENSE, BASE_CHARS[m_i]);
+			m_v.smartSetLastBase(ANTISENSE, BASE_CHARS[m_i]);
 			if (vertex_exists(m_v, *m_g))
 				break;
 		}
@@ -384,11 +413,15 @@ struct in_edge_iterator
 	in_edge_iterator(const RollingBloomDBG<BF>& g, const vertex_descriptor& u)
 		: m_g(&g), m_u(u), m_v(u.clone()), m_i(0)
 	{
+		m_v.savePrev();
 		m_v.shift(ANTISENSE);
-		next();
+		if (!vertex_exists(m_v, *m_g)) {
+			++m_i;
+			next();
+		}
 	}
 
-	edge_descriptor operator*() const
+	const edge_descriptor operator*() const
 	{
 		assert(m_i < NUM_BASES);
 		return edge_descriptor(m_v.clone(), m_u);
@@ -506,6 +539,15 @@ in_degree(const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descript
 	typedef typename graph_traits<Graph>::in_edge_iterator Iit;
 	std::pair<Iit, Iit> it = in_edges(u, g);
 	return std::distance(it.first, it.second);
+}
+
+template <typename BloomT>
+static inline
+typename graph_traits<RollingBloomDBG<BloomT> >::degree_size_type
+degree(const typename graph_traits<RollingBloomDBG<BloomT> >::vertex_descriptor& u,
+	const RollingBloomDBG<BloomT>& g)
+{
+	return in_degree(u, g) + out_degree(u, g);
 }
 
 // PropertyGraph
