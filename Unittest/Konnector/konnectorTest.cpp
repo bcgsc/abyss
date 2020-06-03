@@ -54,7 +54,7 @@ TEST(ConnectPairsTest, MergeOverlappingPair)
 	read2.seq = reverseComplement(mergedSeq.substr(1,readLength));
 
 	KonnectorBloomFilter bloom(1000, k);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	Bloom::loadSeq(bloom, k, read1.seq);
 	Bloom::loadSeq(bloom, k, read2.seq);

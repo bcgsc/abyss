@@ -1,6 +1,7 @@
 #include "Konnector/DBGBloomAlgorithms.h"
 #include "Bloom/Bloom.h"
 #include "Bloom/CascadingBloomFilter.h"
+#include "BloomDBG/RollingBloomDBG.h"
 #include "Common/Sequence.h"
 #include <gtest/gtest.h>
 #include <string>
@@ -47,7 +48,7 @@ TEST_F(GetStartKmerPosTest, FullReadMatch)
 {
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, testRead.seq);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 	const unsigned numMatchesThreshold = 1;
 
 	EXPECT_EQ(5U, getStartKmerPos(testRead, k, FORWARD, g,
@@ -59,7 +60,7 @@ TEST_F(GetStartKmerPosTest, FullReadMismatch)
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	// Leave the bloom filter empty to generate a mismatch
 	// for every kmer in the read.
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 	EXPECT_EQ(NO_MATCH, getStartKmerPos(testRead, k, FORWARD, g));
 }
 
@@ -67,7 +68,7 @@ TEST_F(GetStartKmerPosTest, NumMatchesThreshold)
 {
 	const string& seq = testRead.seq;
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 101101
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -108,7 +109,7 @@ TEST_F(GetStartKmerPosTest, EqualLengthMatchRegions)
 {
 	const string& seq = testRead.seq;
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	// This loop creates kmer match vector 011011
 	for (unsigned i = 0; i < seq.length() - k + 1; i++) {
@@ -156,7 +157,7 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 {
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, correctRead.seq);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -167,26 +168,11 @@ TEST_F(CorrectSingleBaseErrorTest, SingleError)
 	EXPECT_TRUE(correctedPos == errorPos1);
 }
 
-TEST_F(CorrectSingleBaseErrorTest, ReverseComplement)
-{
-	KonnectorBloomFilter bloom(bloomFilterSize, k);
-	Bloom::loadSeq(bloom, k, correctRead.seq);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
-
-	size_t correctedPos = numeric_limits<size_t>::max();
-	FastaRecord read = singleErrorRead;
-	bool success = correctSingleBaseError(g, k, read, correctedPos, true);
-
-	ASSERT_TRUE(success);
-	EXPECT_EQ(read.seq, read.seq);
-	EXPECT_TRUE(correctedPos == errorPos1);
-}
-
 TEST_F(CorrectSingleBaseErrorTest, NoError)
 {
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, singleErrorRead.seq);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
@@ -199,7 +185,7 @@ TEST_F(CorrectSingleBaseErrorTest, SkipFalsePositive)
 	KonnectorBloomFilter bloom(bloomFilterSize, k);
 	Bloom::loadSeq(bloom, k, correctRead.seq);
 	Bloom::loadSeq(bloom, k, simulatedFalsePositive);
-	DBGBloom<KonnectorBloomFilter> g(bloom);
+	RollingBloomDBG<KonnectorBloomFilter> g(bloom);
 
 	size_t correctedPos = numeric_limits<size_t>::max();
 	FastaRecord read = singleErrorRead;
