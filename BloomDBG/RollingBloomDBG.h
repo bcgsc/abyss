@@ -105,10 +105,6 @@ public:
 		/* do fast comparison first */
 		if (m_rollingHash != o.m_rollingHash)
 			return false;
-		
-		if (m_rollingHash.getForwardHash() != o.m_rollingHash.getForwardHash()) {
-			return false;
-		}
 
 		return true;
 	}
