@@ -257,23 +257,23 @@ public:
 private:
 
 	/** number of hash functions */
-	unsigned m_numHashes;
+	unsigned m_numHashes = 0;
 	/** k-mer length */
-	unsigned m_k;
+	unsigned m_k = 0;
 	/** value of first hash function for current k-mer */
-	hash_t m_hash1;
+	hash_t m_hash1 = 0;
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
-	hash_t m_rcHash1;
+	hash_t m_rcHash1 = 0;
 	/** current canonical hash value */
-	hash_t m_hash;
+	hash_t m_hash = 0;
 	/** value of first hash function for current k-mer */
-	hash_t m_prevHash1;
+	hash_t m_prevHash1 = 0;
 	/** value of first hash function for current k-mer, after
 	 * reverse-complementing */
-	hash_t m_prevRCHash1;
-	char m_oldFirstChar;
-	char m_oldLastChar;
+	hash_t m_prevRCHash1 = 0;
+	char m_oldFirstChar = 'A';
+	char m_oldLastChar = 'A';
 
 };
 
