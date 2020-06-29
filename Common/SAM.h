@@ -341,7 +341,9 @@ struct SAMRecord : SAMAlignment {
 		in >> o.seq >> o.qual;
 		getline(in, o.tags);
 #endif
+#if !SAM_SEQ_QUAL
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+#endif
 		if (!in)
 			return in;
 		o.pos--;
