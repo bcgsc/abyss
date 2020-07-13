@@ -1,0 +1,59 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+cd "${MESON_SOURCE_ROOT}"
+
+if [[ -n "$BTLLIB_PYTHON_CFLAGS" ]]; then
+  cflags=$BTLLIB_PYTHON_CFLAGS
+  ldflags=$BTLLIB_PYTHON_LDFLAGS
+else
+  cflags=$(python3-config --cflags)
+  ldflags=$(python3-config --ldflags)
+fi
+
+found_libpython=false
+for flag in $ldflags; do
+  if [[ $flag == "-lpython"* ]]; then
+    found_libpython=true
+  fi
+done
+
+if [[ $found_libpython == false ]]; then
+  if [[ -n "$BTLLIB_PYTHON_VERSION" ]]; then
+    py_version="python$BTLLIB_PYTHON_VERSION"
+  else
+    py_version=python$(python3 --version | awk '{print $2}' | awk -F '.' '{print $1 "." $2}')
+  fi
+  py_version_major=$(echo $py_version | sed 's~python\([[:digit:]]\).[[:digit:]]~python\1~')
+
+  pylibs=( "${py_version}" "${py_version}m" "${py_version_major}" "python" )
+  libdetects=( "" "" "" "" )
+
+  if [[ $OSTYPE == "linux-gnu"* ]]; then
+    for i in $(seq 0 3); do
+      libdetects[$i]="rm -f btllib_py_lib_check.tmp; ld ${ldflags} -l${pylibs[$i]} -o btllib_py_lib_check.tmp"
+    done
+  elif [[ $OSTYPE == "darwin"* ]]; then
+    for i in $(seq 0 3); do
+      libdetects[$i]="rm -f btllib_py_lib_check.tmp; ld ${ldflags} -l${pylibs[$i]} -dylib -arch x86_64 -o btllib_py_lib_check.tmp"
+    done
+  fi
+
+  for i in $(seq 0 3); do
+    if [[ -n ${libdetects[$i]} ]]; then
+      eval ${libdetects[$i]}
+      if [[ $? -eq 0 ]]; then
+        ldflags+=" -l${pylibs[$i]}"
+        break
+      fi
+    fi
+  done
+  rm -f btllib_py_lib_check.tmp
+fi
+
+echo "$cflags"
+echo "$ldflags"

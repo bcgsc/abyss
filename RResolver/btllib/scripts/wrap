@@ -1,0 +1,96 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+set -e
+
+# Remove old wrapper files
+rm -f ${MESON_SOURCE_ROOT}/extras/java/*.java
+rm -f ${MESON_SOURCE_ROOT}/extras/python/*.py
+
+# Generate java swig files
+cd ${MESON_SOURCE_ROOT}
+
+include_files=$(scripts/get_include_files)
+
+echo "%module btllib
+
+%{" > extras/java/btllib.i
+
+for file in ${include_files}; do
+  relative=$(scripts/get_include_relative ${file})
+  path="${relative}/$(basename ${file})"
+  echo "#include \"$path\"" >> extras/java/btllib.i
+done
+
+echo "%}
+
+%include <java.swg>
+%include <various.i>
+%include <std_string.i>
+
+%include \"extra.i\"
+" >> extras/java/btllib.i
+
+for file in ${include_files}; do
+  relative=$(scripts/get_include_relative ${file})
+  path="${relative}/$(basename ${file})"
+  echo "%include \"$path\"" >> extras/java/btllib.i
+done
+
+ln -sf $PWD/include extras/java/
+cd extras/java
+swig -java -package btllib -c++ -Iinclude btllib.i
+rm include
+
+# Add java files to meson build
+java_files=$(find . -maxdepth 1 -iname "*.java" | sed "s~\(.*\)~'\1'~" | tr '\n' , | sed 's~.$~~')
+meson_build=$(cat meson.build)
+echo "$meson_build" | sed "s~java_files.*=.*\[.*\]~java_files = [$java_files]~" >meson.build
+
+# Generate python swig files
+cd ${MESON_SOURCE_ROOT}
+
+include_files=$(scripts/get_include_files)
+
+echo "%module btllib
+
+%{
+#define SWIG_FILE_WITH_INIT
+" > extras/python/btllib.i
+
+for file in ${include_files}; do
+  relative=$(scripts/get_include_relative ${file})
+  path="${relative}/$(basename ${file})"
+  echo "#include \"$path\"" >> extras/python/btllib.i
+done
+
+echo "%}
+
+%include <pyprimtypes.swg>
+%include <pyopers.swg>
+%include <std_common.i>
+%include <cstring.i>
+%include <std_string.i>
+%include <exception.i>
+%include <std_string.i>
+%include <std_iostream.i>
+%include <std_vector.i>
+%include <carrays.i>
+
+%include \"extra.i\"
+" >> extras/python/btllib.i
+
+for file in ${include_files}; do
+  relative=$(scripts/get_include_relative ${file})
+  path="${relative}/$(basename ${file})"
+  echo "%include \"$path\"" >> extras/python/btllib.i
+done
+
+ln -sf $PWD/include extras/python/
+cd extras/python
+swig -python -py3 -builtin -c++ -Iinclude btllib.i
+rm include
