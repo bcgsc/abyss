@@ -25,7 +25,7 @@ Contents
 
 * [Quick Start](#quick-start)
 	* [Install ABySS on Debian or Ubuntu](#install-abyss-on-debian-or-ubuntu)
-	* [Install ABySS on Mac OS X](#install-abyss-on-mac-os-x)
+	* [Install ABySS on macOS](#install-abyss-on-macos)
 * [Dependencies](#dependencies)
 * [Compiling ABySS from GitHub](#compiling-abyss-from-github)
 * [Compiling ABySS from source](#compiling-abyss-from-source)
