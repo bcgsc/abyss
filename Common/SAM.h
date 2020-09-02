@@ -340,8 +340,8 @@ struct SAMRecord : SAMAlignment {
 #if SAM_SEQ_QUAL
 		in >> o.seq >> o.qual;
 		getline(in, o.tags);
-#endif
-#if !SAM_SEQ_QUAL
+		o.tags = o.tags.substr(1);
+#else
 		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 #endif
 		if (!in)
