@@ -40,6 +40,11 @@ check_PROGRAMS += common_sam
 common_sam_SOURCES = Common/SAM.cc
 common_sam_LDADD = $(top_builddir)/Common/libcommon.a $(LDADD)
 
+check_PROGRAMS += common_sam_ssq
+common_sam_ssq_CPPFLAGS = $(AM_CPPFLAGS) $(common_sam_CPPFLAGS) -DSAM_SEQ_QUAL
+common_sam_ssq_LDADD = $(common_sam_LDADD)
+common_sam_ssq_SOURCES = $(common_sam_SOURCES)
+
 check_PROGRAMS += BloomFilter
 BloomFilter_SOURCES = Konnector/BloomFilter.cc
 BloomFilter_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/Common
