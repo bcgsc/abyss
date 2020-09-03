@@ -1,7 +1,8 @@
 #include <sstream>
 #include <string>
+
 #include "Common/SAM.h"
-#include <gtest/gtest.h>
+#include "gtest/gtest.h"
 
 /** Verify SAM records are stored and used correctly */
 
