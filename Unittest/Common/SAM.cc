@@ -68,7 +68,14 @@ TEST(parseCigarDeath, invalid_cigar)
 // Test friend std::istream& operator >>(std::istream& in, SAMRecord& o)
 TEST(parseSAMInput, check_values)
 {
-	std::string testSAMString("1:497:R:-272+13M17D24M	113	1	497	37	37M	15	100338662	0	CGGGTCTGACCTGAGGAGAACTGTGCTCCGCCTTCAG	0;==-==9;>>>>>=>>>>>>>>>>>=>>>>>>>>>>	XT:A:U	NM:i:0	SM:i:37	AM:i:0	X0:i:1	X1:i:0	XM:i:0	XO:i:0	XG:i:0	MD:Z:37\n19:20389:F:275+18M2D19M	99	1	17644	0	37M	=	17919	314	TATGACTGCTAATAATACCTACACATGTTAGAACCAT	>>>>>>>>>>>>>>>>>>>><<>>><<>>4::>>:<9	RG:Z:UM0098:1	XT:A:R	NM:i:0	SM:i:0	AM:i:0	X0:i:4	X1:i:0	XM:i:0	XO:i:0	XG:i:0	MD:Z:37");
+	std::string testSAMString(  "1:497:R:-272+13M17D24M	113	1	497	37	37M	15	100338662	0	"
+								"CGGGTCTGACCTGAGGAGAACTGTGCTCCGCCTTCAG	0;==-==9;>>>>>=>>>>>>>>>>>=>>>>>>>>>>	"
+								"XT:A:U	NM:i:0	SM:i:37	AM:i:0	X0:i:1	X1:i:0	XM:i:0	XO:i:0	XG:i:0	MD:Z:37"
+								"\n" 
+								"19:20389:F:275+18M2D19M	99	1	17644	0	37M	=	17919	314	"
+								"TATGACTGCTAATAATACCTACACATGTTAGAACCAT	>>>>>>>>>>>>>>>>>>>><<>>><<>>4::>>:<9	"
+								"RG:Z:UM0098:1	XT:A:R	NM:i:0	SM:i:0	AM:i:0	X0:i:4	X1:i:0	XM:i:0	XO:i:0	XG:i:0	MD:Z:37"
+								);
 	std::istringstream testSAMIStringStream(testSAMString);
 	SAMRecord testSAMRecord;
 	testSAMIStringStream >> testSAMRecord;
