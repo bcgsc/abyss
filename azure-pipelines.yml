@@ -52,7 +52,11 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq clang-7.0
+  - script: |
+      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+      sudo apt-get update
+      sudo apt-get install -qq clang-7.0
     displayName: Install clang-7.0
   - script: |
       ./autogen.sh
