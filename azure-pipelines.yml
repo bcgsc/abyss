@@ -56,14 +56,14 @@ jobs:
       curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
       sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
       sudo apt-get update
-      sudo apt-get install -qq clang-7.0
-    displayName: Install clang-7.0
+      sudo apt-get install -qq clang-7
+    displayName: Install clang-7
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-7.0 CXX=clang++-7.0"
-      ./configure CC=clang-7.0 CXX=clang++-7.0 --with-mpi=/usr/lib/openmpi
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-7 CXX=clang++-7"
+      ./configure CC=clang-7 CXX=clang++-7 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
-    displayName: Compiling ABySS with clang 7.0
+    displayName: Compiling ABySS with clang 7
 
 - job: linux_clang8
   pool:
