@@ -5,7 +5,7 @@
 	General:
 	* Resolve various compilation errors in newer versions of clang
 	* Use ntHash's 0th hash as the default hash instead of the 1st hash
-	* Added optional RResolver module
+	* Added optional RResolver module, not currently part of the ABySS assembly pipeline
 
 	abyss-rresolver-short:
 	* Improves genome assemblies at unitig stage by using a sliding window at read size level
