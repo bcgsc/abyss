@@ -40,6 +40,70 @@ jobs:
       ./configure CC=clang-6.0 CXX=clang++-6.0 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with clang 6.0
+    
+- job: linux_clang7
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: |
+      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main"
+      sudo apt-get update
+      sudo apt-get install -qq clang-7
+    displayName: Install clang-7
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-7 CXX=clang++-7"
+      ./configure CC=clang-7 CXX=clang++-7 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 7
+
+- job: linux_clang8
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq clang-8
+    displayName: Install clang-8
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-8 CXX=clang++-8"
+      ./configure CC=clang-8 CXX=clang++-8 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 8
+
+- job: linux_clang9
+  pool:
+    vmImage: Ubuntu 16.04
+  steps:
+  - script: |
+      sudo apt-get update -qq
+      sudo apt-get install -qq software-properties-common
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+      sudo apt-get update -qq
+      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+    displayName: Install common
+  - script: sudo apt-get install -qq clang-9
+    displayName: Install clang-9
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-9 CXX=clang++-9"
+      ./configure CC=clang-9 CXX=clang++-9 --with-mpi=/usr/lib/openmpi
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 9
 
 - job: linux_gcc5
   pool:
@@ -159,6 +223,21 @@ jobs:
       ./configure --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
+
+- job: macOS_default_clang
+  pool:
+    vmImage: macOS-10.14
+  steps:
+  - script: |
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
+    displayName: Install common
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
+      make -j12 distcheck
+    displayName: Compiling ABySS with default clang
 
 - job: linux_gcc9
   pool:
