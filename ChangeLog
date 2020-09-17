@@ -10,6 +10,7 @@
 	abyss-rresolver-short:
 	* Improves genome assemblies at unitig stage by using a sliding window at read size level
 	across repeats to determine which paths are correct
+	* For further information: consult http://www.birollab.ca/assets/posts/195_Nikolic_Vladimir_HiTSeq_ISMB2020.pdf
 	
 	misc:
 	* Extract all tags in a SAM file
