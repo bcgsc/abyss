@@ -105,26 +105,6 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS with clang 9
 
-- job: linux_clang10
-  pool:
-    vmImage: Ubuntu 16.04
-  steps:
-  - script: |
-      sudo apt-get update -qq
-      sudo apt-get install -qq software-properties-common
-      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      sudo apt-get update -qq
-      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
-    displayName: Install common
-  - script: sudo apt-get install -qq clang-10
-    displayName: Install clang-10
-  - script: |
-      ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-10 CXX=clang++-10"
-      ./configure CC=clang-10 CXX=clang++-10 --with-mpi=/usr/lib/openmpi
-      make -j12 distcheck
-    displayName: Compiling ABySS with clang 10
-
 - job: linux_gcc5
   pool:
     vmImage: Ubuntu 16.04
@@ -243,6 +223,21 @@ jobs:
       ./configure --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
+
+- job: macOS_default_clang
+  pool:
+    vmImage: macOS-10.14
+  steps:
+  - script: |
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
+    displayName: Install common
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
+      make -j12 distcheck
+    displayName: Compiling ABySS with default clang
 
 - job: linux_gcc9
   pool:
