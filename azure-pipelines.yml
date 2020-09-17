@@ -76,14 +76,14 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq clang-8.0
-    displayName: Install clang-8.0
+  - script: sudo apt-get install -qq clang-8
+    displayName: Install clang-8
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-8.0 CXX=clang++-8.0"
-      ./configure CC=clang-8.0 CXX=clang++-8.0 --with-mpi=/usr/lib/openmpi
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-8 CXX=clang++-8"
+      ./configure CC=clang-8 CXX=clang++-8 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
-    displayName: Compiling ABySS with clang 8.0
+    displayName: Compiling ABySS with clang 8
 
 - job: linux_clang9
   pool:
@@ -96,14 +96,14 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq clang-9.0
-    displayName: Install clang-9.0
+  - script: sudo apt-get install -qq clang-9
+    displayName: Install clang-9
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-9.0 CXX=clang++-9.0"
-      ./configure CC=clang-9.0 CXX=clang++-9.0 --with-mpi=/usr/lib/openmpi
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-9 CXX=clang++-9"
+      ./configure CC=clang-9 CXX=clang++-9 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
-    displayName: Compiling ABySS with clang 9.0
+    displayName: Compiling ABySS with clang 9
 
 - job: linux_clang10
   pool:
@@ -116,14 +116,14 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq clang-10.0
-    displayName: Install clang-10.0
+  - script: sudo apt-get install -qq clang-10
+    displayName: Install clang-10
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-9.0 CXX=clang++-10.0"
-      ./configure CC=clang-10.0 CXX=clang++-10.0 --with-mpi=/usr/lib/openmpi
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-10 CXX=clang++-10"
+      ./configure CC=clang-10 CXX=clang++-10 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
-    displayName: Compiling ABySS with clang 10.0
+    displayName: Compiling ABySS with clang 10
 
 - job: linux_gcc5
   pool:
