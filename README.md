@@ -608,6 +608,8 @@ Authors
 + **Tony Raymond** - [GitHub/traymond](https://github.com/traymond)
 + **Ben Vandervalk** - [GitHub/benvvalk ](https://github.com/benvvalk)
 + **Jared Simpson** - [GitHub/jts](https://github.com/jts)
++ **Johnathan Wong** - [GitHub/jowong4](https://github.com/jowong4)
++ **Vladimir Nikolić** - [GitHub/schutzekatze](https://github.com/schutzekatze)
 
 Supervised by [**Dr. Inanc Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 
