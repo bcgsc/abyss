@@ -1,3 +1,20 @@
+2020-09-17  Johnathan Wong <jowong@bcgsc.ca>
+
+	* Release version 2.2.5
+
+	General:
+	* Resolve various compilation errors in newer versions of clang
+	* Use ntHash's 0th hash as the default hash instead of the 1st hash
+	* Added optional RResolver module, not currently part of the ABySS assembly pipeline
+
+	abyss-rresolver-short:
+	* Improves genome assemblies at unitig stage by using a sliding window at read size level
+	across repeats to determine which paths are correct
+	* For further information: consult http://www.birollab.ca/assets/posts/195_Nikolic_Vladimir_HiTSeq_ISMB2020.pdf
+	
+	misc:
+	* Extract all tags in a SAM file
+
 2020-01-30  Johnathan Wong <jowong@bcgsc.ca>
 
 	* Release version 2.2.4
@@ -13,7 +30,6 @@
 
 	abyss-bloom-dbg:
 	* Report coverage information of unitigs
-
 
 2019-09-20  Johnathan Wong <jowong@bcgsc.ca>
 
