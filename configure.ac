@@ -308,13 +308,13 @@ AC_CONFIG_FILES([
 	GapFiller/Makefile
 	Sealer/Makefile
 	vendor/gtest-1.7.0/Makefile
+	RResolver/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
 	BloomDBG/Makefile
 	DataBase/Makefile
 	vendor/Makefile
-	vendor/nthash/Makefile
 ])
 
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then

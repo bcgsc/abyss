@@ -54,9 +54,9 @@ SUBDIRS = \
 	FilterGraph \
 	GapFiller \
 	Sealer \
+	RResolver \
 	AdjList \
 	vendor \
-	vendor/nthash \
 	$(GTest) \
 	$(UnitTest)
 

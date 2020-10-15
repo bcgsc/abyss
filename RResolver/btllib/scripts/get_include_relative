@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+if [ "$#" -ne 1 ]; then
+  echo "Missing argument"
+  exit 1
+fi
+
+cd "${MESON_SOURCE_ROOT}"
+
+echo -n $(dirname ${1#"${MESON_SOURCE_ROOT}/include/"})

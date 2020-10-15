@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+cd "${MESON_SOURCE_ROOT}"
+
+set -e
+files=$(scripts/get_include_files)
+files+=$(scripts/get_tests_files)
+files+=$(scripts/get_examples_files)
+for file in $files; do
+  clang-format -style=mozilla $file >${file}_formatted
+  rm $file
+  mv ${file}_formatted $file
+done
