@@ -48,20 +48,20 @@ public class BloomFilter {
     this(btllibJNI.new_BloomFilter__SWIG_2(path), true);
   }
 
-  public void insert(SWIGTYPE_p_std__vectorT_uint64_t_t hashes) {
-    btllibJNI.BloomFilter_insert__SWIG_0(swigCPtr, this, SWIGTYPE_p_std__vectorT_uint64_t_t.getCPtr(hashes));
-  }
-
   public void insert(SWIGTYPE_p_uint64_t hashes) {
-    btllibJNI.BloomFilter_insert__SWIG_1(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(hashes));
+    btllibJNI.BloomFilter_insert__SWIG_0(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(hashes));
   }
 
-  public boolean contains(SWIGTYPE_p_std__vectorT_uint64_t_t hashes) {
-    return btllibJNI.BloomFilter_contains__SWIG_0(swigCPtr, this, SWIGTYPE_p_std__vectorT_uint64_t_t.getCPtr(hashes));
+  public void insert(SWIGTYPE_p_std__vectorT_uint64_t_t hashes) {
+    btllibJNI.BloomFilter_insert__SWIG_1(swigCPtr, this, SWIGTYPE_p_std__vectorT_uint64_t_t.getCPtr(hashes));
   }
 
   public boolean contains(SWIGTYPE_p_uint64_t hashes) {
-    return btllibJNI.BloomFilter_contains__SWIG_1(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(hashes));
+    return btllibJNI.BloomFilter_contains__SWIG_0(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(hashes));
+  }
+
+  public boolean contains(SWIGTYPE_p_std__vectorT_uint64_t_t hashes) {
+    return btllibJNI.BloomFilter_contains__SWIG_1(swigCPtr, this, SWIGTYPE_p_std__vectorT_uint64_t_t.getCPtr(hashes));
   }
 
   public long get_bytes() {
@@ -70,6 +70,10 @@ public class BloomFilter {
 
   public SWIGTYPE_p_uint64_t get_pop_cnt() {
     return new SWIGTYPE_p_uint64_t(btllibJNI.BloomFilter_get_pop_cnt(swigCPtr, this), true);
+  }
+
+  public double get_occupancy() {
+    return btllibJNI.BloomFilter_get_occupancy(swigCPtr, this);
   }
 
   public long get_hash_num() {

@@ -1,4 +1,4 @@
-BTL common code library in C++ with Python and Java wrappers.
+[BTL](http://www.birollab.ca/) common code library in C++ with Python and Java wrappers.
 
 Platforms
 ---
@@ -48,3 +48,10 @@ If you want to contribute code to this repo, before making a pull request, make 
 - `ninja docs` generates code documentation from comments (requires Doxygen)
 
 Any of these can be run individually within `build` directory.
+
+Credits
+---
+- Author: [Vladimir Nikolic](https://github.com/schutzekatze)
+- Components:
+  - [Hamid Mohamadi](https://github.com/mohamadi) for [ntHash](https://github.com/bcgsc/ntHash)
+  - [Chase Geigle](https://github.com/skystrife) for [cpptoml](https://github.com/skystrife/cpptoml)

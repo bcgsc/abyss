@@ -178,7 +178,7 @@ storeContigs(const std::string& contigsPath)
 }
 
 unsigned
-num_vertices_removed(const Graph& graph)
+numVerticesRemoved(const Graph& graph)
 {
 	unsigned removed = 0;
 	Graph::vertex_iterator vertexStart, vertexEnd;

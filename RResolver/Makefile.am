@@ -2,7 +2,7 @@ bin_PROGRAMS = abyss-rresolver-short
 
 abyss_rresolver_short_CXXFLAGS = \
 	$(AM_CXXFLAGS) $(OPENMP_CXXFLAGS) \
-	-I$(top_srcdir) -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer
+	-I$(top_srcdir) -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer -I$(top_srcdir)/RResolver/btllib/include
 
 abyss_rresolver_short_SOURCES = \
 	RResolverShort.cpp \
@@ -19,7 +19,7 @@ noinst_LIBRARIES = libralgorithmsshort.a
 
 libralgorithmsshort_a_CXXFLAGS = \
   $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS) \
-	-I$(top_srcdir) -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer
+	-I$(top_srcdir) -I$(top_srcdir)/Common -I$(top_srcdir)/DataLayer -I$(top_srcdir)/RResolver/btllib/include
 
 libralgorithmsshort_a_SOURCES = \
 	RAlgorithmsShort.cpp RAlgorithmsShort.h \

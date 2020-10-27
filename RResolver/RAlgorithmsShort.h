@@ -144,11 +144,11 @@ class Support
 	UnknownReason unknownReason = UnknownReason::UNDETERMINED;
 };
 
-class ReadBatch
+class ReadSize
 {
 
   public:
-	ReadBatch(int size)
+	ReadSize(int size)
 	  : size(size)
 	{}
 
@@ -160,8 +160,8 @@ class ReadBatch
 	long sampleCount = 0;
 
 	static long readsSampleSize;
-	static std::vector<ReadBatch> batches;
-	static ReadBatch current;
+	static std::vector<ReadSize> readSizes;
+	static ReadSize current;
 };
 
 void

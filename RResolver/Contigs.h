@@ -30,8 +30,7 @@ typedef Graph::out_edge_iterator out_edge_iterator;
 
 class ContigSequence : public const_string
 {
-
-  public:
+public:
 	ContigSequence(const std::string& s)
 	  : const_string(s)
 	{
@@ -40,7 +39,7 @@ class ContigSequence : public const_string
 
 	size_t size() const { return strSize; }
 
-  private:
+private:
 	size_t strSize;
 };
 
@@ -86,7 +85,7 @@ void
 storeContigs(const std::string& contigsPath);
 
 unsigned
-num_vertices_removed(const Graph& contigGraph);
+numVerticesRemoved(const Graph& contigGraph);
 
 void
 assembleContigs();

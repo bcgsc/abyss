@@ -1,5 +1,5 @@
 project('btllib', 'cpp',
-        version : '1.1.0',
+        version : '1.0.4',
         license : 'GPL3',
         default_options : [ 'cpp_std=c++11' ])
 

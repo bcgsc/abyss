@@ -8,11 +8,12 @@
 
 package btllib;
 
-public class KmerBloomFilter extends BloomFilter {
+public class KmerBloomFilter {
   private transient long swigCPtr;
+  protected transient boolean swigCMemOwn;
 
   protected KmerBloomFilter(long cPtr, boolean cMemoryOwn) {
-    super(btllibJNI.KmerBloomFilter_SWIGUpcast(cPtr), cMemoryOwn);
+    swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
@@ -33,31 +34,66 @@ public class KmerBloomFilter extends BloomFilter {
       }
       swigCPtr = 0;
     }
-    super.delete();
+  }
+
+  public KmerBloomFilter() {
+    this(btllibJNI.new_KmerBloomFilter__SWIG_0(), true);
   }
 
   public KmerBloomFilter(long bytes, long hash_num, long k) {
-    this(btllibJNI.new_KmerBloomFilter__SWIG_0(bytes, hash_num, k), true);
+    this(btllibJNI.new_KmerBloomFilter__SWIG_1(bytes, hash_num, k), true);
   }
 
   public KmerBloomFilter(String path) {
-    this(btllibJNI.new_KmerBloomFilter__SWIG_1(path), true);
-  }
-
-  public void insert(String seq) {
-    btllibJNI.KmerBloomFilter_insert__SWIG_0(swigCPtr, this, seq);
+    this(btllibJNI.new_KmerBloomFilter__SWIG_2(path), true);
   }
 
   public void insert(String seq, long seq_len) {
-    btllibJNI.KmerBloomFilter_insert__SWIG_1(swigCPtr, this, seq, seq_len);
+    btllibJNI.KmerBloomFilter_insert__SWIG_0(swigCPtr, this, seq, seq_len);
   }
 
-  public long contains(String seq) {
-    return btllibJNI.KmerBloomFilter_contains__SWIG_0(swigCPtr, this, seq);
+  public void insert(String seq) {
+    btllibJNI.KmerBloomFilter_insert__SWIG_1(swigCPtr, this, seq);
   }
 
   public long contains(String seq, long seq_len) {
-    return btllibJNI.KmerBloomFilter_contains__SWIG_1(swigCPtr, this, seq, seq_len);
+    return btllibJNI.KmerBloomFilter_contains__SWIG_0(swigCPtr, this, seq, seq_len);
+  }
+
+  public long contains(String seq) {
+    return btllibJNI.KmerBloomFilter_contains__SWIG_1(swigCPtr, this, seq);
+  }
+
+  public boolean contains(SWIGTYPE_p_uint64_t hashes) {
+    return btllibJNI.KmerBloomFilter_contains__SWIG_2(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(hashes));
+  }
+
+  public boolean contains(SWIGTYPE_p_std__vectorT_uint64_t_t hashes) {
+    return btllibJNI.KmerBloomFilter_contains__SWIG_3(swigCPtr, this, SWIGTYPE_p_std__vectorT_uint64_t_t.getCPtr(hashes));
+  }
+
+  public long get_bytes() {
+    return btllibJNI.KmerBloomFilter_get_bytes(swigCPtr, this);
+  }
+
+  public SWIGTYPE_p_uint64_t get_pop_cnt() {
+    return new SWIGTYPE_p_uint64_t(btllibJNI.KmerBloomFilter_get_pop_cnt(swigCPtr, this), true);
+  }
+
+  public double get_occupancy() {
+    return btllibJNI.KmerBloomFilter_get_occupancy(swigCPtr, this);
+  }
+
+  public long get_hash_num() {
+    return btllibJNI.KmerBloomFilter_get_hash_num(swigCPtr, this);
+  }
+
+  public double get_fpr() {
+    return btllibJNI.KmerBloomFilter_get_fpr(swigCPtr, this);
+  }
+
+  public long get_k() {
+    return btllibJNI.KmerBloomFilter_get_k(swigCPtr, this);
   }
 
   public void write(String path) {

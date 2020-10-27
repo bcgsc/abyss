@@ -4,9 +4,6 @@
 
 #include "btllib/include/btllib/seq_reader.hpp"
 
-#include "vendor/nthash/ntHashIterator.hpp"
-#include "vendor/nthash/stHashIterator.hpp"
-
 #if _OPENMP
 #include <omp.h>
 #endif
@@ -23,14 +20,12 @@
 template<std::size_t N, class T>
 constexpr std::size_t countof(T(&)[N]) { return N; }
 
-static unsigned char BASES[] = { 'A', 'C', 'T', 'G' };
-
 typedef std::map<unsigned int, std::map<unsigned int, Support>> SupportMap;
 typedef std::map<unsigned int, SupportMap> RepeatSupportMap;
 
-long ReadBatch::readsSampleSize = 0;
-std::vector<ReadBatch> ReadBatch::batches;
-ReadBatch ReadBatch::current(0);
+long ReadSize::readsSampleSize = 0;
+std::vector<ReadSize> ReadSize::readSizes;
+ReadSize ReadSize::current(0);
 
 class FractionHistogram : public Histogram
 {
@@ -57,13 +52,13 @@ class Resolution
 {
 
   public:
-	Resolution(const ReadBatch& batch, int r)
+	Resolution(const ReadSize& batch, int r)
 	  : batch(batch)
 	  , r(r)
 	{}
 
 	RepeatSupportMap repeatSupportMap;
-	const ReadBatch& batch;
+	const ReadSize& batch;
 	int r;
 	Histogram findsHistogram;
 	FractionHistogram fractionFindsHistogram;
@@ -103,7 +98,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 	if (opt::verbose) {
 		std::cerr << "Determining read stats..." << std::endl;
 	}
-	ReadBatch::batches.clear();
+	ReadSize::readSizes.clear();
 #pragma omp parallel
 #pragma omp single
 	{
@@ -134,12 +129,12 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 					}
 				}
 
-#pragma omp critical(ReadBatches)
+#pragma omp critical(ReadSizes)
 				{
 					for (const auto& i : hist) {
-						ReadBatch* batch = nullptr;
+						ReadSize* batch = nullptr;
 						bool found = false;
-						for (auto& b : ReadBatch::batches) {
+						for (auto& b : ReadSize::readSizes) {
 							if (b.size == i.first) {
 								found = true;
 								batch = &b;
@@ -147,8 +142,8 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 							}
 						}
 						if (!found) {
-							ReadBatch::batches.push_back(ReadBatch(i.first));
-							batch = &(ReadBatch::batches.back());
+							ReadSize::readSizes.push_back(ReadSize(i.first));
+							batch = &(ReadSize::readSizes.back());
 						}
 						batch->sampleCount += i.second;
 						auto& qualHist = batch->qualThresholdPositions;
@@ -164,62 +159,62 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 #pragma omp taskwait
 	}
 
-	ReadBatch::readsSampleSize = 0;
-	for (const auto& batch : ReadBatch::batches) {
-		ReadBatch::readsSampleSize += batch.sampleCount;
+	ReadSize::readsSampleSize = 0;
+	for (const auto& batch : ReadSize::readSizes) {
+		ReadSize::readsSampleSize += batch.sampleCount;
 	}
 
-	std::sort(ReadBatch::batches.begin(), ReadBatch::batches.end(), [](ReadBatch a, ReadBatch b) {
+	std::sort(ReadSize::readSizes.begin(), ReadSize::readSizes.end(), [](ReadSize a, ReadSize b) {
 		return a.sampleCount > b.sampleCount;
 	});
 
-	if (ReadBatch::batches.size() == 0) {
+	if (ReadSize::readSizes.size() == 0) {
 		std::cerr << "Insufficient number of short reads. Finishing..." << std::endl;
 		return false;
 	}
 
-	if (ReadBatch::batches[0].getFractionOfTotal() < READ_BATCH_FRACTION_THRESHOLD) {
+	if (ReadSize::readSizes[0].getFractionOfTotal() < READ_BATCH_FRACTION_THRESHOLD) {
 		std::cerr << "Insufficient reads of same size. Finishing..." << std::endl;
 		return false;
 	}
 
-	std::vector<ReadBatch> batchesFiltered;
-	for (const auto& b : ReadBatch::batches) {
+	std::vector<ReadSize> readSizesFiltered;
+	for (const auto& b : ReadSize::readSizes) {
 		if (b.getFractionOfTotal() >= READ_BATCH_FRACTION_THRESHOLD) {
-			batchesFiltered.push_back(b);
+			readSizesFiltered.push_back(b);
 		}
 	}
-	ReadBatch::batches = batchesFiltered;
+	ReadSize::readSizes = readSizesFiltered;
 
-	std::sort(ReadBatch::batches.begin(), ReadBatch::batches.end(), [](ReadBatch a, ReadBatch b) {
+	std::sort(ReadSize::readSizes.begin(), ReadSize::readSizes.end(), [](ReadSize a, ReadSize b) {
 		return a.size < b.size;
 	});
 	if (opt::verbose) {
 		std::cerr << "Read lengths determined to be: " << std::fixed;
-		std::cerr << ReadBatch::batches[0].size << " ("
-		          << (ReadBatch::batches[0].getFractionOfTotal() * 100.0) << "%)";
-		for (size_t i = 1; i < ReadBatch::batches.size(); i++) {
-			std::cerr << ", " << ReadBatch::batches[i].size << " ("
-			          << (ReadBatch::batches[i].getFractionOfTotal() * 100.0) << "%)";
+		std::cerr << ReadSize::readSizes[0].size << " ("
+		          << (ReadSize::readSizes[0].getFractionOfTotal() * 100.0) << "%)";
+		for (size_t i = 1; i < ReadSize::readSizes.size(); i++) {
+			std::cerr << ", " << ReadSize::readSizes[i].size << " ("
+			          << (ReadSize::readSizes[i].getFractionOfTotal() * 100.0) << "%)";
 		}
 		std::cerr << std::defaultfloat << std::endl;
 	}
 
 	std::sort(opt::rValues.begin(), opt::rValues.end());
-	for (size_t i = 0; i < ReadBatch::batches.size(); i++) {
-		auto& batch = ReadBatch::batches[i];
+	for (size_t i = 0; i < ReadSize::readSizes.size(); i++) {
+		auto& batch = ReadSize::readSizes[i];
 		if (opt::rValues.size() > 0) {
 			if (i < opt::rValues.size()) {
 				batch.rValues.push_back(opt::rValues[i]);
 			} else {
-				std::cerr << "Insufficient number of R values (" << opt::rValues.size() << " / " << ReadBatch::batches.size() << ") provided over command line." << std::endl;
+				std::cerr << "Insufficient number of R values (" << opt::rValues.size() << " / " << ReadSize::readSizes.size() << ") provided over command line." << std::endl;
 				std::exit(-1);
 			}
 		} else {
 			int r = batch.qualThresholdPositions.percentile(0.1) - opt::threshold + 1;
 			int prevR = opt::k;
 			if (i > 0) {
-				prevR = ReadBatch::batches[i - 1].rValues.back();
+				prevR = ReadSize::readSizes[i - 1].rValues.back();
 			}
 			int steps = 0;
 			while ((r - prevR > R_VALUES_STEP) && (steps < R_STEPS_MAX)) {
@@ -236,12 +231,12 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 
 	if (opt::verbose) {
 		std::cerr << "Using r values: ";
-		for (size_t i = 0, j = 0; i < ReadBatch::batches.size(); i++) {
+		for (size_t i = 0, j = 0; i < ReadSize::readSizes.size(); i++) {
 			j = 0;
-			for (auto r : ReadBatch::batches[i].rValues) {
-				std::cerr << r << " (" << ReadBatch::batches[i].size << +")";
-				if ((i < ReadBatch::batches.size() - 1) ||
-				    (j < ReadBatch::batches[i].rValues.size() - 1)) {
+			for (auto r : ReadSize::readSizes[i].rValues) {
+				std::cerr << r << " (" << ReadSize::readSizes[i].size << +")";
+				if ((i < ReadSize::readSizes.size() - 1) ||
+				    (j < ReadSize::readSizes[i].rValues.size() - 1)) {
 					std::cerr << ", ";
 				}
 				j++;
@@ -256,43 +251,38 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 static Support
 testSequence(const Sequence& sequence)
 {
+	static unsigned char BASES[] = { 'A', 'C', 'T', 'G' };
 	int found = 0;
 	int tests = 0;
-	unsigned r = g_vanillaBloom->getKmerSize();
+	unsigned r = g_vanillaBloom->get_k();
 	if (sequence.size() >= r) {
 		tests = sequence.size() - r + 1;
-
 		int offset = 0;
-
 		if (opt::errorCorrection) {
-			stHashIterator it(
-			    sequence,
-			    g_spacedSeedsBloom->getSpacedSeeds(),
-			    SPACED_SEEDS_COUNT,
-			    SPACED_SEEDS_HASH_PER_SEED,
-			    r);
-			for (; it != stHashIterator::end(); ++it, ++offset) {
-				auto hitSeeds = g_spacedSeedsBloom->getHitSeeds(*it);
+			btllib::NtHash nthash(sequence, r, g_vanillaBloom->get_hash_num());
+			for (const auto hitSeeds : g_spacedSeedsBloom->contains(sequence)) {
+				nthash.roll();
 				if (hitSeeds.size() > 0) {
-					it.snp({}, {}, g_vanillaBloom->getHashNum());
-					if (g_vanillaBloom->contains(*it)) {
+					nthash.sub({}, {});
+					if (g_vanillaBloom->contains(nthash.hashes())) {
 						found++;
 					} else {
 						bool success = false;
-						for (auto hitSeed : hitSeeds) {
+						for (const auto hitSeed : hitSeeds) {
+							const auto seed = g_spacedSeedsBloom->get_parsed_seeds()[hitSeed];
 							for (auto seedIt =
-							         (hitSeed.begin() +
+							         (seed.begin() +
 							          std::round(
-							              hitSeed.size() * (1.00 - SPACED_SEEDS_SNP_FRACTION)));
-							     seedIt != hitSeed.end();
+							              seed.size() * (1.00 - SPACED_SEEDS_SNP_FRACTION)));
+							     seedIt != seed.end();
 							     ++seedIt) {
 								const auto pos = *seedIt;
 								for (auto base : BASES) {
 									if (base == (unsigned char)(sequence[offset + pos])) {
 										continue;
 									}
-									it.snp({ pos }, { base }, g_vanillaBloom->getHashNum());
-									if (g_vanillaBloom->contains(*it)) {
+									nthash.sub({ pos }, { base });
+									if (g_vanillaBloom->contains(nthash.hashes())) {
 										success = true;
 										found++;
 										break;
@@ -308,14 +298,10 @@ testSequence(const Sequence& sequence)
 						}
 					}
 				}
+				offset++;
 			}
 		} else {
-			for (ntHashIterator it(sequence, HASH_NUM, r); it != ntHashIterator::end();
-			     ++it, ++offset) {
-				if (g_vanillaBloom->contains(*it)) {
-					found++;
-				}
-			}
+			found = g_vanillaBloom->contains(sequence);
 		}
 	}
 	return Support(found, tests);
@@ -328,7 +314,7 @@ testCombination(
     const std::string& tail,
     const int requestedTests)
 {
-	const auto windowSize = g_vanillaBloom->getKmerSize();
+	const auto windowSize = g_vanillaBloom->get_k();
 
 	auto plannedTests = requestedTests;
 	if (plannedTests < opt::minTests) {
@@ -381,18 +367,18 @@ expectedSpacingBetweenReads(const ContigPath& path)
 	const double pathBases = pathBaseCoverage * (pathLength - opt::k + 1);
 
 	double meanReadKmerContribution = 0;
-	for (const auto& batch : ReadBatch::batches) {
+	for (const auto& batch : ReadSize::readSizes) {
 		meanReadKmerContribution += batch.getFractionOfTotal() * (batch.size - opt::k + 1);
 	}
-	const double baseContributionRatio = ReadBatch::current.getFractionOfTotal() *
-	                                     (ReadBatch::current.size - opt::k + 1) /
+	const double baseContributionRatio = ReadSize::current.getFractionOfTotal() *
+	                                     (ReadSize::current.size - opt::k + 1) /
 	                                     meanReadKmerContribution;
 
 	const double approxNumOfReads = double(pathBases * baseContributionRatio) /
-	                                double(opt::k * (ReadBatch::current.size - opt::k + 1));
+	                                double(opt::k * (ReadSize::current.size - opt::k + 1));
 	assert(approxNumOfReads > 2);
 
-	return double(pathLength - ReadBatch::current.size) / double(approxNumOfReads - 1);
+	return double(pathLength - ReadSize::current.size) / double(approxNumOfReads - 1);
 }
 
 static Support
@@ -415,7 +401,7 @@ determinePathSupport(const ContigPath& path)
 		return Support(calculatedTests, Support::UnknownReason::OVER_MAX_TESTS);
 	}
 
-	const int windowSize = g_vanillaBloom->getKmerSize();
+	const int windowSize = g_vanillaBloom->get_k();
 	assert(windowSize >= 4);
 
 	if (!windowLongEnough(windowSize, requiredTests, repeatSize, MIN_MARGIN)) {
@@ -628,7 +614,7 @@ updateStats(
 static bool
 isSmallRepeat(const ContigNode& node)
 {
-	unsigned r = g_vanillaBloom->getKmerSize();
+	unsigned r = g_vanillaBloom->get_k();
 	return (
 	    !get(vertex_removed, g_contigGraph, node) && !node.sense() &&
 	    windowLongEnough(r, opt::minTests, getContigSize(node), MIN_MARGIN) &&
@@ -645,9 +631,9 @@ resolveRepeats()
 	std::vector<Support> supports;
 
 	progressStart(
-	    "Path resolution (r = " + std::to_string(g_vanillaBloom->getKmerSize()) + ")", total * 2);
+	    "Path resolution (r = " + std::to_string(g_vanillaBloom->get_k()) + ")", total * 2);
 
-	Resolution resolution(ReadBatch::current, g_vanillaBloom->getKmerSize());
+	Resolution resolution(ReadSize::current, g_vanillaBloom->get_k());
 
 	Graph::vertex_iterator vertexStart, vertexEnd;
 	boost::tie(vertexStart, vertexEnd) = vertices(g_contigGraph);
@@ -1196,15 +1182,15 @@ resolveShort(
 
 	assert(g_contigSequences.size() > 0);
 	assert(g_contigSequences.size() / 2 == g_contigComments.size());
-	assert(ReadBatch::batches.size() > 0);
+	assert(ReadSize::readSizes.size() > 0);
 
 	std::vector<std::pair<int, Histogram>> histograms;
-	for (auto batch : ReadBatch::batches) {
-		ReadBatch::current = batch;
+	for (auto batch : ReadSize::readSizes) {
+		ReadSize::current = batch;
 
-		for (int r : ReadBatch::current.rValues) {
+		for (int r : ReadSize::current.rValues) {
 			if (int(r) < int(opt::k)) {
-				std::cerr << "r value " << r << "(" << ReadBatch::current.size
+				std::cerr << "r value " << r << "(" << ReadSize::current.size
 				          << ") is too short - skipping." << std::endl;
 				continue;
 			}

@@ -37,6 +37,7 @@ main()
   std::string seq2 = "GTAGTACGATCAGCGACTATCGAGCTACGAGCA";
   assert(seq.size() == seq2.size());
 
+  std::cerr << "Testing KmerCountingBloomFilter" << std::endl;
   btllib::KmerCountingBloomFilter8 kmer_counting_bf(
     1024 * 1024, 4, seq.size() / 2);
   kmer_counting_bf.insert(seq);

@@ -100,21 +100,13 @@ public class btllib {
     return (cPtr == 0) ? null : new SWIGTYPE_p_uint64_t(cPtr, false);
   }
 
-  public static void setMs_tab_33r(SWIGTYPE_p_p_uint64_t value) {
-    btllibJNI.ms_tab_33r_set(SWIGTYPE_p_p_uint64_t.getCPtr(value));
-  }
-
-  public static SWIGTYPE_p_p_uint64_t getMs_tab_33r() {
-    long cPtr = btllibJNI.ms_tab_33r_get();
+  public static SWIGTYPE_p_p_uint64_t getMS_TAB_33R() {
+    long cPtr = btllibJNI.MS_TAB_33R_get();
     return (cPtr == 0) ? null : new SWIGTYPE_p_p_uint64_t(cPtr, false);
   }
 
-  public static void setMs_tab_31l(SWIGTYPE_p_p_uint64_t value) {
-    btllibJNI.ms_tab_31l_set(SWIGTYPE_p_p_uint64_t.getCPtr(value));
-  }
-
-  public static SWIGTYPE_p_p_uint64_t getMs_tab_31l() {
-    long cPtr = btllibJNI.ms_tab_31l_get();
+  public static SWIGTYPE_p_p_uint64_t getMS_TAB_31L() {
+    long cPtr = btllibJNI.MS_TAB_31L_get();
     return (cPtr == 0) ? null : new SWIGTYPE_p_p_uint64_t(cPtr, false);
   }
 
@@ -273,6 +265,10 @@ public class btllib {
 
   public static SWIGTYPE_p_uint64_t mask_hash(SWIGTYPE_p_uint64_t fk_val, SWIGTYPE_p_uint64_t rk_val, String seed_seq, String kmer_seq, long k) {
     return new SWIGTYPE_p_uint64_t(btllibJNI.mask_hash(SWIGTYPE_p_uint64_t.getCPtr(fk_val), SWIGTYPE_p_uint64_t.getCPtr(rk_val), seed_seq, kmer_seq, k), true);
+  }
+
+  public static void sub_hash(SWIGTYPE_p_uint64_t fh_val, SWIGTYPE_p_uint64_t rh_val, String kmer_seq, SWIGTYPE_p_std__vectorT_unsigned_int_t positions, SWIGTYPE_p_std__vectorT_unsigned_char_t new_bases, long k, long m, SWIGTYPE_p_uint64_t h_val) {
+    btllibJNI.sub_hash(SWIGTYPE_p_uint64_t.getCPtr(fh_val), SWIGTYPE_p_uint64_t.getCPtr(rh_val), kmer_seq, SWIGTYPE_p_std__vectorT_unsigned_int_t.getCPtr(positions), SWIGTYPE_p_std__vectorT_unsigned_char_t.getCPtr(new_bases), k, m, SWIGTYPE_p_uint64_t.getCPtr(h_val));
   }
 
   public static SWIGTYPE_p_uint64_t nts64(String kmer_seq, SWIGTYPE_p_std__vectorT_bool_t seed, long k, SWIGTYPE_p_uint64_t h_val) {
@@ -480,6 +476,10 @@ public class btllib {
 
   public static String getKMER_BLOOM_FILTER_MAGIC_HEADER() {
     return btllibJNI.KMER_BLOOM_FILTER_MAGIC_HEADER_get();
+  }
+
+  public static String getSEED_BLOOM_FILTER_MAGIC_HEADER() {
+    return btllibJNI.SEED_BLOOM_FILTER_MAGIC_HEADER_get();
   }
 
   public static long pop_cnt_byte(SWIGTYPE_p_uint8_t x) {

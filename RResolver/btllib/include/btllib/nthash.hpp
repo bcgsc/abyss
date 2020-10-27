@@ -174,7 +174,7 @@ static const uint64_t N31L[31] = {
   SEED_N, SEED_N, SEED_N, SEED_N, SEED_N, SEED_N, SEED_N
 };
 
-static const uint64_t* ms_tab_33r[ASCII_SIZE] = {
+static const uint64_t* const MS_TAB_33R[ASCII_SIZE] = {
   N33R, T33R, N33R, G33R, A33R, A33R, N33R, C33R, // 0..7
   N33R, N33R, N33R, N33R, N33R, N33R, N33R, N33R, // 8..15
   N33R, N33R, N33R, N33R, N33R, N33R, N33R, N33R, // 16..23
@@ -209,7 +209,7 @@ static const uint64_t* ms_tab_33r[ASCII_SIZE] = {
   N33R, N33R, N33R, N33R, N33R, N33R, N33R, N33R  // 248..255
 };
 
-static const uint64_t* ms_tab_31l[ASCII_SIZE] = {
+static const uint64_t* const MS_TAB_31L[ASCII_SIZE] = {
   N31L, T31L, N31L, G31L, A31L, A31L, N31L, C31L, // 0..7
   N31L, N31L, N31L, N31L, N31L, N31L, N31L, N31L, // 8..15
   N31L, N31L, N31L, N31L, N31L, N31L, N31L, N31L, // 16..23
@@ -577,7 +577,7 @@ ntf64(const uint64_t fh_val,
   h_val = swapbits033(h_val);
   h_val ^= SEED_TAB[char_in];
   h_val ^=
-    (ms_tab_31l[char_out][k % 31] | ms_tab_33r[char_out][k % 33]); // NOLINT
+    (MS_TAB_31L[char_out][k % 31] | MS_TAB_33R[char_out][k % 33]); // NOLINT
   return h_val;
 }
 
@@ -588,8 +588,8 @@ ntr64(const uint64_t rh_val,
       const unsigned char char_out,
       const unsigned char char_in)
 {
-  uint64_t h_val = rh_val ^ (ms_tab_31l[char_in & CP_OFF][k % 31] | // NOLINT
-                             ms_tab_33r[char_in & CP_OFF][k % 33]); // NOLINT
+  uint64_t h_val = rh_val ^ (MS_TAB_31L[char_in & CP_OFF][k % 31] | // NOLINT
+                             MS_TAB_33R[char_in & CP_OFF][k % 33]); // NOLINT
   h_val ^= SEED_TAB[char_out & CP_OFF];
   h_val = ror1(h_val);
   h_val = swapbits3263(h_val);
@@ -638,8 +638,8 @@ ntf64l(const uint64_t rh_val,
        const unsigned char char_out,
        const unsigned char char_in)
 {
-  uint64_t h_val = rh_val ^ (ms_tab_31l[char_in][k % 31] | // NOLINT
-                             ms_tab_33r[char_in][k % 33]); // NOLINT
+  uint64_t h_val = rh_val ^ (MS_TAB_31L[char_in][k % 31] | // NOLINT
+                             MS_TAB_33R[char_in][k % 33]); // NOLINT
   h_val ^= SEED_TAB[char_out];
   h_val = ror1(h_val);
   h_val = swapbits3263(h_val);
@@ -656,8 +656,8 @@ ntr64l(const uint64_t fh_val,
   uint64_t h_val = rol1(fh_val);
   h_val = swapbits033(h_val);
   h_val ^= SEED_TAB[char_in & CP_OFF];
-  h_val ^= (ms_tab_31l[char_out & CP_OFF][k % 31] | // NOLINT
-            ms_tab_33r[char_out & CP_OFF][k % 33]); // NOLINT
+  h_val ^= (MS_TAB_31L[char_out & CP_OFF][k % 31] | // NOLINT
+            MS_TAB_33R[char_out & CP_OFF][k % 33]); // NOLINT
   return h_val;
 }
 
@@ -995,14 +995,53 @@ mask_hash(uint64_t& fk_val,
   for (unsigned i = 0; i < k; i++) {
     if (seed_seq[i] != '1') {
       fs_val ^=
-        (ms_tab_31l[(unsigned char)kmer_seq[i]][(k - 1 - i) % 31] | // NOLINT
-         ms_tab_33r[(unsigned char)kmer_seq[i]][(k - 1 - i) % 33]); // NOLINT
+        (MS_TAB_31L[(unsigned char)kmer_seq[i]][(k - 1 - i) % 31] | // NOLINT
+         MS_TAB_33R[(unsigned char)kmer_seq[i]][(k - 1 - i) % 33]); // NOLINT
       rs_val ^=
-        (ms_tab_31l[(unsigned char)kmer_seq[i] & CP_OFF][i % 31] | // NOLINT
-         ms_tab_33r[(unsigned char)kmer_seq[i] & CP_OFF][i % 33]); // NOLINT
+        (MS_TAB_31L[(unsigned char)kmer_seq[i] & CP_OFF][i % 31] | // NOLINT
+         MS_TAB_33R[(unsigned char)kmer_seq[i] & CP_OFF][i % 33]); // NOLINT
     }
   }
   return (rs_val < fs_val) ? rs_val : fs_val;
+}
+
+// replacing canonical ntHash with a substitution
+inline void
+sub_hash(uint64_t fh_val,
+         uint64_t rh_val,
+         const char* kmer_seq,
+         const std::vector<unsigned>& positions,
+         const std::vector<unsigned char>& new_bases,
+         const unsigned k,
+         const unsigned m,
+         uint64_t* h_val)
+{
+  uint64_t b_val = 0, t_val = 0;
+
+  for (size_t i = 0; i < positions.size(); i++) {
+    const auto pos = positions[i];
+    const auto new_base = new_bases[i];
+
+    fh_val ^=
+      (MS_TAB_31L[(unsigned char)kmer_seq[pos]][(k - 1 - pos) % 31] | // NOLINT
+       MS_TAB_33R[(unsigned char)kmer_seq[pos]][(k - 1 - pos) % 33]); // NOLINT
+    fh_val ^= (MS_TAB_31L[new_base][(k - 1 - pos) % 31] |             // NOLINT
+               MS_TAB_33R[new_base][(k - 1 - pos) % 33]);             // NOLINT
+
+    rh_val ^=
+      (MS_TAB_31L[(unsigned char)kmer_seq[pos] & CP_OFF][pos % 31] | // NOLINT
+       MS_TAB_33R[(unsigned char)kmer_seq[pos] & CP_OFF][pos % 33]); // NOLINT
+    rh_val ^= (MS_TAB_31L[new_base & CP_OFF][pos % 31] |             // NOLINT
+               MS_TAB_33R[new_base & CP_OFF][pos % 33]);             // NOLINT
+  }
+
+  b_val = rh_val < fh_val ? rh_val : fh_val;
+  h_val[0] = b_val;
+  for (unsigned i = 1; i < m; i++) {
+    t_val = b_val * (i ^ k * MULTISEED);
+    t_val ^= t_val >> MULTISHIFT;
+    h_val[i] = t_val;
+  }
 }
 
 // spaced seed ntHash for base kmer, i.e. fhval(kmer_0)
@@ -1039,8 +1078,8 @@ nts64(const char* kmer_seq,
   uint64_t s_val = h_val;
   for (unsigned i = 0; i < k; i++) {
     if (!seed[i]) {
-      s_val ^= (ms_tab_31l[(unsigned char)kmer_seq[i]][k % 31] | // NOLINT
-                ms_tab_33r[(unsigned char)kmer_seq[i]][k % 33]); // NOLINT
+      s_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[i]][k % 31] | // NOLINT
+                MS_TAB_33R[(unsigned char)kmer_seq[i]][k % 33]); // NOLINT
     }
   }
   return s_val;
@@ -1077,13 +1116,13 @@ ntms64(const char* kmer_seq,
   for (unsigned j = 0; j < m; j++) {
     uint64_t fs_val = fh_val, rs_val = rh_val;
     for (const auto& seed_pos : seed_seq[j]) {
-      fs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos]]
+      fs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos]]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 33]); // NOLINT
-      rs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+      rs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
     }
     h_stn[j] = rs_val < fs_val;
@@ -1110,13 +1149,13 @@ ntms64(const char* kmer_seq,
   for (unsigned j = 0; j < m; j++) {
     uint64_t fs_val = fh_val, rs_val = rh_val;
     for (const auto& seed_pos : seed_seq[j]) {
-      fs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos]]
+      fs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos]]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 33]); // NOLINT
-      rs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+      rs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
       ;
     }
@@ -1156,13 +1195,13 @@ ntmsm64(const char* kmer_seq,
   for (unsigned j = 0; j < m; j++) {
     uint64_t fs_val = fh_val, rs_val = rh_val;
     for (const auto& seed_pos : seed_seq[j]) {
-      fs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos]]
+      fs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos]]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 33]); // NOLINT
-      rs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+      rs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
     }
     h_val[j * m2] = rs_val < fs_val ? rs_val : fs_val;
@@ -1193,13 +1232,13 @@ ntmsm64(const char* kmer_seq,
   for (unsigned j = 0; j < m; j++) {
     uint64_t fs_val = fh_val, rs_val = rh_val;
     for (const auto& seed_pos : seed_seq[j]) {
-      fs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos]]
+      fs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos]]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos]]
                            [(k - 1 - seed_pos) % 33]); // NOLINT
-      rs_val ^= (ms_tab_31l[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+      rs_val ^= (MS_TAB_31L[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 31] | // NOLINT
-                 ms_tab_33r[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
+                 MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
     }
     h_val[j * m2] = rs_val < fs_val ? rs_val : fs_val;
@@ -1256,14 +1295,19 @@ public:
    */
   bool roll();
 
-  const uint64_t* hashes() const;
+  void sub(const std::vector<unsigned>& positions,
+           const std::vector<unsigned char>& new_bases);
+
+  const uint64_t* hashes() const { return hashes_vector.data(); }
 
   size_t get_pos() const { return pos; }
   bool forward() const { return forward_hash <= reverse_hash; }
   unsigned get_k() const { return k; }
   unsigned get_hash_num() const { return hash_num; }
 
-protected:
+private:
+  friend class SeedNtHash;
+
   /** Initialize internal state of iterator */
   bool init();
 
@@ -1278,7 +1322,7 @@ protected:
   uint64_t reverse_hash = 0;
 };
 
-class SeedNtHash : public NtHash
+class SeedNtHash
 {
 
 public:
@@ -1305,6 +1349,12 @@ public:
              unsigned hash_num_per_seed,
              size_t pos = 0);
 
+  const uint64_t* hashes() const { return nthash.hashes(); }
+
+  size_t get_pos() const { return nthash.get_pos(); }
+  bool forward() const { return nthash.forward(); }
+  unsigned get_k() const { return nthash.get_k(); }
+  unsigned get_hash_num() const { return nthash.get_hash_num(); }
   unsigned get_hash_num_per_seed() const { return hash_num_per_seed; }
 
   bool roll();
@@ -1312,6 +1362,7 @@ public:
 private:
   bool init();
 
+  NtHash nthash;
   const unsigned hash_num_per_seed;
   std::vector<SpacedSeed> seeds;
 };
@@ -1344,7 +1395,7 @@ inline SeedNtHash::SeedNtHash(const char* seq,
                               const std::vector<SpacedSeed>& seeds,
                               unsigned hash_num_per_seed,
                               size_t pos)
-  : NtHash(seq, seq_len, k, seeds.size() * hash_num_per_seed, pos)
+  : nthash(seq, seq_len, k, seeds.size() * hash_num_per_seed, pos)
   , hash_num_per_seed(hash_num_per_seed)
   , seeds(seeds)
 {}
@@ -1354,7 +1405,7 @@ inline SeedNtHash::SeedNtHash(const std::string& seq,
                               const std::vector<SpacedSeed>& seeds,
                               unsigned hash_num_per_seed,
                               size_t pos)
-  : NtHash(seq, k, seeds.size() * hash_num_per_seed, pos)
+  : nthash(seq, k, seeds.size() * hash_num_per_seed, pos)
   , hash_num_per_seed(hash_num_per_seed)
   , seeds(seeds)
 {}
@@ -1365,7 +1416,7 @@ inline SeedNtHash::SeedNtHash(const char* seq,
                               const std::vector<std::string>& seeds,
                               unsigned hash_num_per_seed,
                               size_t pos)
-  : NtHash(seq, seq_len, k, seeds.size() * hash_num_per_seed, pos)
+  : nthash(seq, seq_len, k, seeds.size() * hash_num_per_seed, pos)
   , hash_num_per_seed(hash_num_per_seed)
   , seeds(parse_seeds(seeds))
 {}
@@ -1375,7 +1426,7 @@ inline SeedNtHash::SeedNtHash(const std::string& seq,
                               const std::vector<std::string>& seeds,
                               unsigned hash_num_per_seed,
                               size_t pos)
-  : NtHash(seq, k, seeds.size() * hash_num_per_seed, pos)
+  : nthash(seq, k, seeds.size() * hash_num_per_seed, pos)
   , hash_num_per_seed(hash_num_per_seed)
   , seeds(parse_seeds(seeds))
 {}
@@ -1398,39 +1449,57 @@ parse_seeds(const std::vector<std::string>& seed_strings)
   return seed_set;
 }
 
+inline void
+NtHash::sub(const std::vector<unsigned>& positions,
+            const std::vector<unsigned char>& new_bases)
+{
+  sub_hash(forward_hash,
+           reverse_hash,
+           seq + pos,
+           positions,
+           new_bases,
+           get_k(),
+           get_hash_num(),
+           hashes_vector.data());
+}
+
 // NOLINTNEXTLINE
-#define NTHASH_INIT(CLASS, NTHASH_CALL)                                        \
+#define NTHASH_INIT(CLASS, NTHASH_CALL, MEMBER_PREFIX)                         \
   inline bool CLASS::init()                                                    \
   {                                                                            \
-    if (k > seq_len) {                                                         \
-      pos = std::numeric_limits<std::size_t>::max();                           \
+    if (MEMBER_PREFIX k > MEMBER_PREFIX seq_len) {                             \
+      MEMBER_PREFIX pos = std::numeric_limits<std::size_t>::max();             \
       return false;                                                            \
     }                                                                          \
     unsigned posN = 0;                                                         \
-    while ((pos < seq_len - k + 1) && !(NTHASH_CALL)) {                        \
-      pos += posN + 1;                                                         \
+    while (                                                                    \
+      (MEMBER_PREFIX pos < MEMBER_PREFIX seq_len - MEMBER_PREFIX k + 1) &&     \
+      !(NTHASH_CALL)) {                                                        \
+      MEMBER_PREFIX pos += posN + 1;                                           \
     }                                                                          \
-    if (pos > seq_len - k) {                                                   \
-      pos = std::numeric_limits<std::size_t>::max();                           \
+    if (MEMBER_PREFIX pos > MEMBER_PREFIX seq_len - MEMBER_PREFIX k) {         \
+      MEMBER_PREFIX pos = std::numeric_limits<std::size_t>::max();             \
       return false;                                                            \
     }                                                                          \
-    initialized = true;                                                        \
+    MEMBER_PREFIX initialized = true;                                          \
     return true;                                                               \
   }
 
 // NOLINTNEXTLINE
-#define NTHASH_ROLL(CLASS, NTHASH_CALL)                                        \
+#define NTHASH_ROLL(CLASS, NTHASH_CALL, MEMBER_PREFIX)                         \
   inline bool CLASS::roll()                                                    \
   {                                                                            \
-    if (!initialized) {                                                        \
+    if (!MEMBER_PREFIX initialized) {                                          \
       return init();                                                           \
     }                                                                          \
-    ++pos;                                                                     \
-    if (pos > seq_len - k) {                                                   \
+    ++MEMBER_PREFIX pos;                                                       \
+    if (MEMBER_PREFIX pos > MEMBER_PREFIX seq_len - MEMBER_PREFIX k) {         \
       return false;                                                            \
     }                                                                          \
-    if (SEED_TAB[(unsigned char)(seq[pos + k - 1])] == SEED_N) {               \
-      pos += k;                                                                \
+    if (SEED_TAB[(unsigned char)(MEMBER_PREFIX seq[MEMBER_PREFIX pos +         \
+                                                   MEMBER_PREFIX k - 1])] ==   \
+        SEED_N) {                                                              \
+      MEMBER_PREFIX pos += MEMBER_PREFIX k;                                    \
       return init();                                                           \
     }                                                                          \
     (NTHASH_CALL);                                                             \
@@ -1444,7 +1513,7 @@ NTHASH_INIT(NtHash,
                    forward_hash,
                    reverse_hash,
                    posN,
-                   hashes_vector.data()))
+                   hashes_vector.data()), )
 NTHASH_ROLL(NtHash,
             ntmc64(seq[pos - 1],
                    seq[pos - 1 + k],
@@ -1452,38 +1521,34 @@ NTHASH_ROLL(NtHash,
                    hash_num,
                    forward_hash,
                    reverse_hash,
-                   hashes_vector.data()))
+                   hashes_vector.data()), )
 
 NTHASH_INIT(SeedNtHash,
-            ntmsm64(seq + pos,
+            ntmsm64(nthash.seq + nthash.pos,
                     seeds,
-                    k,
+                    nthash.k,
                     seeds.size(),
                     hash_num_per_seed,
-                    forward_hash,
-                    reverse_hash,
+                    nthash.forward_hash,
+                    nthash.reverse_hash,
                     posN,
-                    hashes_vector.data()))
+                    nthash.hashes_vector.data()),
+            nthash.)
 NTHASH_ROLL(SeedNtHash,
-            ntmsm64(seq + pos,
+            ntmsm64(nthash.seq + nthash.pos,
                     seeds,
-                    seq[pos - 1],
-                    seq[pos - 1 + k],
-                    k,
+                    nthash.seq[nthash.pos - 1],
+                    nthash.seq[nthash.pos - 1 + nthash.k],
+                    nthash.k,
                     seeds.size(),
                     hash_num_per_seed,
-                    forward_hash,
-                    reverse_hash,
-                    hashes_vector.data()))
+                    nthash.forward_hash,
+                    nthash.reverse_hash,
+                    nthash.hashes_vector.data()),
+            nthash.)
 
 #undef NTHASH_INIT
 #undef NTHASH_ROLL
-
-inline const uint64_t*
-NtHash::hashes() const
-{
-  return hashes_vector.data();
-}
 
 } // namespace btllib
 

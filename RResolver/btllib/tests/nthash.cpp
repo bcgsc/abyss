@@ -10,7 +10,7 @@ main()
   std::string kmer = "ACGTACACTGGACTGAGTCT";
 
   {
-    std::cerr << "Invariant hash values" << std::endl;
+    std::cerr << "Testing single kmer hash values" << std::endl;
     btllib::NtHash nthash(kmer, kmer.size(), 3);
 
     /* Hash values*/
@@ -27,8 +27,25 @@ main()
     assert(i == 3);
   }
 
-  std::cerr << "Reverse complement" << std::endl;
   {
+    std::cerr << "Testing base substitution" << std::endl;
+    btllib::NtHash nthash(kmer, kmer.size(), 3);
+    std::string kmer_subbed = "ACGCGCACTGGACTGAGTCT";
+    btllib::NtHash nthash_subbed(kmer_subbed, kmer_subbed.size(), 3);
+
+    nthash.roll();
+    nthash.sub({ 3, 4 }, { 'C', 'G' });
+    nthash_subbed.roll();
+    assert(nthash.get_hash_num() == nthash_subbed.get_hash_num());
+    size_t i;
+    for (i = 0; i < nthash.get_hash_num(); ++i) {
+      assert(nthash.hashes()[i] == nthash_subbed.hashes()[i]);
+    }
+    assert(i == 3);
+  }
+
+  {
+    std::cerr << "Testing reverse complement" << std::endl;
     /* Reverse complement of kmer*/
     std::string rc_kmer = "AGACTCAGTCCAGTGTACGT";
 
@@ -45,8 +62,8 @@ main()
     assert(i == 3);
   }
 
-  std::cerr << "Rolling hash values" << std::endl;
   {
+    std::cerr << "Testing rolling hash values" << std::endl;
     btllib::NtHash nthash(kmer, 18, 3);
 
     /* 18-mers of kmer*/
@@ -69,8 +86,8 @@ main()
     assert(i == 3);
   }
 
-  std::cerr << "Spaced seeds" << std::endl;
   {
+    std::cerr << "Testing spaced seeds" << std::endl;
     std::vector<std::string> seeds = { "11111100000000111111",
                                        "11111111000011111111" };
 
@@ -109,8 +126,8 @@ main()
     assert(i == 3);
   }
 
-  std::cerr << "RNA" << std::endl;
   {
+    std::cerr << "Testing RNA" << std::endl;
     btllib::NtHash dna_nthash(kmer, 20, 3);
 
     std::string rna_kmer = "ACGUACACUGGACUGAGUCU";

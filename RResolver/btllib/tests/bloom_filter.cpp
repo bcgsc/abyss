@@ -2,6 +2,7 @@
 
 #include "helpers.hpp"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdio>
 #include <iostream>
@@ -35,10 +36,35 @@ main()
   std::string seq2 = "GTAGTACGATCAGCGACTATCGAGCTACGAGCA";
   assert(seq.size() == seq2.size());
 
+  std::cerr << "Testing KmerBloomFilter" << std::endl;
   btllib::KmerBloomFilter kmer_bf(1024 * 1024, 4, seq.size() / 2);
   kmer_bf.insert(seq);
   assert(kmer_bf.contains(seq) == (seq.size() - seq.size() / 2 + 1));
   assert(kmer_bf.contains(seq2) <= 1);
+
+  std::cerr << "Testing SeedBloomFilter" << std::endl;
+  std::string seed1 = "000001111111111111111111111111111";
+  std::string seed2 = "111111111111111111111111111100000";
+  std::string snp_seq1 = "AACTATCGACGATCATTCGAGCATCAGCGACTG";
+  std::string snp_seq2 = "CACTATCGACGATCATTCGAGCATCAGCGACTA";
+  assert(seed1.size() == seed2.size());
+  btllib::SeedBloomFilter seed_bf(1024 * 1024, seq.size(), { seed1, seed2 }, 4);
+  seed_bf.insert(seq);
+  auto hit_seeds = seed_bf.contains(seq);
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 0) !=
+         hit_seeds[0].end());
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 1) !=
+         hit_seeds[0].end());
+  hit_seeds = seed_bf.contains(snp_seq1);
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 0) !=
+         hit_seeds[0].end());
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 1) ==
+         hit_seeds[0].end());
+  hit_seeds = seed_bf.contains(snp_seq2);
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 0) ==
+         hit_seeds[0].end());
+  assert(std::find(hit_seeds[0].begin(), hit_seeds[0].end(), 1) !=
+         hit_seeds[0].end());
 
   std::cerr << "Testing KmerBloomFilter with multiple threads" << std::endl;
 

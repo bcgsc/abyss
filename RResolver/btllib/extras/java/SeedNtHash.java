@@ -8,11 +8,12 @@
 
 package btllib;
 
-public class SeedNtHash extends NtHash {
+public class SeedNtHash {
   private transient long swigCPtr;
+  protected transient boolean swigCMemOwn;
 
   protected SeedNtHash(long cPtr, boolean cMemoryOwn) {
-    super(btllibJNI.SeedNtHash_SWIGUpcast(cPtr), cMemoryOwn);
+    swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
@@ -33,7 +34,6 @@ public class SeedNtHash extends NtHash {
       }
       swigCPtr = 0;
     }
-    super.delete();
   }
 
   public SeedNtHash(String seq, long seq_len, long k, SWIGTYPE_p_std__vectorT_std__vectorT_unsigned_int_t_t seeds, long hash_num_per_seed, long pos) {
@@ -66,6 +66,27 @@ public class SeedNtHash extends NtHash {
 
   public SeedNtHash(String seq, long k, SWIGTYPE_p_std__vectorT_std__string_t seeds, long hash_num_per_seed) {
     this(btllibJNI.new_SeedNtHash__SWIG_7(seq, k, SWIGTYPE_p_std__vectorT_std__string_t.getCPtr(seeds), hash_num_per_seed), true);
+  }
+
+  public SWIGTYPE_p_uint64_t hashes() {
+    long cPtr = btllibJNI.SeedNtHash_hashes(swigCPtr, this);
+    return (cPtr == 0) ? null : new SWIGTYPE_p_uint64_t(cPtr, false);
+  }
+
+  public long get_pos() {
+    return btllibJNI.SeedNtHash_get_pos(swigCPtr, this);
+  }
+
+  public boolean forward() {
+    return btllibJNI.SeedNtHash_forward(swigCPtr, this);
+  }
+
+  public long get_k() {
+    return btllibJNI.SeedNtHash_get_k(swigCPtr, this);
+  }
+
+  public long get_hash_num() {
+    return btllibJNI.SeedNtHash_get_hash_num(swigCPtr, this);
   }
 
   public long get_hash_num_per_seed() {
