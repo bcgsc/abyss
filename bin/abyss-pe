@@ -562,7 +562,7 @@ endif
 # Resolve repeats with short reads
 
 %-1-rr.fa %-1-rr.$g: %-1.fa %-1.$g
-	$(gtime) abyss-rresolver-short -b$B -j$j -k$k $(RRESOLVER_OPTIONS) \
+	$(gtime) abyss-rresolver-short $v -b$B -j$j -k$k $(RRESOLVER_OPTIONS) \
 	-h $*-1-rr --$g -c $*-1-rr.fa -g $*-1-rr.$g $^ $(in) $(se)
 
 # Remove shim contigs
