@@ -32,7 +32,7 @@ static const int COMM_BUFFER_SIZE = 1024;
 static const mode_t PIPE_PERMISSIONS = 0666;
 
 using PipeId = unsigned long;
-class _Pipeline;
+class DataStreamPipeline;
 
 // clang-format off
 inline bool& process_spawner_initialized() { static bool var; return var; }
@@ -40,7 +40,7 @@ inline int* process_spawner_parent2child_fd() { static int var[2]; return var; }
 inline int* process_spawner_child2parent_fd() { static int var[2]; return var; }
 inline std::mutex& process_spawner_comm_mutex() { static std::mutex var; return var; };
 inline PipeId new_pipe_id() { static PipeId last_pipe_id = 0; return last_pipe_id++; }
-inline std::map<std::string, _Pipeline>& pipeline_map() { static std::map<std::string, _Pipeline> var; return var; }
+inline std::map<std::string, DataStreamPipeline>& pipeline_map() { static std::map<std::string, DataStreamPipeline> var; return var; }
 // clang-format on
 
 static inline std::string
@@ -269,7 +269,7 @@ DataStream::close()
   }
 }
 
-class _Pipeline
+class DataStreamPipeline
 {
 
 public:
@@ -279,9 +279,9 @@ public:
     SINK
   };
 
-  _Pipeline() {}
+  DataStreamPipeline() {}
 
-  _Pipeline(Direction direction, pid_t pid_first, pid_t pid_last)
+  DataStreamPipeline(Direction direction, pid_t pid_first, pid_t pid_last)
     : direction(direction)
     , pid_first(pid_first)
     , pid_last(pid_last)
@@ -296,7 +296,7 @@ public:
 };
 
 inline void
-_Pipeline::finish()
+DataStreamPipeline::finish()
 {
   if (!closed) {
     int status;
@@ -320,7 +320,7 @@ static const bool PROCESS_SPAWNER_INITIALIZER = process_spawner_init();
 static inline std::string
 get_pipeline_cmd(const std::string& path, DataStream::Operation op);
 
-static inline _Pipeline
+static inline DataStreamPipeline
 run_pipeline_cmd(const std::string& cmd, DataStream::Operation op, int pipe_fd);
 
 static inline bool
@@ -381,7 +381,7 @@ process_spawner_init()
       int pipe_fd;
       char buf[COMM_BUFFER_SIZE];
       size_t pathlen;
-      _Pipeline pipeline;
+      DataStreamPipeline pipeline;
       char confirmation = 0;
       for (;;) {
         read_from_parent(&op, sizeof(op));
@@ -615,7 +615,7 @@ get_pipeline_cmd(const std::string& path, DataStream::Operation op)
   return result_cmd;
 }
 
-static inline _Pipeline
+static inline DataStreamPipeline
 run_pipeline_cmd(const std::string& cmd, DataStream::Operation op, int pipe_fd)
 {
   auto individual_cmds = split(cmd, " | ");
@@ -738,11 +738,11 @@ run_pipeline_cmd(const std::string& cmd, DataStream::Operation op, int pipe_fd)
     i++;
   }
 
-  return _Pipeline(op == DataStream::Operation::READ
-                     ? _Pipeline::Direction::SOURCE
-                     : _Pipeline::Direction::SINK,
-                   pids.back(),
-                   pids.front());
+  return DataStreamPipeline(op == DataStream::Operation::READ
+                              ? DataStreamPipeline::Direction::SOURCE
+                              : DataStreamPipeline::Direction::SINK,
+                            pids.back(),
+                            pids.front());
 }
 
 } // namespace btllib

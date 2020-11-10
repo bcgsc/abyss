@@ -22,7 +22,7 @@ tidy_checks="*,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-hicpp-no-ar
 -cppcoreguidelines-non-private-member-variables-in-classes,-fuchsia-statically-constructed-objects,\
 -modernize-return-braced-init-list,-clang-analyzer-unix.Vfork,-clang-analyzer-security.insecureAPI.vfork,\
 -cppcoreguidelines-init-variables,readability-identifier-naming,-google-readability-todo,\
--cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-type-reinterpret-cast"
+-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-type-reinterpret-cast,-llvmlibc-*"
 
 tidy_options="[
   { key: readability-identifier-naming.ClassCase,                 value: CamelCase },

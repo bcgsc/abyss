@@ -44,9 +44,15 @@ class BloomFilter
 public:
   BloomFilter() {}
   BloomFilter(size_t bytes, unsigned hash_num);
-  BloomFilter(const std::string& path);
+  explicit BloomFilter(const std::string& path);
 
   ~BloomFilter() { delete[] array; }
+
+  BloomFilter(const BloomFilter&) = delete;
+  BloomFilter(BloomFilter&&) = delete;
+
+  BloomFilter& operator=(const BloomFilter&) = delete;
+  BloomFilter& operator=(BloomFilter&&) = delete;
 
   void insert(const uint64_t* hashes);
   void insert(const std::vector<uint64_t>& hashes) { insert(hashes.data()); }
@@ -97,7 +103,13 @@ public:
    * @param hash_num number of hashes
    */
   KmerBloomFilter(size_t bytes, unsigned hash_num, unsigned k);
-  KmerBloomFilter(const std::string& path);
+  explicit KmerBloomFilter(const std::string& path);
+
+  KmerBloomFilter(const KmerBloomFilter&) = delete;
+  KmerBloomFilter(KmerBloomFilter&&) = delete;
+
+  KmerBloomFilter& operator=(const KmerBloomFilter&) = delete;
+  KmerBloomFilter& operator=(KmerBloomFilter&&) = delete;
 
   /**
    * Store the kmers of a sequence.
@@ -147,6 +159,7 @@ public:
   unsigned get_hash_num() const { return bloom_filter.get_hash_num(); }
   double get_fpr() const { return bloom_filter.get_fpr(); }
   unsigned get_k() const { return k; }
+  BloomFilter& get_bloom_filter() { return bloom_filter; }
 
   void write(const std::string& path);
 
@@ -166,7 +179,13 @@ public:
                   unsigned k,
                   const std::vector<std::string>& seeds,
                   unsigned hash_num_per_seed);
-  SeedBloomFilter(const std::string& path);
+  explicit SeedBloomFilter(const std::string& path);
+
+  SeedBloomFilter(const SeedBloomFilter&) = delete;
+  SeedBloomFilter(SeedBloomFilter&&) = delete;
+
+  SeedBloomFilter& operator=(const SeedBloomFilter&) = delete;
+  SeedBloomFilter& operator=(SeedBloomFilter&&) = delete;
 
   void insert(const char* seq, size_t seq_len);
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }
@@ -205,6 +224,7 @@ public:
   {
     return kmer_bloom_filter.get_hash_num();
   }
+  KmerBloomFilter& get_kmer_bloom_filter() { return kmer_bloom_filter; }
 
   void write(const std::string& path);
 

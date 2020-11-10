@@ -15,14 +15,12 @@
 #include <functional>
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <string>
 #include <thread>
 #include <vector>
 
 namespace btllib {
-
-static const unsigned BUFFER_SIZE = 256;
-static const unsigned BLOCK_SIZE = 64;
 
 // TODO: Allow multiple Indexlr objects to be instantiated (by assigning ID to
 // each instance / indexing static members based on ID)
@@ -46,6 +44,8 @@ public:
     static const unsigned NO_FILTER_IN = 0;
     static const unsigned FILTER_OUT = 16;
     static const unsigned NO_FILTER_OUT = 0;
+    static const unsigned SHORT_MODE = 0;
+    static const unsigned LONG_MODE = 32;
   };
 
   bool output_id() const { return bool(~flags & Flag::NO_ID); }
@@ -53,6 +53,8 @@ public:
   bool output_seq() const { return bool(flags & Flag::SEQ); }
   bool filter_in() const { return bool(flags & Flag::FILTER_IN); }
   bool filter_out() const { return bool(flags & Flag::FILTER_OUT); }
+  bool short_mode() const { return bool(~flags & Flag::LONG_MODE); }
+  bool long_mode() const { return bool(flags & Flag::LONG_MODE); }
 
   struct Read
   {
@@ -73,6 +75,8 @@ public:
 
   struct Minimizer
   {
+    Minimizer() = default;
+
     Minimizer(uint64_t min_hash,
               uint64_t out_hash,
               size_t pos,
@@ -85,9 +89,9 @@ public:
       , seq(std::move(seq))
     {}
 
-    uint64_t min_hash, out_hash;
-    size_t pos;
-    bool forward;
+    uint64_t min_hash = 0, out_hash = 0;
+    size_t pos = 0;
+    bool forward = false;
     std::string seq;
   };
 
@@ -130,20 +134,25 @@ public:
 
   static const size_t MAX_SIMULTANEOUS_INDEXLRS = 256;
 
+  static const size_t SHORT_MODE_BUFFER_SIZE = 32;
+  static const size_t SHORT_MODE_BLOCK_SIZE = 32;
+
+  static const size_t LONG_MODE_BUFFER_SIZE = 4;
+  static const size_t LONG_MODE_BLOCK_SIZE = 1;
+
 private:
   static std::string extract_barcode(const std::string& id,
                                      const std::string& comment);
-  std::vector<HashedKmer> hash_kmers(const std::string& seq, size_t k) const;
-  static std::vector<Minimizer> minimize_hashed_kmers(
-    const std::vector<HashedKmer>& hashed_kmers,
-    size_t w);
+  std::vector<Minimizer> minimize(const std::string& seq) const;
 
   const std::string seqfile;
   const size_t k, w;
   const unsigned flags;
   const unsigned threads;
   const bool verbose;
-  const unsigned id;
+  const long id;
+  const size_t buffer_size;
+  const size_t block_size;
 
   static const BloomFilter& dummy_bf()
   {
@@ -157,20 +166,26 @@ private:
   bool filter_out_enabled;
 
   std::atomic<bool> fasta{ false };
-  OrderQueueSPMC<Read, BUFFER_SIZE, BLOCK_SIZE> input_queue;
-  OrderQueueMPSC<Record, BUFFER_SIZE, BLOCK_SIZE> output_queue;
+  OrderQueueSPMC<Read> input_queue;
+  OrderQueueMPSC<Record> output_queue;
 
   using OutputQueueType = decltype(output_queue);
-  static OutputQueueType::Block* ready_blocks_array()
+  static std::unique_ptr<OutputQueueType::Block>* ready_blocks_array()
   {
-    thread_local static decltype(
-      output_queue)::Block var[MAX_SIMULTANEOUS_INDEXLRS];
+    thread_local static std::unique_ptr<decltype(output_queue)::Block>
+      var[MAX_SIMULTANEOUS_INDEXLRS];
     return var;
   }
 
-  static std::atomic<unsigned>& last_id()
+  static long* ready_blocks_owners()
   {
-    static std::atomic<unsigned> var(0);
+    thread_local static long var[MAX_SIMULTANEOUS_INDEXLRS];
+    return var;
+  }
+
+  static std::atomic<long>& last_id()
+  {
+    static std::atomic<long> var(0);
     return var;
   }
 
@@ -264,12 +279,16 @@ inline Indexlr::Indexlr(std::string seqfile,
   , flags(flags)
   , threads(threads)
   , verbose(verbose)
-  , id(last_id()++)
+  , id(++last_id())
+  , buffer_size(short_mode() ? SHORT_MODE_BUFFER_SIZE : LONG_MODE_BUFFER_SIZE)
+  , block_size(short_mode() ? SHORT_MODE_BLOCK_SIZE : LONG_MODE_BLOCK_SIZE)
   , bf1(bf1)
   , bf2(bf2)
   , filter_in_enabled(filter_in())
   , filter_out_enabled(filter_out())
-  , reader(this->seqfile)
+  , input_queue(buffer_size, block_size)
+  , output_queue(buffer_size, block_size)
+  , reader(this->seqfile, 0, 3, buffer_size, block_size)
   , input_worker(*this)
   , minimize_workers(
       std::vector<MinimizeWorker>(threads, MinimizeWorker(*this)))
@@ -338,54 +357,69 @@ Indexlr::extract_barcode(const std::string& id, const std::string& comment)
   return "NA";
 }
 
-inline std::vector<Indexlr::HashedKmer>
-Indexlr::hash_kmers(const std::string& seq, const size_t k) const
-{
-  std::vector<HashedKmer> hashed_kmers;
-  if (seq.size() < k) {
-    return {};
-  }
-  hashed_kmers.reserve(seq.size() - k + 1);
-  for (NtHash nh(seq, k, 2); nh.roll();) {
-    hashed_kmers.emplace_back(nh.hashes()[0],
-                              nh.hashes()[1],
-                              nh.get_pos(),
-                              nh.forward(),
-                              output_seq() ? seq.substr(nh.get_pos(), k) : "");
-  }
-  return hashed_kmers;
-}
-
 inline std::vector<Indexlr::Minimizer>
-Indexlr::minimize_hashed_kmers(
-  const std::vector<Indexlr::HashedKmer>& hashed_kmers,
-  const size_t w)
+Indexlr::minimize(const std::string& seq) const
 {
-  if (hashed_kmers.size() < w) {
+  if ((k > seq.size()) || (w > seq.size() - k + 1)) {
     return {};
   }
   std::vector<Minimizer> minimizers;
-  minimizers.reserve(2 * hashed_kmers.size() / w);
-  int candidate_min_pos = -1, prev_min_pos = -1;
-  const auto first_it = hashed_kmers.begin();
-  auto min_it = hashed_kmers.end();
-  for (auto left_it = first_it; left_it < hashed_kmers.end() - w + 1;
-       ++left_it) {
-    const auto right_it = left_it + w;
-    if (candidate_min_pos < left_it - first_it) {
-      // Use of operator '<=' returns the minimum that is furthest from left.
-      min_it = std::min_element(
-        left_it, right_it, [](const HashedKmer& a, const HashedKmer& b) {
-          return a.min_hash <= b.min_hash;
-        });
-    } else if (right_it[-1].min_hash <= min_it->min_hash) {
-      min_it = right_it - 1;
+  minimizers.reserve(2 * (seq.size() - k + 1) / w);
+  std::vector<HashedKmer> hashed_kmers_buffer(w + 1);
+  ssize_t min_idx_left, min_idx_right, min_pos_prev = -1;
+  const Minimizer* min_current = nullptr;
+  size_t idx = 0;
+  for (NtHash nh(seq, k, 2); nh.roll(); ++idx) {
+    auto& hk = hashed_kmers_buffer[idx % hashed_kmers_buffer.size()];
+
+    hk = HashedKmer(nh.hashes()[0],
+                    nh.hashes()[1],
+                    nh.get_pos(),
+                    nh.forward(),
+                    output_seq() ? seq.substr(nh.get_pos(), k) : "");
+
+    if (filter_in() && filter_out()) {
+      std::vector<uint64_t> tmp;
+      tmp = { hk.min_hash };
+      if (!bf1.get().contains(tmp) || bf2.get().contains(tmp)) {
+        hk.min_hash = std::numeric_limits<uint64_t>::max();
+      }
+    } else if (filter_in()) {
+      if (!bf1.get().contains({ hk.min_hash })) {
+        hk.min_hash = std::numeric_limits<uint64_t>::max();
+      }
+    } else if (filter_out()) {
+      if (bf1.get().contains({ hk.min_hash })) {
+        hk.min_hash = std::numeric_limits<uint64_t>::max();
+      }
     }
-    candidate_min_pos = min_it - first_it;
-    if (candidate_min_pos > prev_min_pos &&
-        min_it->min_hash != std::numeric_limits<uint64_t>::max()) {
-      prev_min_pos = candidate_min_pos;
-      minimizers.push_back(*min_it);
+
+    if (idx + 1 >= w) {
+      min_idx_left = idx + 1 - w;
+      min_idx_right = idx + 1;
+      const auto& min_left =
+        hashed_kmers_buffer[min_idx_left % hashed_kmers_buffer.size()];
+      const auto& min_right =
+        hashed_kmers_buffer[(min_idx_right - 1) % hashed_kmers_buffer.size()];
+
+      if (min_current == nullptr || min_current->pos < min_left.pos) {
+        min_current = &min_left;
+        // Use of operator '<=' returns the minimum that is furthest from left.
+        for (ssize_t i = min_idx_left; i < min_idx_right; i++) {
+          const auto& min_i =
+            hashed_kmers_buffer[i % hashed_kmers_buffer.size()];
+          if (min_i.min_hash <= min_current->min_hash) {
+            min_current = &min_i;
+          }
+        }
+      } else if (min_right.min_hash <= min_current->min_hash) {
+        min_current = &min_right;
+      }
+      if (ssize_t(min_current->pos) > min_pos_prev &&
+          min_current->min_hash != std::numeric_limits<uint64_t>::max()) {
+        min_pos_prev = min_current->pos;
+        minimizers.push_back(*min_current);
+      }
     }
   }
   return minimizers;
@@ -394,12 +428,18 @@ Indexlr::minimize_hashed_kmers(
 inline Indexlr::Record
 Indexlr::get_minimizers()
 {
-  auto& block = ready_blocks_array()[id % MAX_SIMULTANEOUS_INDEXLRS];
+  if (ready_blocks_owners()[id % MAX_SIMULTANEOUS_INDEXLRS] != id) {
+    ready_blocks_array()[id % MAX_SIMULTANEOUS_INDEXLRS] =
+      std::unique_ptr<decltype(output_queue)::Block>(
+        new decltype(output_queue)::Block(block_size));
+    ready_blocks_owners()[id % MAX_SIMULTANEOUS_INDEXLRS] = id;
+  }
+  auto& block = *(ready_blocks_array()[id % MAX_SIMULTANEOUS_INDEXLRS]);
   if (block.count <= block.current) {
     output_queue.read(block);
     if (block.count <= block.current) {
       output_queue.close();
-      block = decltype(output_queue)::Block();
+      block = decltype(output_queue)::Block(block_size);
       return Record();
     }
   }
@@ -415,7 +455,7 @@ Indexlr::InputWorker::work()
     indexlr.fasta = false;
   }
 
-  decltype(indexlr.input_queue)::Block block;
+  decltype(indexlr.input_queue)::Block block(indexlr.block_size);
   size_t current_block_num = 0;
   SeqReader::Record record;
   Read read;
@@ -424,7 +464,7 @@ Indexlr::InputWorker::work()
                                      std::move(record.name),
                                      std::move(record.comment),
                                      std::move(record.seq));
-    if (block.count == BLOCK_SIZE) {
+    if (block.count == indexlr.block_size) {
       block.num = current_block_num++;
       indexlr.input_queue.write(block);
       block.count = 0;
@@ -445,8 +485,8 @@ Indexlr::InputWorker::work()
 inline void
 Indexlr::MinimizeWorker::work()
 {
-  decltype(indexlr.input_queue)::Block input_block;
-  decltype(indexlr.output_queue)::Block output_block;
+  decltype(indexlr.input_queue)::Block input_block(indexlr.block_size);
+  decltype(indexlr.output_queue)::Block output_block(indexlr.block_size);
 
   for (;;) {
     if (input_block.current == input_block.count) {
@@ -475,52 +515,23 @@ Indexlr::MinimizeWorker::work()
       record.barcode = indexlr.extract_barcode(record.id, read.comment);
     }
 
-    check_info(indexlr.verbose && read.seq.size() < indexlr.k,
+    check_info(indexlr.verbose && indexlr.k > read.seq.size(),
                "Indexlr: skipped seq " + std::to_string(read.num) +
                  " on line " +
                  std::to_string(read.num * (indexlr.fasta ? 2 : 4) + 2) +
                  "; k (" + std::to_string(indexlr.k) + ") > seq length (" +
                  std::to_string(read.seq.size()) + ")");
 
-    decltype(indexlr.hash_kmers(read.seq, indexlr.k)) hashed_kmers;
-    if (read.seq.size() >= indexlr.k) {
-      hashed_kmers = indexlr.hash_kmers(read.seq, indexlr.k);
+    check_info(indexlr.verbose && indexlr.w > read.seq.size() - indexlr.k + 1,
+               "Indexlr: skipped seq " + std::to_string(read.num) +
+                 " on line " +
+                 std::to_string(read.num * (indexlr.fasta ? 2 : 4) + 2) +
+                 "; w (" + std::to_string(indexlr.w) + ") > # of hashes (" +
+                 std::to_string(read.seq.size() - indexlr.k + 1) + ")");
 
-      check_info(indexlr.verbose && indexlr.w > hashed_kmers.size(),
-                 "Indexlr: skipped seq " + std::to_string(read.num) +
-                   " on line " +
-                   std::to_string(read.num * (indexlr.fasta ? 2 : 4) + 2) +
-                   "; w (" + std::to_string(indexlr.w) + ") > # of hashes (" +
-                   std::to_string(hashed_kmers.size()) + ")");
-      if (indexlr.w <= hashed_kmers.size()) {
-        if (indexlr.filter_in() && indexlr.filter_out()) {
-          std::vector<uint64_t> tmp;
-          for (auto& hk : hashed_kmers) {
-            tmp = { hk.min_hash };
-            if (!indexlr.bf1.get().contains(tmp) ||
-                indexlr.bf2.get().contains(tmp)) {
-              hk.min_hash = std::numeric_limits<uint64_t>::max();
-            }
-          }
-        } else if (indexlr.filter_in()) {
-          for (auto& hk : hashed_kmers) {
-            if (!indexlr.bf1.get().contains({ hk.min_hash })) {
-              hk.min_hash = std::numeric_limits<uint64_t>::max();
-            }
-          }
-        } else if (indexlr.filter_out()) {
-          for (auto& hk : hashed_kmers) {
-            if (indexlr.bf1.get().contains({ hk.min_hash })) {
-              hk.min_hash = std::numeric_limits<uint64_t>::max();
-            }
-          }
-        }
-
-        record.minimizers =
-          indexlr.minimize_hashed_kmers(hashed_kmers, indexlr.w);
-      } else {
-        record.minimizers = {};
-      }
+    if (indexlr.k <= read.seq.size() &&
+        indexlr.w <= read.seq.size() - indexlr.k + 1) {
+      record.minimizers = indexlr.minimize(read.seq);
     } else {
       record.minimizers = {};
     }

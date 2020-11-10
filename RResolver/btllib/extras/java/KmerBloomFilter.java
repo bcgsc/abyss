@@ -96,6 +96,10 @@ public class KmerBloomFilter {
     return btllibJNI.KmerBloomFilter_get_k(swigCPtr, this);
   }
 
+  public BloomFilter get_bloom_filter() {
+    return new BloomFilter(btllibJNI.KmerBloomFilter_get_bloom_filter(swigCPtr, this), false);
+  }
+
   public void write(String path) {
     btllibJNI.KmerBloomFilter_write(swigCPtr, this, path);
   }

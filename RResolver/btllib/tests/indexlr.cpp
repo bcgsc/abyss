@@ -1,5 +1,5 @@
-#include "../include/btllib/indexlr.hpp"
-#include "../include/btllib/bloom_filter.hpp"
+#include "btllib/indexlr.hpp"
+#include "btllib/bloom_filter.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -36,6 +36,7 @@ main()
   std::stringstream ss;
   std::stringstream ss2;
 
+  std::cerr << "Testing without Bloom filters" << std::endl;
   decltype(indexlr)::Record record;
   bool success_indexlr = false, success_indexlr2 = false;
   for (int i = 0;; i++) {
@@ -87,6 +88,7 @@ main()
   }
   assert(ss2.str() == correct_output2);
 
+  std::cerr << "Testing with Bloom filters" << std::endl;
   btllib::BloomFilter filter_in_bf(1024 * 1024 * 32, 1);
   btllib::BloomFilter filter_out_bf(1024 * 1024 * 32, 1);
 

@@ -1,6 +1,7 @@
 #ifndef BTLLIB_SEQ_READER_HPP
 #define BTLLIB_SEQ_READER_HPP
 
+#include "cstring.hpp"
 #include "data_stream.hpp"
 #include "order_queue.hpp"
 #include "seq.hpp"
@@ -48,7 +49,16 @@ public:
 
   SeqReader(const std::string& source_path,
             unsigned flags = 0,
-            unsigned threads = 3);
+            unsigned threads = 3,
+            size_t buffer_size = 32,
+            size_t block_size = 32);
+
+  SeqReader(const SeqReader&) = delete;
+  SeqReader(SeqReader&&) = delete;
+
+  SeqReader& operator=(const SeqReader&) = delete;
+  SeqReader& operator=(SeqReader&&) = delete;
+
   ~SeqReader();
 
   void close() noexcept;
@@ -87,8 +97,8 @@ public:
 private:
   const std::string& source_path;
   DataSource source;
-  unsigned flags;
-  unsigned threads;
+  const unsigned flags;
+  const unsigned threads;
   Format format = Format::UNDETERMINED; // Format of the source file
   bool closed = false;
 
@@ -100,80 +110,8 @@ private:
   size_t buffer_end = 0;
   bool eof_newline_inserted = false;
 
-  static const size_t RECORD_QUEUE_SIZE = 32;
-  static const size_t RECORD_BLOCK_SIZE = 128;
-
-  static const size_t CSTRING_DEFAULT_CAP = 4096;
-
-  struct CString
-  {
-
-    CString() { s[0] = '\0'; }
-    CString(const CString&) = delete;
-    CString(CString&& cstring) noexcept
-    {
-      std::swap(s, cstring.s);
-      s_size = cstring.s_size;
-      cstring.clear();
-      std::swap(s_cap, cstring.s_cap);
-    }
-    CString(const std::string& str)
-    {
-      if (str.size() + 1 > s_cap) {
-        s_cap = str.size() + 1;
-        s = (char*)std::realloc((char*)s, s_cap); // NOLINT
-      }
-      s_size = str.size();
-      memcpy(s, str.c_str(), s_size + 1);
-    }
-
-    CString& operator=(const CString&) = delete;
-    CString& operator=(CString&& cstring) noexcept
-    {
-      std::swap(s, cstring.s);
-      s_size = cstring.s_size;
-      cstring.clear();
-      std::swap(s_cap, cstring.s_cap);
-      return *this;
-    }
-    CString& operator=(const std::string& str)
-    {
-      if (str.size() + 1 > s_cap) {
-        s_cap = str.size() + 1;
-        s = (char*)std::realloc((char*)s, s_cap); // NOLINT
-      }
-      s_size = str.size();
-      memcpy(s, str.c_str(), s_size + 1);
-      return *this;
-    }
-
-    ~CString() { free(s); } // NOLINT
-
-    void clear()
-    {
-      s[0] = '\0';
-      s_size = 0;
-    }
-    bool empty() const { return (ssize_t)s_size <= 0; }
-    size_t size() const { return s_size; }
-
-    operator char*() const { return s; }
-
-    char* s = (char*)std::malloc(CSTRING_DEFAULT_CAP); // NOLINT
-    size_t s_size = 0;
-    size_t s_cap = CSTRING_DEFAULT_CAP;
-  };
-
   struct RecordCString
   {
-
-    RecordCString() = default;
-    RecordCString(const RecordCString&) = delete;
-    RecordCString(RecordCString&& record) = default;
-
-    RecordCString& operator=(const RecordCString&) = delete;
-    RecordCString& operator=(RecordCString&& record) = default;
-
     CString header;
     CString seq;
     CString qual;
@@ -187,28 +125,35 @@ private:
   std::condition_variable format_cv;
   std::atomic<bool> reader_end;
   RecordCString* reader_record = nullptr;
-  OrderQueueSPMC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>
-    cstring_queue;
-  OrderQueueMPMC<Record, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE> output_queue;
+  const size_t buffer_size;
+  const size_t block_size;
+  OrderQueueSPMC<RecordCString> cstring_queue;
+  OrderQueueMPMC<Record> output_queue;
 
   // I am crying at this code, but until C++17 compliant compilers are
   // widespread, this cannot be a static inline variable
   using OutputQueueType = decltype(output_queue);
-  static OutputQueueType::Block* ready_records_array()
+  static std::unique_ptr<OutputQueueType::Block>* ready_records_array()
   {
-    thread_local static decltype(
-      output_queue)::Block var[MAX_SIMULTANEOUS_SEQREADERS];
+    thread_local static std::unique_ptr<decltype(output_queue)::Block>
+      var[MAX_SIMULTANEOUS_SEQREADERS];
+    return var;
+  }
+
+  static long* ready_records_owners()
+  {
+    thread_local static long var[MAX_SIMULTANEOUS_SEQREADERS];
     return var;
   }
 
   // :(
-  static std::atomic<unsigned>& last_id()
+  static std::atomic<long>& last_id()
   {
-    static std::atomic<unsigned> var(0);
+    static std::atomic<long> var(0);
     return var;
   }
 
-  unsigned id;
+  const long id;
 
   void determine_format();
   void start_reader();
@@ -253,39 +198,39 @@ private:
   /// @endcond
 
   template<typename F>
-  void read_from_buffer(
-    F f,
-    OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-      records,
-    size_t& counter);
+  void read_from_buffer(F f,
+                        OrderQueueSPMC<RecordCString>::Block& records,
+                        size_t& counter);
 
   template<typename F>
-  void read_transition(
-    F f,
-    OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-      records,
-    size_t& counter);
+  void read_transition(F f,
+                       OrderQueueSPMC<RecordCString>::Block& records,
+                       size_t& counter);
 
   template<typename F>
-  void read_from_file(
-    F f,
-    OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-      records,
-    size_t& counter);
+  void read_from_file(F f,
+                      OrderQueueSPMC<RecordCString>::Block& records,
+                      size_t& counter);
 
   void postprocess();
 };
 
 inline SeqReader::SeqReader(const std::string& source_path,
                             const unsigned flags,
-                            const unsigned threads)
+                            const unsigned threads,
+                            const size_t buffer_size,
+                            const size_t block_size)
   : source_path(source_path)
   , source(source_path)
   , flags(flags)
   , threads(threads)
   , buffer(std::vector<char>(BUFFER_SIZE))
   , reader_end(false)
-  , id(last_id()++)
+  , buffer_size(buffer_size)
+  , block_size(block_size)
+  , cstring_queue(buffer_size, block_size)
+  , output_queue(buffer_size, block_size)
+  , id(++last_id())
 {
   start_processor();
   {
@@ -1026,22 +971,24 @@ struct SeqReader::read_gfa2_file
 
 template<typename F>
 inline void
-SeqReader::read_from_buffer(
-  F f,
-  OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-    records,
-  size_t& counter)
+SeqReader::read_from_buffer(F f,
+                            OrderQueueSPMC<RecordCString>::Block& records,
+                            size_t& counter)
 {
   for (; buffer_start < buffer_end && !reader_end;) {
     reader_record = &(records.data[records.count]);
+    reader_record->header.clear();
+    reader_record->seq.clear();
+    reader_record->qual.clear();
     if (!f(*this) || reader_record->seq.empty()) {
       break;
     }
     records.count++;
-    if (records.count == RECORD_BLOCK_SIZE) {
+    if (records.count == block_size) {
       records.current = 0;
       records.num = counter++;
       cstring_queue.write(records);
+      records.num = 0;
       records.current = 0;
       records.count = 0;
     }
@@ -1050,11 +997,9 @@ SeqReader::read_from_buffer(
 
 template<typename F>
 inline void
-SeqReader::read_transition(
-  F f,
-  OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-    records,
-  size_t& counter)
+SeqReader::read_transition(F f,
+                           OrderQueueSPMC<RecordCString>::Block& records,
+                           size_t& counter)
 {
   if (std::ferror(source) == 0 && std::feof(source) == 0 && !reader_end) {
     int p = std::fgetc(source);
@@ -1064,10 +1009,11 @@ SeqReader::read_transition(
       f(*this);
       if (!reader_record->seq.empty()) {
         records.count++;
-        if (records.count == RECORD_BLOCK_SIZE) {
+        if (records.count == block_size) {
           records.current = 0;
           records.num = counter++;
           cstring_queue.write(records);
+          records.num = 0;
           records.current = 0;
           records.count = 0;
         }
@@ -1078,11 +1024,9 @@ SeqReader::read_transition(
 
 template<typename F>
 inline void
-SeqReader::read_from_file(
-  F f,
-  OrderQueueSPSC<RecordCString, RECORD_QUEUE_SIZE, RECORD_BLOCK_SIZE>::Block&
-    records,
-  size_t& counter)
+SeqReader::read_from_file(F f,
+                          OrderQueueSPMC<RecordCString>::Block& records,
+                          size_t& counter)
 {
   for (; std::ferror(source) == 0 && std::feof(source) == 0 && !reader_end;) {
     reader_record = &(records.data[records.count]);
@@ -1091,10 +1035,11 @@ SeqReader::read_from_file(
       break;
     }
     records.count++;
-    if (records.count == RECORD_BLOCK_SIZE) {
+    if (records.count == block_size) {
       records.current = 0;
       records.num = counter++;
       cstring_queue.write(records);
+      records.num = 0;
       records.current = 0;
       records.count = 0;
     }
@@ -1112,7 +1057,7 @@ SeqReader::start_reader()
     }
 
     size_t counter = 0;
-    decltype(cstring_queue)::Block records;
+    decltype(cstring_queue)::Block records(block_size);
     switch (format) {
       case Format::FASTA: {
         read_from_buffer(read_fasta_buffer(), records, counter);
@@ -1150,7 +1095,7 @@ SeqReader::start_reader()
       cstring_queue.write(records);
     }
     for (unsigned i = 0; i < threads; i++) {
-      decltype(cstring_queue)::Block dummy;
+      decltype(cstring_queue)::Block dummy(block_size);
       dummy.num = counter++;
       dummy.current = 0;
       dummy.count = 0;
@@ -1166,8 +1111,8 @@ SeqReader::start_processor()
   for (unsigned i = 0; i < threads; i++) {
     processor_threads.push_back(
       std::unique_ptr<std::thread>(new std::thread([this]() {
-        decltype(cstring_queue)::Block records_in;
-        decltype(output_queue)::Block records_out;
+        decltype(cstring_queue)::Block records_in(block_size);
+        decltype(output_queue)::Block records_out(block_size);
         for (;;) {
           cstring_queue.read(records_in);
           for (size_t i = 0; i < records_in.count; i++) {
@@ -1243,7 +1188,7 @@ SeqReader::start_processor()
             if (fold_case()) {
               for (auto& c : seq) {
                 char old = c;
-                c = CAPITALS[unsigned(c)];
+                c = CAPITALS[(unsigned char)(c)];
                 if (!bool(c)) {
                   log_error(std::string("A sequence contains invalid "
                                         "IUPAC character: ") +
@@ -1252,7 +1197,7 @@ SeqReader::start_processor()
                 }
               }
             }
-            records_out.data[i].num = records_in.num * RECORD_BLOCK_SIZE + i;
+            records_out.data[i].num = records_in.num * block_size + i;
           }
           records_out.count = records_in.count;
           records_out.current = records_in.current;
@@ -1270,12 +1215,19 @@ SeqReader::start_processor()
 inline SeqReader::Record
 SeqReader::read()
 {
-  auto& ready_records = ready_records_array()[id % MAX_SIMULTANEOUS_SEQREADERS];
+  if (ready_records_owners()[id % MAX_SIMULTANEOUS_SEQREADERS] != id) {
+    ready_records_array()[id % MAX_SIMULTANEOUS_SEQREADERS] =
+      std::unique_ptr<decltype(output_queue)::Block>(
+        new decltype(output_queue)::Block(block_size));
+    ready_records_owners()[id % MAX_SIMULTANEOUS_SEQREADERS] = id;
+  }
+  auto& ready_records =
+    *(ready_records_array()[id % MAX_SIMULTANEOUS_SEQREADERS]);
   if (ready_records.count <= ready_records.current) {
     output_queue.read(ready_records);
     if (ready_records.count <= ready_records.current) {
       close();
-      ready_records = decltype(output_queue)::Block();
+      ready_records = decltype(output_queue)::Block(block_size);
       return Record();
     }
   }

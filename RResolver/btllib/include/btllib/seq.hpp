@@ -79,7 +79,7 @@ reverse_complement(std::string& seq)
 {
   std::reverse(seq.begin(), seq.end());
   std::transform(seq.begin(), seq.end(), seq.begin(), [](char c) {
-    return COMPLEMENTS[unsigned(c)];
+    return COMPLEMENTS[(unsigned char)(c)];
   });
 }
 

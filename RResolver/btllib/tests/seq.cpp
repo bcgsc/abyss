@@ -1,4 +1,4 @@
-#include "../include/btllib/seq.hpp"
+#include "btllib/seq.hpp"
 
 #include <cassert>
 #include <string>

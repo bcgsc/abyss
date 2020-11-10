@@ -1,5 +1,5 @@
-#include "../include/btllib/seq_writer.hpp"
-#include "../include/btllib/seq_reader.hpp"
+#include "btllib/seq_writer.hpp"
+#include "btllib/seq_reader.hpp"
 
 #include "helpers.hpp"
 

@@ -1,4 +1,4 @@
-#include "../include/btllib/data_stream.hpp"
+#include "btllib/data_stream.hpp"
 
 #include "helpers.hpp"
 

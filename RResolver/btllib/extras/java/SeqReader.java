@@ -74,16 +74,24 @@ public class SeqReader {
     public final static long TRIM_MASKED = btllibJNI.SeqReader_Flag_TRIM_MASKED_get();
   }
 
+  public SeqReader(String source_path, long flags, long threads, long buffer_size, long block_size) {
+    this(btllibJNI.new_SeqReader__SWIG_0(source_path, flags, threads, buffer_size, block_size), true);
+  }
+
+  public SeqReader(String source_path, long flags, long threads, long buffer_size) {
+    this(btllibJNI.new_SeqReader__SWIG_1(source_path, flags, threads, buffer_size), true);
+  }
+
   public SeqReader(String source_path, long flags, long threads) {
-    this(btllibJNI.new_SeqReader__SWIG_0(source_path, flags, threads), true);
+    this(btllibJNI.new_SeqReader__SWIG_2(source_path, flags, threads), true);
   }
 
   public SeqReader(String source_path, long flags) {
-    this(btllibJNI.new_SeqReader__SWIG_1(source_path, flags), true);
+    this(btllibJNI.new_SeqReader__SWIG_3(source_path, flags), true);
   }
 
   public SeqReader(String source_path) {
-    this(btllibJNI.new_SeqReader__SWIG_2(source_path), true);
+    this(btllibJNI.new_SeqReader__SWIG_4(source_path), true);
   }
 
   public void close() {

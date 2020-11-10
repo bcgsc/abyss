@@ -32,9 +32,15 @@ class CountingBloomFilter
 public:
   CountingBloomFilter() {}
   CountingBloomFilter(size_t bytes, unsigned hash_num);
-  CountingBloomFilter(const std::string& path);
+  explicit CountingBloomFilter(const std::string& path);
 
   ~CountingBloomFilter() { delete[] array; }
+
+  CountingBloomFilter(const CountingBloomFilter&) = delete;
+  CountingBloomFilter(CountingBloomFilter&&) = delete;
+
+  CountingBloomFilter& operator=(const CountingBloomFilter&) = delete;
+  CountingBloomFilter& operator=(CountingBloomFilter&&) = delete;
 
   void insert(const uint64_t* hashes);
   void insert(const std::vector<uint64_t>& hashes) { insert(hashes.data()); }
@@ -72,7 +78,13 @@ class KmerCountingBloomFilter
 
 public:
   KmerCountingBloomFilter(size_t bytes, unsigned hash_num, unsigned k);
-  KmerCountingBloomFilter(const std::string& path);
+  explicit KmerCountingBloomFilter(const std::string& path);
+
+  KmerCountingBloomFilter(const KmerCountingBloomFilter&) = delete;
+  KmerCountingBloomFilter(KmerCountingBloomFilter&&) = delete;
+
+  KmerCountingBloomFilter& operator=(const KmerCountingBloomFilter&) = delete;
+  KmerCountingBloomFilter& operator=(KmerCountingBloomFilter&&) = delete;
 
   void insert(const char* seq, size_t seq_len);
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }

@@ -108,6 +108,10 @@ public class SeedBloomFilter {
     return btllibJNI.SeedBloomFilter_get_hash_num_per_seed(swigCPtr, this);
   }
 
+  public KmerBloomFilter get_kmer_bloom_filter() {
+    return new KmerBloomFilter(btllibJNI.SeedBloomFilter_get_kmer_bloom_filter(swigCPtr, this), false);
+  }
+
   public void write(String path) {
     btllibJNI.SeedBloomFilter_write(swigCPtr, this, path);
   }

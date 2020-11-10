@@ -1,4 +1,4 @@
-#include "../include/btllib/counting_bloom_filter.hpp"
+#include "btllib/counting_bloom_filter.hpp"
 
 #include "helpers.hpp"
 
