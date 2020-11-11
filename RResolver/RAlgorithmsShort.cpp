@@ -205,6 +205,10 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		auto& batch = ReadSize::readSizes[i];
 		if (opt::rValues.size() > 0) {
 			if (i < opt::rValues.size()) {
+				if (opt::rValues[i] <= batch.size) {
+					std::cerr << "r size (" << opt::rValues[i] << ") must be larger than read size (" << batch.size << ")." << std::endl;
+					std::exit(-1);
+				 }
 				batch.rValues.push_back(opt::rValues[i]);
 			} else {
 				std::cerr << "Insufficient number of R values (" << opt::rValues.size() << " / " << ReadSize::readSizes.size() << ") provided over command line." << std::endl;
