@@ -52,21 +52,15 @@ Contents
 Quick Start
 ===========
 
-## Install ABySS on Linux
+## Install ABySS on Linux or macOS
 
-Install [Linuxbrew](http://linuxbrew.sh/), and run the command
-
-	brew install abyss
-
-## Install ABySS on macOS
-
-Install [Homebrew](https://brew.sh/), and run the command
+Install [Homebrew](https://brew.sh), and run the command
 
 	brew install abyss
 
 ## Install ABySS on Windows
 
-Install [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/) and [Linuxbrew](http://linuxbrew.sh/), and run the command
+Install [Windows Subsystem for Linux](https://docs.microsoft.com/en-us/windows/wsl/) and [Homebrew](https://brew.sh), and run the command
 
 	brew install abyss
 
@@ -90,7 +84,7 @@ Run the command
 Dependencies
 ============
 
-Dependencies may be installed using the package manager [Homebrew](https://homebrew.sh) on macOS and [Linxubrew](http://linuxbrew.sh) on Linux and Windows, using Windows Subsystem for Linux.
+Dependencies may be installed using the package manager [Homebrew](https://brew.sh) on either Linux, macOS, or Windows, using Windows Subsystem for Linux.
 
 ABySS requires a C++ compiler that supports
 [OpenMP](http://www.openmp.org) such as [GCC](http://gcc.gnu.org).
