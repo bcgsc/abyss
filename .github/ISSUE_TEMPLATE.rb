@@ -13,7 +13,7 @@
 
 # Build error
 
-Consider installing ABySS using [Linuxbrew](https://linuxbrew.sh) on Linux or [Homebrew](https://brew.sh) on macOS with `brew install abyss`, or using [Bioconda](https://bioconda.github.io) with `conda install abyss`.
+Consider installing ABySS using [Homebrew](https://brew.sh) on either Linux or macOS with `brew install abyss`, or using [Bioconda](https://bioconda.github.io) with `conda install abyss`.
 
 - [ ] Have you tried installing ABySS using Brew or Bioconda?
 - [ ] version of GCC or compiler with `gcc --version`
