@@ -210,7 +210,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 					std::exit(-1);
 				}
 				if (opt::rValues[i] > batch.size - opt::threshold + 1) {
-					std::cerr << "r size (" << opt::rValues[i] << ") must be smaller than read size - threshold + 1 (" << batch.size - opt::threshold + 1 << ")." << std::endl;
+					std::cerr << "r size (" << opt::rValues[i] << ") must be smaller than or equal to read size - threshold + 1 (" << batch.size - opt::threshold + 1 << ")." << std::endl;
 					std::exit(-1);
 				}
 				batch.rValues.push_back(opt::rValues[i]);
