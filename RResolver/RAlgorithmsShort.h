@@ -15,9 +15,9 @@
 
 const int MIN_MARGIN = 2;
 const int MAX_TESTS_OFFSET = 16; // std::numeric_limits<int>::max();
-const int R_VALUES_STEP = 20;
-const int R_STEPS_MAX = 1;
-const int R_MAX_K_DIFF = 40;
+const int R_HEURISTIC = 45;
+const double R_HEURISTIC_A = 0.49;
+const double R_HEURISTIC_B = 63.5;
 const int MAX_SUBITERATIONS = 2;
 const long HIST_SAMPLE_SIZE = LONG_MAX;
 const long REPEAT_CASES_LIMIT = LONG_MAX;

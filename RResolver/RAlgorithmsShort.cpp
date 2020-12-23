@@ -219,21 +219,8 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 				std::exit(-1);
 			}
 		} else {
-			int r = batch.qualThresholdPositions.percentile(0.1) - opt::threshold + 1;
-			int prevR = opt::k;
-			if (i > 0) {
-				prevR = ReadSize::readSizes[i - 1].rValues.back();
-			}
-			int steps = 0;
-			while ((r - prevR > R_VALUES_STEP) && (steps < R_STEPS_MAX)) {
-				if (r - opt::k > R_MAX_K_DIFF) {
-					r = opt::k + R_MAX_K_DIFF;
-				}
-				batch.rValues.push_back(r);
-				r -= R_VALUES_STEP;
-				steps++;
-			}
-			std::reverse(batch.rValues.begin(), batch.rValues.end());
+			const int r = std::min({ int(opt::k + R_HEURISTIC), int(batch.size * R_HEURISTIC_A + R_HEURISTIC_B), int(batch.size - opt::threshold + 1) });
+			batch.rValues.push_back(r);
 		}
 	}
 
