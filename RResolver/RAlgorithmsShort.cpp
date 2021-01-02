@@ -204,23 +204,22 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 	for (size_t i = 0; i < ReadSize::readSizes.size(); i++) {
 		auto& batch = ReadSize::readSizes[i];
 		if (opt::rValues.size() > 0) {
-			if (i < opt::rValues.size()) {
-				if (opt::rValues[i] <= int(opt::k)) {
-					std::cerr << "r size (" << opt::rValues[i] << ") must be larger than assembly k (" << opt::k << ")." << std::endl;
-					std::exit(-1);
-				}
-				if (opt::rValues[i] > batch.size - opt::threshold + 1) {
-					std::cerr << "r size (" << opt::rValues[i] << ") must be smaller than or equal to read size - threshold + 1 (" << batch.size - opt::threshold + 1 << ")." << std::endl;
-					std::exit(-1);
-				}
-				batch.rValues.push_back(opt::rValues[i]);
-			} else {
-				std::cerr << "Insufficient number of R values (" << opt::rValues.size() << " / " << ReadSize::readSizes.size() << ") provided over command line." << std::endl;
+			if (i < ReadSize::readSizes.size() - opt::rValues.size()) { continue; }
+			const int r = opt::rValues[i - (ReadSize::readSizes.size() - opt::rValues.size())];
+			if (r <= int(opt::k)) {
+				std::cerr << "r size (" << r << ") must be larger than assembly k (" << opt::k << ")." << std::endl;
 				std::exit(-1);
 			}
+			if (r > batch.size - opt::threshold + 1) {
+				std::cerr << "r size (" << r << ") must be smaller than or equal to read size - threshold + 1 (" << batch.size - opt::threshold + 1 << ")." << std::endl;
+				std::exit(-1);
+			}
+			batch.rValues.push_back(r);
 		} else {
 			const int r = std::min({ int(opt::k + R_HEURISTIC), int(batch.size * R_HEURISTIC_A + R_HEURISTIC_B), int(batch.size - opt::threshold + 1) });
-			batch.rValues.push_back(r);
+			if (r > int(opt::k)) {
+				batch.rValues.push_back(r);
+			}
 		}
 	}
 
