@@ -174,7 +174,7 @@ loadReads(const std::vector<std::string>& readFilepaths, int r)
 					if (int(record.seq.size()) != ReadSize::current.size) {
 						continue;
 					}
-					std::string seq = record.seq.substr(0, r + opt::threshold - 1);
+					std::string seq = record.seq.substr(0, r + opt::extract - 1);
 					if (seq.size() >= g_vanillaBloom->get_k()) {
 						g_vanillaBloom->insert(seq);
 						if (opt::errorCorrection) {

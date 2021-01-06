@@ -49,6 +49,9 @@ extern std::string outputContigsPath;
 /** Number of kmers required to be found for a path to be supported */
 extern int threshold;
 
+/** Number of Rmers to extract per read */
+extern int extract;
+
 /** Minimum number of sliding window moves */
 extern int minTests;
 

@@ -47,11 +47,12 @@ static const char USAGE_MESSAGE[] =
     "  -h, --hist=PREFIX           write the algorithm histograms with the given prefix.\n"
     "                              Histograms are omitted if no prefix is given."
     "  -t, --threshold=N           set path support threshold to N. [4]"
+	"  -x, --extract=N             extract N rmers per read. [4]"
     "  -m, --min-tests=N           set minimum number of sliding window moves to N. [20]"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]"
-		"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
-		"                              The number of set r values should be equalto the number of read sizes."
-		"  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35]"
+	"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
+	"                              The number of set r values should be equalto the number of read sizes."
+	"  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)"
     "  -e, --error-correction      enable correction of a 1bp error in kmers. [false]"
     "  -S, --supported=FILE        write supported paths to FILE.\n"
     "  -U, --unsupported=FILE      write unsupported paths to FILE.\n"
@@ -90,6 +91,9 @@ std::string outputContigsPath;
 /** Number of kmers required to be found for a path to be supported */
 int threshold = 4;
 
+/** Number of Rmers to extract per read */
+int extract = 4;
+
 /** Minimum number of sliding window moves */
 int minTests = 20;
 
@@ -117,7 +121,7 @@ int format; // used by ContigProperties
 
 }
 
-static const char shortopts[] = "b:j:g:c:k:h:t:m:n:r:q:eS:U:v";
+static const char shortopts[] = "b:j:g:c:k:h:t:x:m:n:r:q:eS:U:v";
 
 enum
 {
@@ -133,6 +137,7 @@ static const struct option longopts[] = {
 	{ "kmer", required_argument, NULL, 'k' },
 	{ "hist", required_argument, NULL, 'h' },
 	{ "threshold", required_argument, NULL, 't' },
+	{ "extract", required_argument, NULL, 'x' },
 	{ "min-tests", required_argument, NULL, 'm' },
 	{ "branching", required_argument, NULL, 'n' },
 	{ "rmer", required_argument, NULL, 'r' },
@@ -284,6 +289,9 @@ main(int argc, char** argv)
 			break;
 		case 't':
 			arg >> opt::threshold;
+			break;
+		case 'x':
+			arg >> opt::extract;
 			break;
 		case 'm':
 			arg >> opt::minTests;
