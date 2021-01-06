@@ -46,8 +46,8 @@ static const char USAGE_MESSAGE[] =
     "  -k, --kmer=N                assembly k-mer size\n"
     "  -h, --hist=PREFIX           write the algorithm histograms with the given prefix.\n"
     "                              Histograms are omitted if no prefix is given."
-    "  -t, --threshold=N           set path support threshold to N. [4]"
-	"  -x, --extract=N             extract N rmers per read. [4]"
+    "  -t, --threshold=N           set path support threshold to N. [3]"
+    "  -x, --extract=N             extract N rmers per read. [5]"
     "  -m, --min-tests=N           set minimum number of sliding window moves to N. [20]"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]"
 	"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
@@ -89,10 +89,10 @@ std::string outputGraphPath;
 std::string outputContigsPath;
 
 /** Number of kmers required to be found for a path to be supported */
-int threshold = 4;
+int threshold = 3;
 
 /** Number of Rmers to extract per read */
-int extract = 4;
+int extract = 5;
 
 /** Minimum number of sliding window moves */
 int minTests = 20;
