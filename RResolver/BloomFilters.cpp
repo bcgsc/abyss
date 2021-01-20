@@ -234,7 +234,7 @@ buildFilters(
 				std::cerr << "Vanilla Bloom filter memory = " << bytesToSI(bloomBytesVanilla)
 				          << '\n';
 				std::cerr << "Spaced seeds Bloom filter memory = "
-				          << bytesToSI(bloomBytesSpacedSeeds / 8) << '\n';
+				          << bytesToSI(bloomBytesSpacedSeeds) << '\n';
 			} else {
 				std::cerr << "Vanilla Bloom filter memory = " << bytesToSI(bloomBytesVanilla)
 				          << '\n';
