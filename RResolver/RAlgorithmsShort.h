@@ -83,7 +83,7 @@ class Support
 {
   public:
 
-	enum class UnknownReason : unsigned {
+	enum class UnknownReason : uint8_t {
 		UNDETERMINED = 0, // Not yet processed
 		TOO_MANY_COMBINATIONS, // Branching out exploded beyond a threshold
 		OVER_MAX_TESTS, // Planned tests was above the threshold
@@ -102,13 +102,15 @@ class Support
 	Support(int calculatedTests, UnknownReason unknownReason)
 	  : found(-1)
 	  , tests(-1)
-	  , calculatedTests(calculatedTests)
 		, unknownReason(unknownReason)
 	{
 		assert(calculatedTests >= 0);
+		if (calculatedTests > std::numeric_limits<decltype(this->calculatedTests)>::max()) { this->calculatedTests = std::numeric_limits<decltype(this->calculatedTests)>::max(); } else {
+			this->calculatedTests = calculatedTests;
+		}
 	}
 
-	Support(int found, int tests)
+	Support(int8_t found, int8_t tests)
 	  : found(found)
 	  , tests(tests)
 	{
@@ -117,14 +119,16 @@ class Support
 		assert(calculatedTests == -1);
 	}
 
-	Support(int found, int tests, int calculatedTests)
+	Support(int8_t found, int8_t tests, int calculatedTests)
 	  : found(found)
 	  , tests(tests)
-	  , calculatedTests(calculatedTests)
 	{
 		assert(found >= 0);
 		assert(tests > 0);
 		assert(calculatedTests >= 0);
+		if (calculatedTests > std::numeric_limits<decltype(this->calculatedTests)>::max()) { this->calculatedTests = std::numeric_limits<decltype(this->calculatedTests)>::max(); } else {
+			this->calculatedTests = calculatedTests;
+		}
 	}
 
 	bool unknown() const { return tests == -1; }
@@ -141,9 +145,9 @@ class Support
 
 	bool operator<(const Support& s) { return found < s.found; }
 
-	int found = -1;
-	int tests = -1;
-	int calculatedTests = -1;
+	int8_t found = -1;
+	int8_t tests = -1;
+	int8_t calculatedTests = -1;
 	UnknownReason unknownReason = UnknownReason::UNDETERMINED;
 };
 

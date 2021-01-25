@@ -48,7 +48,7 @@ static const char USAGE_MESSAGE[] =
     "                              Histograms are omitted if no prefix is given."
     "  -t, --threshold=N           set path support threshold to N. [4]"
     "  -x, --extract=N             extract N rmers per read. [4]"
-    "  -m, --min-tests=N           set minimum number of sliding window moves to N. [20]"
+    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Maximum value is 127. [20]"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]"
 	"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
 	"                              The number of set r values should be equalto the number of read sizes."
