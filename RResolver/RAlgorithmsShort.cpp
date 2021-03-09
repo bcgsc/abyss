@@ -320,7 +320,7 @@ testCombination(
 		return Support(Support::UnknownReason::POSSIBLE_TESTS_LT_PLANNED);
 	}
 
-	if (plannedTests > opt::minTests + MAX_TESTS_OFFSET) {
+	if (plannedTests > opt::maxTests) {
 		return Support(Support::UnknownReason::OVER_MAX_TESTS);
 	}
 
@@ -391,7 +391,7 @@ determinePathSupport(const ContigPath& path)
 	if (requiredTests < opt::minTests) {
 		requiredTests = opt::minTests;
 	}
-	if (requiredTests > opt::minTests + MAX_TESTS_OFFSET) {
+	if (requiredTests > opt::maxTests) {
 		return Support(calculatedTests, Support::UnknownReason::OVER_MAX_TESTS);
 	}
 

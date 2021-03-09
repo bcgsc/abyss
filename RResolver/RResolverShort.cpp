@@ -48,7 +48,8 @@ static const char USAGE_MESSAGE[] =
     "                              Histograms are omitted if no prefix is given."
     "  -t, --threshold=N           set path support threshold to N. [4]"
     "  -x, --extract=N             extract N rmers per read. [4]"
-    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Maximum value is 127. [20]"
+    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [20]"
+    "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [36]"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]"
 	"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
 	"                              The number of set r values should be equalto the number of read sizes."
@@ -97,6 +98,9 @@ int extract = 4;
 /** Minimum number of sliding window moves */
 int minTests = 20;
 
+/** Maximum number of sliding window moves */
+int maxTests = 36;
+
 /** Maximum number of branching paths */
 int branching = 75;
 
@@ -121,7 +125,7 @@ int format; // used by ContigProperties
 
 }
 
-static const char shortopts[] = "b:j:g:c:k:h:t:x:m:n:r:q:eS:U:v";
+static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:q:eS:U:v";
 
 enum
 {
@@ -139,6 +143,7 @@ static const struct option longopts[] = {
 	{ "threshold", required_argument, NULL, 't' },
 	{ "extract", required_argument, NULL, 'x' },
 	{ "min-tests", required_argument, NULL, 'm' },
+	{ "max-tests", required_argument, NULL, 'M' },
 	{ "branching", required_argument, NULL, 'n' },
 	{ "rmer", required_argument, NULL, 'r' },
 	{ "quality-threshold", required_argument, NULL, 'q' },
@@ -194,6 +199,11 @@ check_options(int argc, bool& die)
 
 	if (opt::threads <= 0) {
 		std::cerr << PROGRAM ": invalid number of threads `-j`" << std::endl;
+		die = true;
+	}
+
+	if (opt::minTests > opt::maxTests) {
+		std::cerr << PROGRAM ": --min-tests cannot be higher than --max-tests" << std::endl;
 		die = true;
 	}
 }
@@ -295,6 +305,9 @@ main(int argc, char** argv)
 			break;
 		case 'm':
 			arg >> opt::minTests;
+			break;
+		case 'M':
+			arg >> opt::maxTests;
 			break;
 		case 'n':
 			arg >> opt::branching;

@@ -14,7 +14,6 @@
 #include <vector>
 
 const int MIN_MARGIN = 2;
-const int MAX_TESTS_OFFSET = 16; // std::numeric_limits<int>::max();
 const int R_HEURISTIC = 45;
 const double R_HEURISTIC_A = 0.49;
 const double R_HEURISTIC_B = 63.5;
@@ -54,6 +53,9 @@ extern int extract;
 
 /** Minimum number of sliding window moves */
 extern int minTests;
+
+/** Maximum number of sliding window moves */
+extern int maxTests;
 
 /** Maximum number of branching paths */
 extern int branching;
