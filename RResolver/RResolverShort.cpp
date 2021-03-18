@@ -37,24 +37,21 @@ static const char USAGE_MESSAGE[] =
     "\n"
     " Options:\n"
     "\n"
-    "  -b, --bloom-size=N          read Bloom filter size.\n"
-    "                              Unit suffixes 'K' (kilobytes), 'M' (megabytes),\n"
-    "                              or 'G' (gigabytes) may be used. [required]\n"
+    "  -b, --bloom-size=N          read Bloom filter size. Unit suffixes 'K' (kilobytes), 'M' (megabytes), or 'G' (gigabytes) may be used. [required]\n"
     "  -g, --graph=FILE            write the contig adjacency graph to FILE. [required]\n"
     "  -c, --contigs=FILE          write the contigs to FILE. [required]\n"
     "  -j, --threads=N             use N parallel threads [1]\n"
     "  -k, --kmer=N                assembly k-mer size\n"
-    "  -h, --hist=PREFIX           write the algorithm histograms with the given prefix.\n"
-    "                              Histograms are omitted if no prefix is given."
-    "  -t, --threshold=N           set path support threshold to N. [4]"
-    "  -x, --extract=N             extract N rmers per read. [4]"
-    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [20]"
-    "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [36]"
-    "  -n, --branching=N           set maximum number of branching paths to N. [75]"
-	"  -r, --rmer=N                explicitly set r value (k value used by rresolver)."
-	"                              The number of set r values should be equalto the number of read sizes."
-	"  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)"
-    "  -e, --error-correction      enable correction of a 1bp error in kmers. [false]"
+    "  -h, --hist=PREFIX           write the algorithm histograms with the given prefix. Histograms are omitted if no prefix is given.\n"
+    "  -t, --threshold=N           set path support threshold to N. [4]\n"
+    "  -x, --extract=N             extract N rmers per read. [4]\n"
+    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [20]\n"
+    "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [36]\n"
+    "  -n, --branching=N           set maximum number of branching paths to N. [75]\n"
+		"  -r, --rmer=N                explicitly set r value (k value used by rresolver). The number of set r values should be equal to the number of read sizes.\n"
+		"  -a, --approx-factor         explicitly set coverage approximation factor.\n"
+		"  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)\n"
+    "  -e, --error-correction      enable correction of a 1bp error in kmers. [false]\n"
     "  -S, --supported=FILE        write supported paths to FILE.\n"
     "  -U, --unsupported=FILE      write unsupported paths to FILE.\n"
     "                              Used for path sequence quality check.\n"
@@ -107,6 +104,9 @@ int branching = 75;
 /** Explicitly specified r values. */
 std::vector<int> rValues;
 
+/** Explicitly set coverage approximation factors. */
+std::vector<double> covApproxFactors;
+
 /** Base pair quality threshold that large k-mers bases should have at minimum. */
 int readQualityThreshold = 35;
 
@@ -125,7 +125,7 @@ int format; // used by ContigProperties
 
 }
 
-static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:q:eS:U:v";
+static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:a:q:eS:U:v";
 
 enum
 {
@@ -146,6 +146,7 @@ static const struct option longopts[] = {
 	{ "max-tests", required_argument, NULL, 'M' },
 	{ "branching", required_argument, NULL, 'n' },
 	{ "rmer", required_argument, NULL, 'r' },
+	{ "approx-factor", required_argument, NULL, 'a' },
 	{ "quality-threshold", required_argument, NULL, 'q' },
 	{ "error-correction", no_argument, &opt::errorCorrection, 1 },
 	{ "supported", required_argument, NULL, 'S' },
@@ -316,6 +317,11 @@ main(int argc, char** argv)
 		  int r;
 			arg >> r;
 			opt::rValues.push_back(r);
+			break;
+		case 'a':
+			double a;
+			arg >> a;
+			opt::covApproxFactors.push_back(a);
 			break;
 		case 'q':
 		  arg >> opt::readQualityThreshold;

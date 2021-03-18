@@ -63,6 +63,9 @@ extern int branching;
 /** Explicitly specified r values. */
 extern std::vector<int> rValues;
 
+/** Explicitly set coverage approximation factors. */
+extern std::vector<double> covApproxFactors;
+
 /** Base pair quality threshold that large k-mers bases should have at minimum. */
 extern int readQualityThreshold;
 
@@ -167,6 +170,7 @@ class ReadSize
 	std::vector<int> rValues;
 	Histogram qualThresholdPositions;
 	long sampleCount = 0;
+	double covApproxFactor = COV_APPROX_FORMULA_FACTOR;
 
 	static long readsSampleSize;
 	static std::vector<ReadSize> readSizes;

@@ -204,7 +204,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 	for (size_t i = 0; i < ReadSize::readSizes.size(); i++) {
 		auto& batch = ReadSize::readSizes[i];
 		if (opt::rValues.size() > 0) {
-			if (i < ReadSize::readSizes.size() - opt::rValues.size()) { continue; }
+			if (int(i) >= int(opt::rValues.size())) { continue; }
 			const int r = opt::rValues[i - (ReadSize::readSizes.size() - opt::rValues.size())];
 			if (r <= int(opt::k)) {
 				std::cerr << "r size (" << r << ") must be larger than assembly k (" << opt::k << ")." << std::endl;
@@ -228,12 +228,30 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		for (size_t i = 0, j = 0; i < ReadSize::readSizes.size(); i++) {
 			j = 0;
 			for (auto r : ReadSize::readSizes[i].rValues) {
-				std::cerr << r << " (" << ReadSize::readSizes[i].size << +")";
+				std::cerr << r << " (" << ReadSize::readSizes[i].size << + ")";
 				if ((i < ReadSize::readSizes.size() - 1) ||
 				    (j < ReadSize::readSizes[i].rValues.size() - 1)) {
 					std::cerr << ", ";
 				}
 				j++;
+			}
+		}
+		std::cerr << '\n';
+	}
+
+	std::sort(opt::covApproxFactors.begin(), opt::covApproxFactors.end());
+	for (size_t i = 0; i < ReadSize::readSizes.size(); i++) {
+		auto& batch = ReadSize::readSizes[i];
+		if (int(i) < int(opt::covApproxFactors.size())) {
+			batch.covApproxFactor = opt::covApproxFactors[i];
+		}
+	}
+	if (opt::verbose) {
+		std::cerr << "Using coverage approximation factors: ";
+		for (size_t i = 0; i < ReadSize::readSizes.size(); i++) {
+			std::cerr << ReadSize::readSizes[i].covApproxFactor << " (" << ReadSize::readSizes[i].size << + ")";
+			if (i < ReadSize::readSizes.size() - 1) {
+				std::cerr << ", ";
 			}
 		}
 		std::cerr << '\n';
@@ -384,7 +402,7 @@ determinePathSupport(const ContigPath& path)
 	assert(repeatSize >= 2);
 
 	const long calculatedTests =
-	    std::round(expectedSpacingBetweenReads(path) * COV_APPROX_FORMULA_FACTOR + opt::threshold);
+	    std::round(expectedSpacingBetweenReads(path) * ReadSize::current.covApproxFactor + opt::threshold);
 	assert(calculatedTests >= 0);
 
 	long requiredTests = calculatedTests;
