@@ -5,7 +5,7 @@
 #include "nthash.hpp"
 #include "status.hpp"
 
-#include "vendor/cpptoml.hpp"
+#include "external/cpptoml.hpp"
 
 #include <atomic>
 #include <climits>
@@ -25,13 +25,32 @@ static const char* const KMER_COUNTING_BLOOM_FILTER_MAGIC_HEADER =
 template<typename T>
 class KmerCountingBloomFilter;
 
+/**
+ * Counting Bloom filter data structure. Provides CountingBloomFilter8,
+ * CountingBloomFilter16, and CountingBloomFilter32 classes with corresponding
+ * bit-size counters.
+ */
 template<typename T>
 class CountingBloomFilter
 {
 
 public:
+  /** Construct a dummy Kmer Bloom filter (e.g. as a default argument). */
   CountingBloomFilter() {}
+
+  /**
+   * Construct an empty Counting Bloom filter of given size.
+   *
+   * @param bytes Filter size in bytes.
+   * @param hash_num Number of hash values per element.
+   */
   CountingBloomFilter(size_t bytes, unsigned hash_num);
+
+  /**
+   * Load a Counting Bloom filter from a file.
+   *
+   * @param path Filepath to load from.
+   */
   explicit CountingBloomFilter(const std::string& path);
 
   ~CountingBloomFilter() { delete[] array; }
@@ -42,24 +61,58 @@ public:
   CountingBloomFilter& operator=(const CountingBloomFilter&) = delete;
   CountingBloomFilter& operator=(CountingBloomFilter&&) = delete;
 
+  /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   */
   void insert(const uint64_t* hashes);
+
+  /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer vector of hash values.
+   */
   void insert(const std::vector<uint64_t>& hashes) { insert(hashes.data()); }
 
+  /**
+   * Check for the presence of an element's hash values.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   *
+   * @return The count of the queried element.
+   */
   T contains(const uint64_t* hashes) const;
+
+  /**
+   * Check for the presence of an element's hash values.
+   *
+   * @param hashes Integer vector of hash values.
+   *
+   * @return The count of the queried element.
+   */
   T contains(const std::vector<uint64_t>& hashes) const
   {
     return contains(hashes.data());
   }
 
+  /** Get filter size in bytes. */
   size_t get_bytes() const { return bytes; }
+  /** Get population count, i.e. the number of counters >0 in the filter. */
   uint64_t get_pop_cnt() const;
+  /** Get the fraction of the filter occupied by >1 counters. */
   double get_occupancy() const;
+  /** Get the number of hash values per element. */
   unsigned get_hash_num() const { return hash_num; }
+  /** Get the query false positive rate. */
   double get_fpr() const;
 
   /**
-   * Write bloom filter data to a file
-   * @param path output filepath
+   * Write the Bloom filter to a file that can be loaded in the future.
+   *
+   * @param path Filepath to store filter at.
    */
   void write(const std::string& path);
 
@@ -72,12 +125,33 @@ private:
   unsigned hash_num = 0;
 };
 
+/**
+ * Counting Bloom filter data structure stores k-mers. Provides
+ * KmerCountingBloomFilter8, KmerCountingBloomFilter16, and
+ * KmerCountingBloomFilter32 classes with corresponding bit-size counters.
+ */
 template<typename T>
 class KmerCountingBloomFilter
 {
 
 public:
+  /** Construct a dummy Kmer Bloom filter (e.g. as a default argument). */
+  KmerCountingBloomFilter() {}
+
+  /**
+   * Construct an empty Kmer Counting Bloom filter of given size.
+   *
+   * @param bytes Filter size in bytes.
+   * @param hash_num Number of hash values per element.
+   * @param k K-mer size.
+   */
   KmerCountingBloomFilter(size_t bytes, unsigned hash_num, unsigned k);
+
+  /**
+   * Load a Kmer Counting Bloom filter from a file.
+   *
+   * @param path Filepath to load from.
+   */
   explicit KmerCountingBloomFilter(const std::string& path);
 
   KmerCountingBloomFilter(const KmerCountingBloomFilter&) = delete;
@@ -86,36 +160,96 @@ public:
   KmerCountingBloomFilter& operator=(const KmerCountingBloomFilter&) = delete;
   KmerCountingBloomFilter& operator=(KmerCountingBloomFilter&&) = delete;
 
+  /**
+   * Insert a sequence's k-mers into the filter.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   */
   void insert(const char* seq, size_t seq_len);
+
+  /**
+   * Insert a sequence's k-mers into the filter.
+   *
+   * @param seq Sequence to k-merize.
+   */
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }
 
+  /**
+   * Query the presence of k-mers of a sequence.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   *
+   * @return The sum of counters of seq's k-mers found in the filter.
+   */
   uint64_t contains(const char* seq, size_t seq_len) const;
+
+  /**
+   * Query the presence of k-mers of a sequence.
+   *
+   * @param seq Sequence to k-merize.
+   *
+   * @return The sum of counters of seq's k-mers found in the filter.
+   */
   uint64_t contains(const std::string& seq) const
   {
     return contains(seq.c_str(), seq.size());
   }
 
+  /**
+   * Check for the presence of an element's hash values.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   *
+   * @return The count of the queried element.
+   */
   T contains(const uint64_t* hashes) const
   {
     counting_bloom_filter.contains(hashes);
   }
+
+  /**
+   * Check for the presence of an element's hash values.
+   *
+   * @param hashes Integer vector of hash values.
+   *
+   * @return The count of the queried element.
+   */
   T contains(const std::vector<uint64_t>& hashes) const
   {
     counting_bloom_filter.contains(hashes);
   }
 
+  /** Get filter size in bytes. */
   size_t get_bytes() const { return counting_bloom_filter.get_bytes(); }
+  /** Get population count, i.e. the number of counters >0 in the filter. */
   uint64_t get_pop_cnt() const { return counting_bloom_filter.get_pop_cnt(); }
+  /** Get the fraction of the filter occupied by >0 counters. */
   double get_occupancy() const { return counting_bloom_filter.get_occupancy(); }
+  /** Get the number of hash values per element. */
   unsigned get_hash_num() const { return counting_bloom_filter.get_hash_num(); }
+  /** Get the query false positive rate. */
   double get_fpr() const { return counting_bloom_filter.get_fpr(); }
+  /** Get the k-mer size used. */
   unsigned get_k() const { return k; }
+  /** Get a reference to the underlying vanilla Counting Bloom filter. */
+  CountingBloomFilter<T>& get_counting_bloom_filter()
+  {
+    return counting_bloom_filter;
+  }
 
+  /**
+   * Write the Bloom filter to a file that can be loaded in the future.
+   *
+   * @param path Filepath to store filter at.
+   */
   void write(const std::string& path);
 
 private:
   CountingBloomFilter<T> counting_bloom_filter;
-  unsigned k;
+  unsigned k = 0;
 };
 
 using CountingBloomFilter8 = CountingBloomFilter<uint8_t>;
@@ -189,7 +323,7 @@ inline uint64_t
 CountingBloomFilter<T>::get_pop_cnt() const
 {
   uint64_t pop_cnt = 0;
-#pragma omp parallel for reduction(+ : pop_cnt)
+#pragma omp parallel for default(none) reduction(+ : pop_cnt)
   for (size_t i = 0; i < array_size; ++i) {
     if (array[i] > 0) {
       ++pop_cnt;

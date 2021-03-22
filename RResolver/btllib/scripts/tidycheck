@@ -37,4 +37,4 @@ tidy_options="[
 
 files=$(scripts/get_include_files)
 clang-tidy -warnings-as-errors='*' -config="{Checks: '$tidy_checks', CheckOptions: $tidy_options}" $files -- \
--std=c++11 -Iinclude
+-std=c++11 -Iinclude $@

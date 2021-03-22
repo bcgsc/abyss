@@ -53,7 +53,11 @@ public class SeqWriter {
   }
 
   public void write(String name, String comment, String seq, String qual) {
-    btllibJNI.SeqWriter_write(swigCPtr, this, name, comment, seq, qual);
+    btllibJNI.SeqWriter_write__SWIG_0(swigCPtr, this, name, comment, seq, qual);
+  }
+
+  public void write(String name, String comment, String seq) {
+    btllibJNI.SeqWriter_write__SWIG_1(swigCPtr, this, name, comment, seq);
   }
 
   public final static class Format {

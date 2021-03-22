@@ -28,7 +28,9 @@ namespace btllib {
  * An example of reading a gzipped fastq file.
  */
 
-/** Read a FASTA, FASTQ, SAM, or GFA2 file. Threadsafe. */
+/** Read a FASTA, FASTQ, SAM, or GFA2 file. Capable of reading gzipped (.gz),
+ * bzipped (.bz2), xzipped (.xz), zipped (.zip), 7zipped (.7z), BAM (.bam) and
+ * CRAM (.cram), and URL (http://, https://, ftp://) files. Threadsafe. */
 class SeqReader
 {
 public:
@@ -40,18 +42,29 @@ public:
   {
     /** Fold lower-case characters to upper-case. */
     static const unsigned FOLD_CASE = 0;
+    /** Do not perform any case folding. May improve performance. */
     static const unsigned NO_FOLD_CASE = 1;
+    /** Do not preform any character trimming. May improve performance. */
+    static const unsigned NO_TRIM_MASKED = 0;
     /** Trim masked (lower case) characters from the ends of
      * sequences. */
-    static const unsigned NO_TRIM_MASKED = 0;
     static const unsigned TRIM_MASKED = 2;
+    /** Optimizes performance for short sequences (approx. <=5kbp) */
+    static const unsigned SHORT_MODE = 0;
+    /** Optimizes performance for long sequences (approx. >5kbp) */
+    static const unsigned LONG_MODE = 4;
   };
 
+  /**
+   * Construct a SeqReader to read sequences from a given path.
+   *
+   * @param source_path Filepath to read from. Pass "-" to read from stdin.
+   * @param flags Modifier flags.
+   * @param threads Maximum number of helper threads to use. Must be at least 1.
+   */
   SeqReader(const std::string& source_path,
             unsigned flags = 0,
-            unsigned threads = 3,
-            size_t buffer_size = 32,
-            size_t block_size = 32);
+            unsigned threads = 3);
 
   SeqReader(const SeqReader&) = delete;
   SeqReader(SeqReader&&) = delete;
@@ -65,6 +78,8 @@ public:
 
   bool fold_case() const { return bool(~flags & Flag::NO_FOLD_CASE); }
   bool trim_masked() const { return bool(flags & Flag::TRIM_MASKED); }
+  bool short_mode() const { return bool(~flags & Flag::LONG_MODE); }
+  bool long_mode() const { return bool(flags & Flag::LONG_MODE); }
 
   enum class Format
   {
@@ -104,6 +119,12 @@ private:
 
   static const size_t DETERMINE_FORMAT_CHARS = 2048;
   static const size_t BUFFER_SIZE = DETERMINE_FORMAT_CHARS;
+
+  static const size_t SHORT_MODE_BUFFER_SIZE = 32;
+  static const size_t SHORT_MODE_BLOCK_SIZE = 32;
+
+  static const size_t LONG_MODE_BUFFER_SIZE = 4;
+  static const size_t LONG_MODE_BLOCK_SIZE = 1;
 
   std::vector<char> buffer;
   size_t buffer_start = 0;
@@ -217,21 +238,20 @@ private:
 
 inline SeqReader::SeqReader(const std::string& source_path,
                             const unsigned flags,
-                            const unsigned threads,
-                            const size_t buffer_size,
-                            const size_t block_size)
+                            const unsigned threads)
   : source_path(source_path)
   , source(source_path)
   , flags(flags)
   , threads(threads)
   , buffer(std::vector<char>(BUFFER_SIZE))
   , reader_end(false)
-  , buffer_size(buffer_size)
-  , block_size(block_size)
+  , buffer_size(short_mode() ? SHORT_MODE_BUFFER_SIZE : LONG_MODE_BUFFER_SIZE)
+  , block_size(short_mode() ? SHORT_MODE_BLOCK_SIZE : LONG_MODE_BLOCK_SIZE)
   , cstring_queue(buffer_size, block_size)
   , output_queue(buffer_size, block_size)
   , id(++last_id())
 {
+  check_error(threads == 0, "SeqReader: Number of helper threads cannot be 0.");
   start_processor();
   {
     std::unique_lock<std::mutex> lock(format_mutex);

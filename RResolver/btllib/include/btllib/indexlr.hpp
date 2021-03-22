@@ -34,17 +34,33 @@ public:
    */
   struct Flag
   {
+    /** Include read ID along with minimizer information. */
     static const unsigned ID = 0;
+    /** Do not include read ID information. May improve performance. */
     static const unsigned NO_ID = 1;
+    /** Include barcode along with minimizer information. */
     static const unsigned BX = 2;
+    /** Do not include barcode information. May improve performance. */
     static const unsigned NO_BX = 0;
+    /** Include read sequence along with minimizer information. */
     static const unsigned SEQ = 4;
+    /** Do not include read sequence information. May improve performance. */
     static const unsigned NO_SEQ = 0;
+    /** Only include minimizers found in the first Bloom filter argument.
+     */
     static const unsigned FILTER_IN = 8;
+    /** Do not perform filter-in processing. */
     static const unsigned NO_FILTER_IN = 0;
+    /** Filter out minimizers found in a Bloom filter argument. If FILTER_IN is
+     * NOT enabled, then use the first Bloom filter argument. If both FILTER_IN
+     * and FILTER_OUT flags are enabled, FILTER_IN uses the first Bloom filter
+     * argument and FILTER_OUT uses the second. */
     static const unsigned FILTER_OUT = 16;
+    /** Do not perform filter-out processing. */
     static const unsigned NO_FILTER_OUT = 0;
+    /** Optimizes performance for short sequences (approx. <=5kbp) */
     static const unsigned SHORT_MODE = 0;
+    /** Optimizes performance for long sequences (approx. >5kbp) */
     static const unsigned LONG_MODE = 32;
   };
 
@@ -55,23 +71,6 @@ public:
   bool filter_out() const { return bool(flags & Flag::FILTER_OUT); }
   bool short_mode() const { return bool(~flags & Flag::LONG_MODE); }
   bool long_mode() const { return bool(flags & Flag::LONG_MODE); }
-
-  struct Read
-  {
-    Read() {}
-
-    Read(size_t num, std::string id, std::string comment, std::string seq)
-      : num(num)
-      , id(std::move(id))
-      , comment(std::move(comment))
-      , seq(std::move(seq))
-    {}
-
-    size_t num = 0;
-    std::string id;
-    std::string comment;
-    std::string seq;
-  };
 
   struct Minimizer
   {
@@ -104,16 +103,19 @@ public:
     Record(size_t num,
            std::string id,
            std::string barcode,
+           size_t readlen,
            std::vector<Minimizer> minimizers)
       : num(num)
       , id(std::move(id))
       , barcode(std::move(barcode))
+      , readlen(readlen)
       , minimizers(std::move(minimizers))
     {}
 
     size_t num = 0;
     std::string id;
     std::string barcode;
+    size_t readlen = 0;
     std::vector<Minimizer> minimizers;
 
     operator bool() const { return !id.empty() || !barcode.empty(); }
@@ -134,13 +136,30 @@ public:
 
   static const size_t MAX_SIMULTANEOUS_INDEXLRS = 256;
 
+private:
   static const size_t SHORT_MODE_BUFFER_SIZE = 32;
   static const size_t SHORT_MODE_BLOCK_SIZE = 32;
 
   static const size_t LONG_MODE_BUFFER_SIZE = 4;
   static const size_t LONG_MODE_BLOCK_SIZE = 1;
 
-private:
+  struct Read
+  {
+    Read() {}
+
+    Read(size_t num, std::string id, std::string comment, std::string seq)
+      : num(num)
+      , id(std::move(id))
+      , comment(std::move(comment))
+      , seq(std::move(seq))
+    {}
+
+    size_t num = 0;
+    std::string id;
+    std::string comment;
+    std::string seq;
+  };
+
   static std::string extract_barcode(const std::string& id,
                                      const std::string& comment);
   std::vector<Minimizer> minimize(const std::string& seq) const;
@@ -160,8 +179,8 @@ private:
     return VAR;
   }
 
-  const std::reference_wrapper<const BloomFilter> bf1;
-  const std::reference_wrapper<const BloomFilter> bf2;
+  const std::reference_wrapper<const BloomFilter> filter_in_bf;
+  const std::reference_wrapper<const BloomFilter> filter_out_bf;
   bool filter_in_enabled;
   bool filter_out_enabled;
 
@@ -282,13 +301,16 @@ inline Indexlr::Indexlr(std::string seqfile,
   , id(++last_id())
   , buffer_size(short_mode() ? SHORT_MODE_BUFFER_SIZE : LONG_MODE_BUFFER_SIZE)
   , block_size(short_mode() ? SHORT_MODE_BLOCK_SIZE : LONG_MODE_BLOCK_SIZE)
-  , bf1(bf1)
-  , bf2(bf2)
+  , filter_in_bf(filter_in() ? bf1 : Indexlr::dummy_bf())
+  , filter_out_bf(filter_out() ? filter_in() ? bf2 : bf1 : Indexlr::dummy_bf())
   , filter_in_enabled(filter_in())
   , filter_out_enabled(filter_out())
   , input_queue(buffer_size, block_size)
   , output_queue(buffer_size, block_size)
-  , reader(this->seqfile, 0, 3, buffer_size, block_size)
+  , reader(this->seqfile,
+           short_mode() ? SeqReader::Flag::SHORT_MODE
+                        : SeqReader::Flag::LONG_MODE,
+           3)
   , input_worker(*this)
   , minimize_workers(
       std::vector<MinimizeWorker>(threads, MinimizeWorker(*this)))
@@ -381,15 +403,16 @@ Indexlr::minimize(const std::string& seq) const
     if (filter_in() && filter_out()) {
       std::vector<uint64_t> tmp;
       tmp = { hk.min_hash };
-      if (!bf1.get().contains(tmp) || bf2.get().contains(tmp)) {
+      if (!filter_in_bf.get().contains(tmp) ||
+          filter_out_bf.get().contains(tmp)) {
         hk.min_hash = std::numeric_limits<uint64_t>::max();
       }
     } else if (filter_in()) {
-      if (!bf1.get().contains({ hk.min_hash })) {
+      if (!filter_in_bf.get().contains({ hk.min_hash })) {
         hk.min_hash = std::numeric_limits<uint64_t>::max();
       }
     } else if (filter_out()) {
-      if (bf1.get().contains({ hk.min_hash })) {
+      if (filter_out_bf.get().contains({ hk.min_hash })) {
         hk.min_hash = std::numeric_limits<uint64_t>::max();
       }
     }
@@ -514,6 +537,7 @@ Indexlr::MinimizeWorker::work()
     if (indexlr.output_bx()) {
       record.barcode = indexlr.extract_barcode(record.id, read.comment);
     }
+    record.readlen = read.seq.size();
 
     check_info(indexlr.verbose && indexlr.k > read.seq.size(),
                "Indexlr: skipped seq " + std::to_string(read.num) +

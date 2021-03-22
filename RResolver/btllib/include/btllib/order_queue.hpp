@@ -189,7 +189,7 @@ protected:
     }                                                                          \
                                                                                \
   private:                                                                     \
-    MEMBERS; /* NOLINT */                                                      \
+    MEMBERS /* NOLINT */                                                       \
   };
 
 ORDER_QUEUE_XPXC(SPSC, , , , notify_one, , , , notify_one, )
@@ -211,7 +211,7 @@ ORDER_QUEUE_XPXC(SPMC,
                  ,
                  read_lock.unlock(),
                  notify_one,
-                 std::mutex read_mutex)
+                 std::mutex read_mutex;)
 ORDER_QUEUE_XPXC(MPMC,
                  ,
                  &&(num - target.last_tenant <= this->queue_size),
@@ -221,7 +221,7 @@ ORDER_QUEUE_XPXC(MPMC,
                  ,
                  read_lock.unlock(),
                  notify_all,
-                 std::mutex read_mutex)
+                 std::mutex read_mutex;)
 
 #undef ORDER_QUEUE_XPXC
 

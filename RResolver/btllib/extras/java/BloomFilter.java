@@ -84,12 +84,12 @@ public class BloomFilter {
     return btllibJNI.BloomFilter_get_fpr(swigCPtr, this);
   }
 
-  public static SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t parse_header(SWIGTYPE_p_std__ifstream file, String magic_string) {
-    return new SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t(btllibJNI.BloomFilter_parse_header(SWIGTYPE_p_std__ifstream.getCPtr(file), magic_string), true);
-  }
-
   public void write(String path) {
     btllibJNI.BloomFilter_write(swigCPtr, this, path);
+  }
+
+  public static SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t parse_header(SWIGTYPE_p_std__ifstream file, String magic_string) {
+    return new SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t(btllibJNI.BloomFilter_parse_header(SWIGTYPE_p_std__ifstream.getCPtr(file), magic_string), true);
   }
 
 }

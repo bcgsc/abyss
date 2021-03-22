@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+cd "${MESON_SOURCE_ROOT}/external/sdsl-lite"
+sed -i 's~^\(.*\) -DCMAKE_POSITION_INDEPENDENT_CODE=ON \(.*\)$~\1 \2~' install.sh
+sed -i 's~^cmake\(.*\) \.\.~cmake\1 -DCMAKE_POSITION_INDEPENDENT_CODE=ON ..~' install.sh
+./install.sh installdir

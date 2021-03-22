@@ -100,8 +100,8 @@ public class SeedBloomFilter {
     return new SWIGTYPE_p_std__vectorT_std__string_t(btllibJNI.SeedBloomFilter_get_seeds(swigCPtr, this), false);
   }
 
-  public SWIGTYPE_p_std__vectorT_std__vectorT_unsigned_int_t_t get_parsed_seeds() {
-    return new SWIGTYPE_p_std__vectorT_std__vectorT_unsigned_int_t_t(btllibJNI.SeedBloomFilter_get_parsed_seeds(swigCPtr, this), false);
+  public SWIGTYPE_p_std__vectorT_SpacedSeed_t get_parsed_seeds() {
+    return new SWIGTYPE_p_std__vectorT_SpacedSeed_t(btllibJNI.SeedBloomFilter_get_parsed_seeds(swigCPtr, this), false);
   }
 
   public long get_hash_num_per_seed() {

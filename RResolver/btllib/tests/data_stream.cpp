@@ -24,7 +24,7 @@ main()
 
   std::cerr << "Test .gz read" << std::endl;
   auto gz_source = btllib::DataSource(gz_filename);
-  getline(&line, &line_len, gz_source);
+  assert(getline(&line, &line_len, gz_source) > 0);
   gz_source.close();
   assert(strcmp(line, txt) == 0);
 
@@ -40,7 +40,7 @@ main()
 
   std::cerr << "Test .xz read" << std::endl;
   auto xz_source = btllib::DataSource(xz_filename);
-  getline(&line, &line_len, xz_source);
+  assert(getline(&line, &line_len, xz_source) > 0);
   xz_source.close();
   assert(strcmp(line, txt) == 0);
 

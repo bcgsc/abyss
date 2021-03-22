@@ -9,6 +9,6 @@ cd "${MESON_BUILD_ROOT}"
 
 set -e
 
-ninja format wrap tidycheck cppcheck
+ninja build-sdsl format wrap tidycheck cppcheck
 ninja test
 ninja docs
