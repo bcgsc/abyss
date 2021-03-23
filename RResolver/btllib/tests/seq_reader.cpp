@@ -1,11 +1,13 @@
-#include "../include/btllib/seq_reader.hpp"
+#include "btllib/seq_reader.hpp"
 
 #include "helpers.hpp"
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstdio>
 #include <fstream>
+#include <random>
 #include <string>
 
 #include <omp.h>
@@ -23,33 +25,34 @@ main()
     size_t i;
     btllib::SeqReader::Record record;
 
-    // Test FASTA
-    std::cerr << "Test FASTA" << std::endl;
+    // Test FASTA and FASTQ (simultaneously)
+    std::cerr << "Test FASTA and FASTQ" << std::endl;
     btllib::SeqReader reader_fasta("../tests/input.fa.gz.bz2.xz");
-    assert(reader_fasta.get_format() == btllib::SeqReader::Format::FASTA);
-
-    i = 0;
-    while ((record = reader_fasta.read())) {
-      assert(record.seq == seqs[i]);
-      assert(record.qual.empty());
-
-      i++;
-    }
-    assert(i == 2);
-
-    // Test FASTQ
-    std::cerr << "Test FASTQ" << std::endl;
     btllib::SeqReader reader_fastq("../tests/input.fq.tar.xz");
+
+    assert(reader_fasta.get_format() == btllib::SeqReader::Format::FASTA);
     assert(reader_fastq.get_format() == btllib::SeqReader::Format::FASTQ);
 
     i = 0;
-    while ((record = reader_fastq.read())) {
-      assert(record.seq == seqs[i]);
-      assert(record.qual == quals[i]);
+    bool success_fasta = false, success_fastq = false;
+    for (;;) {
+      if ((success_fasta = (record = reader_fasta.read()))) {
+        assert(record.seq == seqs[i]);
+        assert(record.qual.empty());
+      }
 
-      i++;
+      if ((success_fastq = (record = reader_fastq.read()))) {
+        assert(record.seq == seqs[i]);
+        assert(record.qual == quals[i]);
+      }
+
+      if (++i == 3) {
+        assert(success_fasta == false && success_fastq == false);
+        break;
+      } else {
+        assert(success_fasta == true && success_fastq == true);
+      }
     }
-    assert(i == 2);
 
     // Test SAM
     std::cerr << "Test SAM" << std::endl;
@@ -88,14 +91,16 @@ main()
     random_filename = get_random_name(64);
     std::ofstream random_seqs(random_filename);
     for (int s = 0; s < 500; s++) {
-      std::string name, comment, seq, qual;
+      std::string name, comment_spaces, comment, seq, qual;
 
       name = get_random_name(10);
+      comment_spaces = std::string(get_random(1, 10), ' ');
       comment = get_random_name(20);
-      seq = get_random_sequence(200 + s);
-      qual = get_random_name(200 + s);
+      size_t seq_size = get_random(100, 2000);
+      seq = get_random_seq(seq_size);
+      qual = get_random_name(seq_size);
 
-      random_seqs << '@' << name << ' ' << comment << '\n'
+      random_seqs << '@' << name << comment_spaces << comment << '\n'
                   << seq << "\n+\n"
                   << qual << '\n';
 

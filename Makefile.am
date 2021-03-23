@@ -54,6 +54,7 @@ SUBDIRS = \
 	FilterGraph \
 	GapFiller \
 	Sealer \
+	RResolver \
 	AdjList \
 	vendor \
 	$(GTest) \

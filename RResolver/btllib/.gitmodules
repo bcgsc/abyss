@@ -1,0 +1,3 @@
+[submodule "external/sdsl-lite"]
+	path = external/sdsl-lite
+	url = https://github.com/simongog/sdsl-lite

@@ -1,3 +1,6 @@
+/**
+ * Functions for sequence manipulation.
+ */
 #ifndef BTLLIB_SEQ_HPP
 #define BTLLIB_SEQ_HPP
 
@@ -74,15 +77,28 @@ static const char CAPITALS[256] = {
 };
 // clang-format on
 
+/**
+ * Reverse complement a sequence in-place.
+ *
+ * @param seq Sequence to reverse complement.
+ */
 inline void
 reverse_complement(std::string& seq)
 {
   std::reverse(seq.begin(), seq.end());
   std::transform(seq.begin(), seq.end(), seq.begin(), [](char c) {
-    return COMPLEMENTS[unsigned(c)];
+    return COMPLEMENTS[(unsigned char)(c)];
   });
 }
 
+/**
+ * Obtain a reverse complement of the provided sequence. The argument sequence
+ * is left untouched.
+ *
+ * @param seq Sequence to reverse complement.
+ *
+ * @return Reverse complemented sequence.
+ */
 inline std::string
 get_reverse_complement(const std::string& seq)
 {

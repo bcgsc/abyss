@@ -1,5 +1,5 @@
 AC_PREREQ(2.62)
-AC_INIT(ABySS, 2.2.5, abyss-users@bcgsc.ca, abyss,
+AC_INIT(ABySS, 2.2.6, abyss-users@bcgsc.ca, abyss,
 		http://www.bcgsc.ca/platform/bioinfo/software/abyss)
 
 AC_CONFIG_MACRO_DIR([m4])
@@ -309,6 +309,7 @@ AC_CONFIG_FILES([
 	GapFiller/Makefile
 	Sealer/Makefile
 	vendor/gtest-1.7.0/Makefile
+	RResolver/Makefile
 	Unittest/Makefile
 	LogKmerCount/Makefile
 	Bloom/Makefile
