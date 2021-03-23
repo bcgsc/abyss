@@ -16,7 +16,7 @@
 #include <sstream>
 #include <string>
 
-#define PROGRAM "rresolver-short"
+#define PROGRAM "abyss-rresolver-short"
 
 static const char VERSION_MESSAGE[] =
     PROGRAM " (" PACKAGE_NAME ") " VERSION "\n"
