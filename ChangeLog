@@ -1,3 +1,10 @@
+2021-03-22 Vladimir Nikolic <vnikolic@bcgsc.ca>
+
+  * Release version 2.3.0
+
+	General:
+	* The RResolver algorithm is now part of the default pipeline. RResolver resolves repeats using short reads and generates assemblies with better contiguity and often fewer misassemblies.
+
 2020-09-17  Johnathan Wong <jowong@bcgsc.ca>
 
 	* Release version 2.2.5
