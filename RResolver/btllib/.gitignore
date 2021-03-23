@@ -1,7 +1,0 @@
-build/
-*.class
-*.jar
-python/
-!extras/python/
-java/
-!extras/java/

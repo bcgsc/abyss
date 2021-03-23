@@ -10,7 +10,15 @@
 
 namespace btllib {
 
-/** Write FASTA or FASTQ sequences to a file. Threadsafe. */
+/**
+ * @example seq_writer.cpp
+ * An example of writing a gzipped fastq file.
+ */
+
+/** Write FASTA or FASTQ sequences to a file. Capable of writing gzipped (.gz),
+ * bzipped (.bz2), xzipped (.xz), zipped (.zip), and 7zipped (.7z) files. Add
+ * the appropriate extension to the output filename to automatically compress.
+ * Threadsafe. */
 class SeqWriter
 {
 
@@ -21,6 +29,13 @@ public:
     FASTQ
   };
 
+  /**
+   * Construct a SeqWriter to write sequences to a given path.
+   *
+   * @param source_path Filepath to write to. Pass "-" to write to stdout.
+   * @param format Which format to write the output as.
+   * @param append Whether to append to the target file or write anew.
+   */
   SeqWriter(const std::string& sink_path,
             Format format = FASTA,
             bool append = false);
@@ -30,7 +45,7 @@ public:
   void write(const std::string& name,
              const std::string& comment,
              const std::string& seq,
-             const std::string& qual);
+             const std::string& qual = "");
 
 private:
   const std::string sink_path;
@@ -68,7 +83,7 @@ SeqWriter::write(const std::string& name,
 {
   check_error(seq.empty(), "Attempted to write empty sequence.");
   for (const auto& c : seq) {
-    if (!bool(COMPLEMENTS[unsigned(c)])) {
+    if (!bool(COMPLEMENTS[(unsigned char)(c)])) {
       log_error(std::string("A sequence contains invalid IUPAC character: ") +
                 c);
       std::exit(EXIT_FAILURE);
@@ -85,8 +100,8 @@ SeqWriter::write(const std::string& name,
   if (!comment.empty()) {
     output += " ";
     output += comment;
-    output += '\n';
   }
+  output += '\n';
 
   output += seq;
   output += '\n';
@@ -101,7 +116,8 @@ SeqWriter::write(const std::string& name,
 
   {
     std::unique_lock<std::mutex> lock(mutex);
-    fwrite(output.c_str(), 1, output.size(), sink);
+    check_error(fwrite(output.c_str(), 1, output.size(), sink) != output.size(),
+                "SeqWriter: fwrite failed.");
   }
 }
 
