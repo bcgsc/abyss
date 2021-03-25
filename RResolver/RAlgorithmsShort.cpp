@@ -272,7 +272,7 @@ testSequence(const Sequence& sequence)
 		int offset = 0;
 		if (opt::errorCorrection) {
 			btllib::NtHash nthash(sequence, r, g_vanillaBloom->get_hash_num());
-			for (const auto hitSeeds : g_spacedSeedsBloom->contains(sequence)) {
+			for (const auto& hitSeeds : g_spacedSeedsBloom->contains(sequence)) {
 				nthash.roll();
 				if (hitSeeds.size() > 0) {
 					nthash.sub({}, {});
@@ -280,7 +280,7 @@ testSequence(const Sequence& sequence)
 						found++;
 					} else {
 						bool success = false;
-						for (const auto hitSeed : hitSeeds) {
+						for (const auto& hitSeed : hitSeeds) {
 							const auto seed = g_spacedSeedsBloom->get_parsed_seeds()[hitSeed];
 							for (auto seedIt =
 							         (seed.begin() +
