@@ -107,7 +107,7 @@ jobs:
 
 - job: linux_clang10
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: Ubuntu 18.04
   steps:
   - script: |
       sudo apt-get update -qq
