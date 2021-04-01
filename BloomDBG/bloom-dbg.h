@@ -22,6 +22,7 @@
 #include "Graph/ExtendPath.h"
 #include "Graph/Path.h"
 #include "vendor/btl_bloomfilter/BloomFilter.hpp"
+#include "vendor/btl_bloomfilter/CountingBloomFilter.hpp"
 
 #include <cmath>
 #include <iomanip>
@@ -77,6 +78,33 @@ allKmersInBloom(const Sequence& seq, const BloomT& bloom)
 }
 
 /**
+ * Return true if all of the sentinel k-mers in `seq` are contained in `bloom`
+ * and false otherwise.
+ */
+template<typename BloomT, typename CountingBloomT>
+inline static bool
+allKmersInBloom(const Sequence& seq, const BloomT& bloom, const CountingBloomT& solid)
+{
+	const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	assert(seq.length() >= k);
+	unsigned validKmers = 0;
+	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end();
+	     ++it, ++validKmers) {
+		// singleton kmers are not used in assembly but remains in the sequence
+		// check if kmer is sentinel (not singleton) before seeing if it is assembled
+	    if (solid.contains(*it)) {
+			if (!bloom.contains(*it))
+				return false;
+		}
+	}
+	/* if we skipped over k-mers containing non-ACGT chars */
+	if (validKmers < seq.length() - k + 1)
+		return false;
+	return true;
+}
+
+/**
  * Add all k-mers of a DNA sequence to a Bloom filter.
  */
 template<typename BloomT>
@@ -89,6 +117,23 @@ addKmersToBloom(const Sequence& seq, BloomT& bloom)
 		bloom.insert(*it);
 	}
 }
+
+/**
+ * Add all k-mers of a DNA sequence to a Bloom filter.
+ */
+template<typename BloomT, typename CountingBloomT>
+inline static void
+addKmersToBloom(const Sequence& seq, BloomT& bloom, const CountingBloomT& solid)
+{
+	const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end(); ++it) {
+		if (solid.contains(*it)) {
+			bloom.insert(*it);
+		}
+	}
+}
+
 
 /**
  * Returns the sum of all kmer multiplicities in `seq` by querying `bloom`
@@ -121,6 +166,36 @@ seqToPath(const Sequence& seq, unsigned k, unsigned numHashes)
 		path.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
 	}
 	return path;
+}
+
+/**
+ * Translate a DNA sequence to an equivalent path in the
+ * de Bruijn graph.
+ */
+template<typename CountingBloomT>
+inline static std::pair<Path<Vertex>, Path<Vertex>>
+longSeqToPath(const Sequence& seq, unsigned k, unsigned numHashes, const CountingBloomT& bloom)
+{
+	Path<Vertex> contigPath, sentinelPath;
+	assert(seq.length() >= k);
+	bool sentinelFound = false, currSentinel = false;
+	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end(); ++it) {
+		if (bloom.contains(*it)) {
+			sentinelFound = true;
+			currSentinel = true;
+		}
+		if(sentinelFound) {
+			contigPath.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
+			if (currSentinel) {
+				sentinelPath.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
+			}
+		}
+		currSentinel = false;
+	}
+	while (contigPath[contigPath.size() - 1] != sentinelPath[sentinelPath.size() - 1]) {
+		contigPath.pop_back();
+	}
+	return std::make_pair(contigPath, sentinelPath);
 }
 
 /**
@@ -624,6 +699,95 @@ enum ContigType
 	CT_HAIRPIN
 };
 
+/**
+ * Output a contig sequence if it is not redundant, i.e. it has not already
+ * been generated from a different read / thread of execution.
+ */
+template<typename SolidKmerSetT, typename AssembledKmerSetT, typename AssemblyStreamsT>
+inline static void
+outputLongContig(
+    const Path<Vertex>& contigPath,
+    ContigRecord& rec,
+    SolidKmerSetT& solidKmerSet,
+    AssembledKmerSetT& assembledKmerSet,
+    KmerHash& contigEndKmers,
+    const AssemblyParams& params,
+    AssemblyCounters& counters,
+    AssemblyStreamsT& streams)
+{
+	const unsigned fpLookAhead = 5;
+
+	Sequence seq = pathToSeq(contigPath, params.k);
+
+	/* vertices representing start/end k-mers of contig */
+
+	Sequence kmer1 = seq.substr(0, params.k);
+	canonicalize(kmer1);
+	RollingHash hash1(kmer1.c_str(), params.numHashes, params.k);
+	Vertex v1(kmer1.c_str(), hash1);
+
+	Sequence kmer2 = seq.substr(seq.length() - params.k);
+	canonicalize(kmer2);
+	RollingHash hash2(kmer2.c_str(), params.numHashes, params.k);
+	Vertex v2(kmer2.c_str(), hash2);
+
+	bool redundant = false;
+#pragma omp critical(redundancyCheck)
+	{
+		/*
+		 * If we use `assembledKmerSet` to check very short contigs,
+		 * we may get full-length matches purely due to Bloom filter
+		 * positives.  For such contigs, we additionally track
+		 * the start and end in a separate hash table called
+		 * `contigEndKmers`.
+		 */
+		if (seq.length() < params.k + fpLookAhead - 1) {
+
+			if (contigEndKmers.find(v1) != contigEndKmers.end() &&
+			    contigEndKmers.find(v2) != contigEndKmers.end()) {
+				redundant = true;
+			} else {
+				contigEndKmers.insert(v1);
+				contigEndKmers.insert(v2);
+			}
+
+		} else if (allKmersInBloom(seq, assembledKmerSet, solidKmerSet)) {
+			redundant = true;
+		}
+
+		if (!redundant) {
+
+			/* mark remaining k-mers as assembled */
+			addKmersToBloom(seq, assembledKmerSet, solidKmerSet);
+		}
+	}
+	rec.redundant = redundant;
+
+	if (!redundant) {
+#pragma omp critical(fasta)
+		{
+			rec.length = seq.length();
+			rec.coverage = getSeqAbsoluteKmerCoverage(seq, solidKmerSet);
+
+			/* add contig to output FASTA */
+			printContig(seq, rec.length, rec.coverage, counters.contigID, rec.readID, params.k, streams.out);
+
+			/* add contig to checkpoint FASTA file */
+			if (params.checkpointsEnabled())
+				printContig(seq, rec.length, rec.coverage, counters.contigID, rec.readID, params.k, streams.checkpointOut);
+
+			rec.contigID = counters.contigID;
+
+			counters.contigID++;
+			counters.basesAssembled += seq.length();
+		}
+	}
+
+#pragma omp critical(trace)
+	streams.traceOut << rec;
+}
+
+
 template<typename GraphT>
 static inline ContigType
 getContigType(const Path<Vertex>& contigPath, const GraphT& dbg)
@@ -879,6 +1043,108 @@ processRead(
 	return ReadRecord(rec.id, RR_GENERATED_CONTIGS);
 }
 
+
+/**
+ * Decide if a read should be extended and if so extend it into a contig.
+ */
+template<typename SolidKmerSetT, typename AssembledKmerSetT, typename AssemblyStreamsT>
+static inline ReadRecord
+processReadLong(
+    FastaRecord& rec,
+    const SolidKmerSetT& solidKmerSet,
+    AssembledKmerSetT& assembledKmerSet,
+    KmerHash& contigEndKmers,
+    KmerHash& visitedBranchKmers,
+    const AssemblyParams& params,
+    AssemblyCounters& counters,
+    AssemblyStreamsT& streams)
+{
+	(void)visitedBranchKmers;
+
+	typedef typename Path<Vertex>::iterator PathIt;
+
+	/* Boost graph API for Bloom filter */
+	RollingBloomDBG<SolidKmerSetT> dbg(solidKmerSet);
+
+	unsigned k = params.k;
+	Sequence& seq = rec.seq;
+
+	/* we can't extend reads shorter than k */
+	if (seq.length() < k)
+		return ReadRecord(rec.id, RR_SHORTER_THAN_K);
+
+	/* skip reads with non-ACGT chars */
+	if (!allACGT(seq))
+		return ReadRecord(rec.id, RR_NON_ACGT);
+
+	/* don't extend reads that are tips */
+	if (hasBluntEnd(seq, dbg, params))
+		return ReadRecord(rec.id, RR_BLUNT_END);
+
+	/* only extend "solid" reads */
+	//if (!allKmersInBloom(seq, solidKmerSet))
+	//	return ReadRecord(rec.id, RR_NOT_SOLID);
+
+#pragma omp atomic
+	counters.solidReads++;
+
+	/* skip reads in previously assembled regions */
+	if (allKmersInBloom(seq, assembledKmerSet, solidKmerSet)) {
+#pragma omp atomic
+		counters.visitedReads++;
+		return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
+	}
+
+	/*
+	 * We use `assembledKmers` to track read k-mers
+	 * that have already been included in the output contigs, and
+	 * therefore do not need to be processed (extended) again.
+	 * Note that we do not use `assembledKmerSet` (a Bloom filter)
+	 * for this purpose because Bloom filter false positives
+	 * may cause us to omit short contigs (e.g. contigs with length k).
+	 */
+	unordered_set<Vertex> assembledKmers;
+
+	Path<Vertex> contigPath, sentinelPath;
+	boost::tie(contigPath, sentinelPath) = longSeqToPath(rec.seq, params.k, params.numHashes, solidKmerSet);
+
+	ExtendPathParams extendParams;
+	extendParams.trimLen = params.trim;
+	extendParams.fpTrim = 5;
+	extendParams.maxLen = NO_LIMIT;
+	extendParams.lookBehind = true;
+	extendParams.lookBehindStartVertex = false;
+
+	ContigRecord contigRec;
+	contigRec.readID = rec.id;
+	contigRec.seedType = ST_READ;
+	PathIt it = contigPath.begin();
+	contigRec.seed = it->kmer().c_str();
+
+	contigRec.leftExtensionResult = extendPath(contigPath, REVERSE, dbg, extendParams);
+
+	contigRec.rightExtensionResult = extendPath(contigPath, FORWARD, dbg, extendParams);
+
+	PathExtensionResultCode leftResult = contigRec.leftExtensionResult.second;
+	PathExtensionResultCode rightResult = contigRec.rightExtensionResult.second;
+
+	if (!isTip(contigPath.size(), leftResult, rightResult, params.trim)) {
+		/* selectively trim branch k-mers from contig ends */
+		trimBranchKmers(contigPath, dbg, params.trim);
+
+		/* output contig to FASTA file */
+		outputLongContig(
+			contigPath, contigRec, solidKmerSet, assembledKmerSet, contigEndKmers, params, counters, streams);
+	}
+
+	/* mark contig k-mers as visited */
+	for (PathIt it2 = sentinelPath.begin(); it2 != contigPath.end(); ++it2)
+		assembledKmers.insert(*it2);
+
+
+	return ReadRecord(rec.id, RR_GENERATED_CONTIGS);
+}
+
 /**
  * Perform a Bloom-filter-based de Bruijn graph assembly.
  * Contigs are generated by extending reads left/right within
@@ -902,7 +1168,7 @@ assemble(
     char** argv,
     SolidKmerSetT& solidKmerSet,
     const AssemblyParams& params,
-    std::ostream& out)
+    std::ostream& out, bool longMode = false)
 {
 	/* k-mers in previously assembled contigs */
 	BloomFilter assembledKmerSet(
@@ -945,7 +1211,7 @@ assemble(
 	AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut, readLogOut);
 
 	/* run the assembly */
-	assemble(solidKmerSet, assembledKmerSet, counters, params, streams);
+	assemble(solidKmerSet, assembledKmerSet, counters, params, streams, longMode);
 }
 
 /**
@@ -974,7 +1240,7 @@ assemble(
     AssembledKmerSetT& assembledKmerSet,
     AssemblyCounters& counters,
     const AssemblyParams& params,
-    AssemblyStreams<InputReadStreamT>& streams)
+    AssemblyStreams<InputReadStreamT>& streams, bool longMode = false)
 {
 	assert(params.initialized());
 
@@ -1028,7 +1294,9 @@ assemble(
 				break;
 
 			for (std::vector<FastaRecord>::iterator it = buffer.begin(); it != buffer.end(); ++it) {
-				ReadRecord result = processRead(
+				ReadRecord result;
+				if (longMode) {
+				result = processReadLong(
 				    *it,
 				    goodKmerSet,
 				    assembledKmerSet,
@@ -1037,6 +1305,17 @@ assemble(
 				    params,
 				    counters,
 				    streams);
+				} else {
+				result = processRead(
+				    *it,
+				    goodKmerSet,
+				    assembledKmerSet,
+				    contigEndKmers,
+				    visitedBranchKmers,
+				    params,
+				    counters,
+				    streams);
+				}
 
 #pragma omp critical(readsProgress)
 				{

@@ -125,7 +125,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:v";
+static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:vS:l";
 
 enum
 {
@@ -167,9 +167,11 @@ static const struct option longopts[] = {
 	{ "read-log", required_argument, NULL, READ_LOG },
 	{ "ref", required_argument, NULL, 'R' },
 	{ "spaced-seed", required_argument, NULL, 's' },
+	{ "solid-bf", required_argument, NULL, 'S' },
 	{ "trim-length", required_argument, NULL, 't' },
 	{ "trace-file", required_argument, NULL, 'T' },
 	{ "verbose", no_argument, NULL, 'v' },
+	{ "long", no_argument, NULL, 'l' },
 	{ "version", no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
 };
@@ -346,7 +348,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
  * Load the reads into a counting Bloom filter and do the assembly.
  */
 void
-countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out)
+countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out, bool longMode = false, std::string solid_path = "")
 {
 	/* init global vars for k-mer size and spaced seed pattern */
 
@@ -368,13 +370,19 @@ countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& par
 
 	CountingBloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
 
-	BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
-	if (params.verbose)
-		printCountingBloomStats(bloom, cerr);
+	if (longMode) {
+		BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose, solid_path);
+		if (params.verbose)
+			printCountingBloomStats(bloom, cerr);
 
+	} else {
+		BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose);
+		if (params.verbose)
+			printCountingBloomStats(bloom, cerr);
+	}
 	/* second pass through FASTA files for assembling */
 
-	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out);
+	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out, longMode);
 
 	/* write supplementary files (e.g. GraphViz) */
 
@@ -389,6 +397,8 @@ int
 main(int argc, char** argv)
 {
 	bool die = false;
+	bool longMode = false;
+	std::string solid_path = "";
 
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -445,6 +455,12 @@ main(int argc, char** argv)
 			break;
 		case 'v':
 			++params.verbose;
+			break;
+		case 'S':
+			arg >> solid_path;
+			break;
+		case 'l':
+			longMode = true;
 			break;
 		case OPT_HELP:
 			cout << USAGE_MESSAGE;
@@ -548,7 +564,7 @@ main(int argc, char** argv)
 	else if (!params.bloomPath.empty())
 		prebuiltBloomAssembly(argc, argv, params, out);
 	else
-		countingBloomAssembly(argc, argv, params, out);
+		countingBloomAssembly(argc, argv, params, out, longMode, solid_path);
 
 	/* cleanup */
 	if (!params.outputPath.empty())

@@ -41,6 +41,27 @@ loadSeq(BF& bloom, const std::string& seq)
 }
 
 /**
+ * Load DNA sequence into Bloom filter using rolling hash.
+ *
+ * @param bloom target Bloom filter
+ * @param seq DNA sequence
+ * @param solid filter in Bloom filter
+ */
+template<typename BF, typename BF2>
+inline static void
+loadSeq(BF& bloom, const std::string& seq, BF2& solid)
+{
+	const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end(); ++it) {
+		if (solid.contains(*it)) {
+			bloom.insert(*it);
+		}
+	}
+}
+
+
+/**
  * Load sequences contents of FASTA file into Bloom filter using
  * rolling hash.
  * @param bloom target Bloom filter
@@ -93,12 +114,60 @@ loadFile(BF& bloom, const std::string& path, bool verbose = false)
 	}
 }
 
+
+template<typename BF>
+inline static void
+loadFile(BF& bloom, const std::string& path, bool verbose, const BloomFilter& solid)
+{
+	const size_t BUFFER_SIZE = 1000000;
+	const size_t LOAD_PROGRESS_STEP = 10000;
+
+	assert(!path.empty());
+	if (verbose)
+		std::cerr << "Reading `" << path << "'..." << std::endl;
+
+	FastaReader in(path.c_str(), FastaReader::FOLD_CASE);
+	uint64_t readCount = 0;
+#pragma omp parallel
+	for (std::vector<std::string> buffer(BUFFER_SIZE);;) {
+		buffer.clear();
+		size_t bufferSize = 0;
+		bool good = true;
+#pragma omp critical(in)
+		for (; good && bufferSize < BUFFER_SIZE;) {
+			std::string seq;
+			good = in >> seq;
+			if (good) {
+				buffer.push_back(seq);
+				bufferSize += seq.length();
+			}
+		}
+		if (buffer.size() == 0)
+			break;
+		for (size_t j = 0; j < buffer.size(); j++) {
+			loadSeq(bloom, buffer.at(j), solid);
+			if (verbose)
+#pragma omp critical(cerr)
+			{
+				readCount++;
+				if (readCount % LOAD_PROGRESS_STEP == 0)
+					std::cerr << "Loaded " << readCount << " reads into Bloom filter\n";
+			}
+		}
+	}
+	assert(in.eof());
+	if (verbose) {
+		std::cerr << "Loaded " << readCount << " reads from `" << path << "` into Bloom filter\n";
+	}
+}
+
 /** Load FASTQ/FASTA/SAM/BAM files from command line into a Bloom filter */
 template<typename BloomFilterT>
 static inline void
-loadBloomFilter(int argc, char** argv, BloomFilterT& bloom, bool verbose = false)
+loadBloomFilter(int argc, char** argv, BloomFilterT& bloom, bool verbose = false, std::string solid_path = "")
 {
 	/* load reads into Bloom filter */
+	BloomFilter solid(solid_path);
 	for (int i = optind; i < argc; ++i) {
 		/*
 		 * Debugging feature: If there is a ':'
@@ -111,7 +180,11 @@ loadBloomFilter(int argc, char** argv, BloomFilterT& bloom, bool verbose = false
 			optind = i + 1;
 			break;
 		}
-		BloomDBG::loadFile(bloom, argv[i], verbose);
+		if (solid_path == "") {
+			BloomDBG::loadFile(bloom, argv[i], verbose);
+		} else {
+			BloomDBG::loadFile(bloom, argv[i], verbose, solid);
+		}
 	}
 	if (verbose)
 		cerr << "Bloom filter FPR: " << setprecision(3) << bloom.FPR() * 100 << "%" << endl;
