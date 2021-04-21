@@ -1,3 +1,11 @@
+2021-04-21 Vladimir Nikolic <vnikolic@bcgsc.ca>
+
+  * Release version 2.3.1
+
+	abyss-rresolver-short:
+  * Fixed a bug that crashed ABySS if Bloom filter size is not specified.
+  * Fixed a compilation error for clang-10.
+
 2021-03-22 Vladimir Nikolic <vnikolic@bcgsc.ca>
 
   * Release version 2.3.0
