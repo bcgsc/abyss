@@ -81,6 +81,96 @@ allKmersInBloom(const Sequence& seq, const BloomT& bloom)
  * Return true if all of the sentinel k-mers in `seq` are contained in `bloom`
  * and false otherwise.
  */
+template<typename BloomT>
+inline static bool
+allKmersInBloom(Path<Vertex>& seq, const BloomT& bloom)
+{
+	//const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	//assert(seq.length() >= k);
+	//unsigned validKmers = 0;
+	uint64_t hashes[numHashes];
+	for (Vertex& v : seq) {
+		// singleton kmers are not used in assembly but remains in the sequence
+		// check if kmer is sentinel (not singleton) before seeing if it is assembled
+		
+		
+		v.rollingHash().getHashes(hashes);
+		if (!bloom.contains(hashes))
+			return false;
+	}
+	/* if we skipped over k-mers containing non-ACGT chars */
+	//if (validKmers < seq.length() - k + 1)
+	//	return false;
+	return true;
+}
+
+template<typename BloomT>
+inline static bool
+allKmersInBloomLongAbs(Path<Vertex>& seq, const BloomT& bloom, const size_t min)
+{
+	//const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	//assert(seq.length() >= k);
+	//unsigned validKmers = 0;
+	uint32_t count = 0;
+	uint64_t hashes[numHashes];
+	for (Vertex& v : seq) {
+		// singleton kmers are not used in assembly but remains in the sequence
+		// check if kmer is sentinel (not singleton) before seeing if it is assembled
+		
+		
+		v.rollingHash().getHashes(hashes);
+		if (!bloom.contains(hashes)){
+			++count;
+			if (count > min) {
+				return false;
+			}
+		}
+			
+	}
+	/* if we skipped over k-mers containing non-ACGT chars */
+	//if (validKmers < seq.length() - k + 1)
+	//	return false;
+	return true;
+}
+
+template<typename BloomT>
+inline static bool
+allKmersInBloomLongPor(Path<Vertex>& seq, const BloomT& bloom, const double por)
+{
+	//const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	//assert(seq.length() >= k);
+	//unsigned validKmers = 0;
+	uint32_t min = seq.size() * por;
+	uint32_t count = 0;
+	uint64_t hashes[numHashes];
+	for (Vertex& v : seq) {
+		// singleton kmers are not used in assembly but remains in the sequence
+		// check if kmer is sentinel (not singleton) before seeing if it is assembled
+		
+		
+		v.rollingHash().getHashes(hashes);
+		if (!bloom.contains(hashes)){
+			++count;
+			if (count > min) {
+				return false;
+			}
+		}
+			
+	}
+	/* if we skipped over k-mers containing non-ACGT chars */
+	//if (validKmers < seq.length() - k + 1)
+	//	return false;
+	return true;
+}
+
+
+/**
+ * Return true if all of the sentinel k-mers in `seq` are contained in `bloom`
+ * and false otherwise.
+ */
 template<typename BloomT, typename CountingBloomT>
 inline static bool
 allKmersInBloom(const Sequence& seq, const BloomT& bloom, const CountingBloomT& solid)
@@ -174,17 +264,30 @@ seqToPath(const Sequence& seq, unsigned k, unsigned numHashes)
  */
 template<typename CountingBloomT>
 inline static std::pair<Path<Vertex>, Path<Vertex>>
-longSeqToPath(const Sequence& seq, unsigned k, unsigned numHashes, const CountingBloomT& bloom)
+longSeqToPath(Sequence& seq, unsigned k, unsigned numHashes, const CountingBloomT& bloom)
 {
 	Path<Vertex> contigPath, sentinelPath;
 	assert(seq.length() >= k);
-	bool sentinelFound = false, currSentinel = false;
+	unsigned min = bloom.threshold();
+	unsigned goldUpper = 50;
+	unsigned goldLower = 5;
+	bool goldilocksFound = false, currSentinel = false;
+	Vertex golidlocksVertex;
+	unsigned count;
 	for (RollingHashIterator it(seq, numHashes, k); it != RollingHashIterator::end(); ++it) {
-		if (bloom.contains(*it)) {
+		count = bloom.minCount(*it);
+		if (count >= min) {
+			currSentinel = true;
+			if (count >= goldLower && count <= goldUpper) {
+				goldilocksFound = true;
+				golidlocksVertex = Vertex(it.kmer().c_str(), it.rollingHash());
+			}
+		}
+		/*if (bloom.contains(*it)) {
 			sentinelFound = true;
 			currSentinel = true;
-		}
-		if(sentinelFound) {
+		}*/
+		if(goldilocksFound) {
 			contigPath.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
 			if (currSentinel) {
 				sentinelPath.push_back(Vertex(it.kmer().c_str(), it.rollingHash()));
@@ -192,8 +295,13 @@ longSeqToPath(const Sequence& seq, unsigned k, unsigned numHashes, const Countin
 		}
 		currSentinel = false;
 	}
-	while (contigPath[contigPath.size() - 1] != sentinelPath[sentinelPath.size() - 1]) {
-		contigPath.pop_back();
+	if(goldilocksFound) {
+		while (contigPath[contigPath.size() - 1] != golidlocksVertex) {
+			contigPath.pop_back();
+		}
+		while (sentinelPath[sentinelPath.size() - 1] != golidlocksVertex) {
+			sentinelPath.pop_back();
+		}
 	}
 	return std::make_pair(contigPath, sentinelPath);
 }
@@ -598,6 +706,20 @@ hasBluntEnd(const Sequence& seq, const GraphT& graph, const AssemblyParams& para
 		return true;
 
 	Sequence rc = reverseComplement(seq);
+	if (leftIsBluntEnd(rc, graph, params))
+		return true;
+
+	return false;
+}
+
+template<typename GraphT>
+inline static bool
+hasBluntEndLong(const Sequence& seq, const Sequence& seq1, const GraphT& graph, const AssemblyParams& params)
+{
+	if (leftIsBluntEnd(seq, graph, params))
+		return true;
+
+	Sequence rc = reverseComplement(seq1);
 	if (leftIsBluntEnd(rc, graph, params))
 		return true;
 
@@ -1057,7 +1179,10 @@ processReadLong(
     KmerHash& visitedBranchKmers,
     const AssemblyParams& params,
     AssemblyCounters& counters,
-    AssemblyStreamsT& streams)
+    AssemblyStreamsT& streams,
+	unsigned type,
+	size_t threshold,
+	double porportion)
 {
 	(void)visitedBranchKmers;
 
@@ -1078,22 +1203,15 @@ processReadLong(
 		return ReadRecord(rec.id, RR_NON_ACGT);
 
 	/* don't extend reads that are tips */
-	if (hasBluntEnd(seq, dbg, params))
-		return ReadRecord(rec.id, RR_BLUNT_END);
+	//if (hasBluntEnd(seq, dbg, params))
+	//	return ReadRecord(rec.id, RR_BLUNT_END);
 
 	/* only extend "solid" reads */
 	//if (!allKmersInBloom(seq, solidKmerSet))
 	//	return ReadRecord(rec.id, RR_NOT_SOLID);
 
-#pragma omp atomic
-	counters.solidReads++;
 
-	/* skip reads in previously assembled regions */
-	if (allKmersInBloom(seq, assembledKmerSet, solidKmerSet)) {
-#pragma omp atomic
-		counters.visitedReads++;
-		return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
-	}
+
 
 	/*
 	 * We use `assembledKmers` to track read k-mers
@@ -1106,7 +1224,33 @@ processReadLong(
 	unordered_set<Vertex> assembledKmers;
 
 	Path<Vertex> contigPath, sentinelPath;
+	//std::cerr << rec.id << std::endl;
 	boost::tie(contigPath, sentinelPath) = longSeqToPath(rec.seq, params.k, params.numHashes, solidKmerSet);
+	if (contigPath.size() > 0) {
+		#pragma omp atomic
+			counters.solidReads++;
+	} else {
+		return ReadRecord(rec.id, RR_SHORTER_THAN_K);
+	}
+
+	/* skip reads in previously assembled regions */
+	bool enough_solid_kmers = false;
+	if (type == 0) {
+		enough_solid_kmers = allKmersInBloomLongAbs(sentinelPath, assembledKmerSet, threshold);
+	} else if (type == 1) {
+		enough_solid_kmers = allKmersInBloomLongPor(sentinelPath, assembledKmerSet, porportion);
+	}
+
+	if (enough_solid_kmers) {
+#pragma omp atomic
+		counters.visitedReads++;
+		return ReadRecord(rec.id, RR_ALL_KMERS_VISITED);
+	}
+
+	if (hasBluntEndLong(std::string(contigPath.front().kmer().c_str()), std::string(contigPath.back().kmer().c_str()), dbg, params))
+		return ReadRecord(rec.id, RR_BLUNT_END);
+	//std::cerr << "checkpoint1" << std::endl;
+	size_t orig_length = contigPath.size();
 
 	ExtendPathParams extendParams;
 	extendParams.trimLen = params.trim;
@@ -1120,27 +1264,34 @@ processReadLong(
 	contigRec.seedType = ST_READ;
 	PathIt it = contigPath.begin();
 	contigRec.seed = it->kmer().c_str();
-
+	//std::cerr << "checkpoint2" << std::endl;
 	contigRec.leftExtensionResult = extendPath(contigPath, REVERSE, dbg, extendParams);
+	//std::cerr << "checkpoint3" << std::endl;
 
 	contigRec.rightExtensionResult = extendPath(contigPath, FORWARD, dbg, extendParams);
-
+	//std::cerr << "checkpoint4" << std::endl;
 	PathExtensionResultCode leftResult = contigRec.leftExtensionResult.second;
 	PathExtensionResultCode rightResult = contigRec.rightExtensionResult.second;
+
+
 
 	if (!isTip(contigPath.size(), leftResult, rightResult, params.trim)) {
 		/* selectively trim branch k-mers from contig ends */
 		trimBranchKmers(contigPath, dbg, params.trim);
-
+		//std::cerr << "checkpoint5" << std::endl;
 		/* output contig to FASTA file */
+		size_t extended_length = contigPath.size() - orig_length;
+		std::cerr << "extended:" << extended_length<< std::endl;
 		outputLongContig(
 			contigPath, contigRec, solidKmerSet, assembledKmerSet, contigEndKmers, params, counters, streams);
+		//std::cerr << "checkpoint6" << std::endl;
 	}
+	//std::cerr << "checkpoint7" << std::endl;
 
 	/* mark contig k-mers as visited */
-	for (PathIt it2 = sentinelPath.begin(); it2 != contigPath.end(); ++it2)
+	for (PathIt it2 = sentinelPath.begin(); it2 != sentinelPath.end(); ++it2)
 		assembledKmers.insert(*it2);
-
+	//std::cerr << "checkpoint8" << std::endl;
 
 	return ReadRecord(rec.id, RR_GENERATED_CONTIGS);
 }
@@ -1168,8 +1319,10 @@ assemble(
     char** argv,
     SolidKmerSetT& solidKmerSet,
     const AssemblyParams& params,
-    std::ostream& out, bool longMode = false)
+    std::ostream& out, bool longMode = false,
+	unsigned type = 0, size_t threshold = 0, double porportion = 0)
 {
+	//std::cerr << "checkpoint0" << std::endl;
 	/* k-mers in previously assembled contigs */
 	BloomFilter assembledKmerSet(
 	    solidKmerSet.size(), solidKmerSet.getHashNum(), solidKmerSet.getKmerSize());
@@ -1211,7 +1364,7 @@ assemble(
 	AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut, readLogOut);
 
 	/* run the assembly */
-	assemble(solidKmerSet, assembledKmerSet, counters, params, streams, longMode);
+	assemble(solidKmerSet, assembledKmerSet, counters, params, streams, longMode, type, threshold, porportion);
 }
 
 /**
@@ -1240,10 +1393,11 @@ assemble(
     AssembledKmerSetT& assembledKmerSet,
     AssemblyCounters& counters,
     const AssemblyParams& params,
-    AssemblyStreams<InputReadStreamT>& streams, bool longMode = false)
+    AssemblyStreams<InputReadStreamT>& streams, bool longMode = false,
+	unsigned type = 0, size_t threshold = 0, double porportion = 0)
 {
 	assert(params.initialized());
-
+	//std::cerr << "checkpoint0.1" << std::endl;
 	/* per-thread I/O buffer (size is in bases) */
 	const size_t SEQ_BUFFER_SIZE = 1000000;
 
@@ -1294,8 +1448,10 @@ assemble(
 				break;
 
 			for (std::vector<FastaRecord>::iterator it = buffer.begin(); it != buffer.end(); ++it) {
+				//std::cerr << "checkpoint0.2" << std::endl;
 				ReadRecord result;
 				if (longMode) {
+				//std::cerr << "checkpoint0.3" << std::endl;
 				result = processReadLong(
 				    *it,
 				    goodKmerSet,
@@ -1304,7 +1460,10 @@ assemble(
 				    visitedBranchKmers,
 				    params,
 				    counters,
-				    streams);
+				    streams,
+					type,
+					threshold,
+					porportion);
 				} else {
 				result = processRead(
 				    *it,

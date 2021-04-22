@@ -125,7 +125,7 @@ static const char USAGE_MESSAGE[] =
 /** Assembly params (stores command-line options) */
 BloomDBG::AssemblyParams params;
 
-static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:vS:l";
+static const char shortopts[] = "b:C:g:H:i:j:k:K:o:q:Q:R:s:t:T:vS:lx:y:z:";
 
 enum
 {
@@ -301,7 +301,7 @@ resumeAssemblyFromCheckpoint(int argc, char** argv, BloomDBG::AssemblyParams& pa
  * is constructed using `abyss-bloom build -t rolling-hash`.)
  */
 void
-prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, ostream& out)
+prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, ostream& out, bool longMode = false)
 {
 	/* load prebuilt Bloom filter from file */
 
@@ -336,9 +336,8 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
 		cerr << params;
 
 	/* do assembly */
-
-	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out);
-
+	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out, longMode);
+	
 	/* write supplementary files (e.g. GraphViz) */
 
 	writeAuxiliaryFiles(argc - optind, argv + optind, bloom, params);
@@ -348,7 +347,7 @@ prebuiltBloomAssembly(int argc, char** argv, BloomDBG::AssemblyParams& params, o
  * Load the reads into a counting Bloom filter and do the assembly.
  */
 void
-countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out, bool longMode = false, std::string solid_path = "")
+countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& params, ostream& out, bool longMode = false, std::string solid_path = "", unsigned type = 0, size_t threshold = 0, double porportion = 0)
 {
 	/* init global vars for k-mer size and spaced seed pattern */
 
@@ -369,9 +368,14 @@ countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& par
 	    BloomDBG::roundUpToMultiple((size_t) round(countingBloomFilterSize), (size_t)64);
 
 	CountingBloomFilterType bloom(counters, params.numHashes, params.k, params.minCov);
+	
+	
 
 	if (longMode) {
+		//std::unordered_map<>
 		BloomDBG::loadBloomFilter(argc, argv, bloom, params.verbose, solid_path);
+		//bloom.storeFilter("ecoli.bf");
+		printCountingBloomStats(bloom, cerr);
 		if (params.verbose)
 			printCountingBloomStats(bloom, cerr);
 
@@ -382,7 +386,7 @@ countingBloomAssembly(int argc, char** argv, const BloomDBG::AssemblyParams& par
 	}
 	/* second pass through FASTA files for assembling */
 
-	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out, longMode);
+	BloomDBG::assemble(argc - optind, argv + optind, bloom, params, out, longMode, type, threshold, porportion);
 
 	/* write supplementary files (e.g. GraphViz) */
 
@@ -398,6 +402,9 @@ main(int argc, char** argv)
 {
 	bool die = false;
 	bool longMode = false;
+	unsigned type = 0;
+	size_t threshold = 0;
+	double porportion = 0;
 	std::string solid_path = "";
 
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
@@ -461,6 +468,15 @@ main(int argc, char** argv)
 			break;
 		case 'l':
 			longMode = true;
+			break;
+		case 'x':
+			type = std::stoul(optarg);
+			break;
+		case 'y':
+			threshold = std::stoul(optarg);
+			break;
+		case 'z':
+			porportion = std::stod(optarg);
 			break;
 		case OPT_HELP:
 			cout << USAGE_MESSAGE;
@@ -562,9 +578,9 @@ main(int argc, char** argv)
 	if (params.checkpointsEnabled() && checkpointExists(params))
 		resumeAssemblyFromCheckpoint(argc, argv, params, out);
 	else if (!params.bloomPath.empty())
-		prebuiltBloomAssembly(argc, argv, params, out);
+		prebuiltBloomAssembly(argc, argv, params, out, longMode);
 	else
-		countingBloomAssembly(argc, argv, params, out, longMode, solid_path);
+		countingBloomAssembly(argc, argv, params, out, longMode, solid_path, type, threshold, porportion);
 
 	/* cleanup */
 	if (!params.outputPath.empty())
