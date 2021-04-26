@@ -173,6 +173,9 @@ static const struct option longopts[] = {
 	{ "verbose", no_argument, NULL, 'v' },
 	{ "long", no_argument, NULL, 'l' },
 	{ "version", no_argument, NULL, OPT_VERSION },
+	{ "type", required_argument, NULL, 'x' },
+	{ "threshold", required_argument, NULL, 'y' },
+	{ "porportion", required_argument, NULL, 'z' },
 	{ NULL, 0, NULL, 0 }
 };
 
@@ -406,6 +409,7 @@ main(int argc, char** argv)
 	size_t threshold = 0;
 	double porportion = 0;
 	std::string solid_path = "";
+	std::string ph = "";
 
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -470,13 +474,19 @@ main(int argc, char** argv)
 			longMode = true;
 			break;
 		case 'x':
-			type = std::stoul(optarg);
+			arg >> ph;
+			type = std::stoul(ph);
+			ph = "";
 			break;
 		case 'y':
-			threshold = std::stoul(optarg);
+			arg >> ph;
+			threshold = std::stoul(ph);
+			ph = "";
 			break;
 		case 'z':
-			porportion = std::stod(optarg);
+			arg >> ph;
+			porportion = std::stod(ph);
+			ph = "";
 			break;
 		case OPT_HELP:
 			cout << USAGE_MESSAGE;
