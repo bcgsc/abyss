@@ -166,6 +166,37 @@ allKmersInBloomLongPor(Path<Vertex>& seq, const BloomT& bloom, const double por)
 	return true;
 }
 
+template<typename BloomT>
+inline static bool
+allKmersInBloomLongAbsPor(Path<Vertex>& seq, const BloomT& bloom, const size_t min, const double por)
+{
+	//const unsigned k = bloom.getKmerSize();
+	const unsigned numHashes = bloom.getHashNum();
+	//assert(seq.length() >= k);
+	//unsigned validKmers = 0;
+	uint32_t minPor = seq.size() * por;
+	uint32_t count = 0;
+	uint64_t hashes[numHashes];
+	for (Vertex& v : seq) {
+		// singleton kmers are not used in assembly but remains in the sequence
+		// check if kmer is sentinel (not singleton) before seeing if it is assembled
+		
+		
+		v.rollingHash().getHashes(hashes);
+		if (!bloom.contains(hashes)){
+			++count;
+			if (count > min && count > minPor) {
+				return false;
+			}
+		}
+			
+	}
+	/* if we skipped over k-mers containing non-ACGT chars */
+	//if (validKmers < seq.length() - k + 1)
+	//	return false;
+	return true;
+}
+
 
 /**
  * Return true if all of the sentinel k-mers in `seq` are contained in `bloom`
@@ -835,11 +866,16 @@ outputLongContig(
     KmerHash& contigEndKmers,
     const AssemblyParams& params,
     AssemblyCounters& counters,
+	unsigned type,
+	size_t threshold,
+	double proportion,
     AssemblyStreamsT& streams)
 {
 	const unsigned fpLookAhead = 5;
 
 	Sequence seq = pathToSeq(contigPath, params.k);
+	Path<Vertex> ignore, sentinelPath;
+	boost::tie(ignore, sentinelPath) = longSeqToPath(seq, params.k, params.numHashes, solidKmerSet);
 
 	/* vertices representing start/end k-mers of contig */
 
@@ -863,6 +899,14 @@ outputLongContig(
 		 * the start and end in a separate hash table called
 		 * `contigEndKmers`.
 		 */
+		bool redundancyResult = false;
+		if (type == 0) {
+			redundancyResult = allKmersInBloomLongAbs(sentinelPath, assembledKmerSet, threshold);
+		} else if (type == 1) {
+			redundancyResult = allKmersInBloomLongPor(sentinelPath, assembledKmerSet, proportion);
+		} else if (type == 2) {
+			redundancyResult = allKmersInBloomLongAbsPor(sentinelPath, assembledKmerSet, threshold, proportion);
+		}
 		if (seq.length() < params.k + fpLookAhead - 1) {
 
 			if (contigEndKmers.find(v1) != contigEndKmers.end() &&
@@ -873,7 +917,7 @@ outputLongContig(
 				contigEndKmers.insert(v2);
 			}
 
-		} else if (allKmersInBloom(seq, assembledKmerSet, solidKmerSet)) {
+		} else if (redundancyResult) {
 			redundant = true;
 		}
 
@@ -1003,6 +1047,8 @@ preprocessCircularContig(Path<Vertex>& contigPath, const GraphT& dbg, unsigned t
  *
  * If a branch k-mer has both indegree > 1 and outdegree > 1, it is
  * output separately as its own contig of length k.
+ * 
+ * celegans_solidBF_k25.bf  celegans_simulated_ont.fa  > celegans-1.fa
  */
 template<typename GraphT>
 inline static void
@@ -1182,7 +1228,8 @@ processReadLong(
     AssemblyStreamsT& streams,
 	unsigned type,
 	size_t threshold,
-	double porportion)
+	double proportion,
+	std::ostream& os)
 {
 	(void)visitedBranchKmers;
 
@@ -1232,13 +1279,16 @@ processReadLong(
 	} else {
 		return ReadRecord(rec.id, RR_SHORTER_THAN_K);
 	}
+	auto origContigPath = contigPath;
 
 	/* skip reads in previously assembled regions */
 	bool enough_solid_kmers = false;
 	if (type == 0) {
 		enough_solid_kmers = allKmersInBloomLongAbs(sentinelPath, assembledKmerSet, threshold);
 	} else if (type == 1) {
-		enough_solid_kmers = allKmersInBloomLongPor(sentinelPath, assembledKmerSet, porportion);
+		enough_solid_kmers = allKmersInBloomLongPor(sentinelPath, assembledKmerSet, proportion);
+	} else if (type == 2) {
+		enough_solid_kmers = allKmersInBloomLongAbsPor(sentinelPath, assembledKmerSet, threshold, proportion);
 	}
 
 	if (enough_solid_kmers) {
@@ -1280,10 +1330,19 @@ processReadLong(
 		trimBranchKmers(contigPath, dbg, params.trim);
 		//std::cerr << "checkpoint5" << std::endl;
 		/* output contig to FASTA file */
-		size_t extended_length = contigPath.size() - orig_length;
+#pragma omp critical(preExtendedRead)
+{
+		os << ">" << rec.id << "\n";
+		os << pathToSeq(origContigPath, params.k) << "\n";
+
+}
+		size_t extended_length = 0;
+		if (contigPath.size() > orig_length) {
+			extended_length =contigPath.size() - orig_length;
+		}
 		std::cerr << "extended:" << extended_length<< std::endl;
 		outputLongContig(
-			contigPath, contigRec, solidKmerSet, assembledKmerSet, contigEndKmers, params, counters, streams);
+			contigPath, contigRec, solidKmerSet, assembledKmerSet, contigEndKmers, params, counters, type, threshold, proportion, streams);
 		//std::cerr << "checkpoint6" << std::endl;
 	}
 	//std::cerr << "checkpoint7" << std::endl;
@@ -1320,7 +1379,7 @@ assemble(
     SolidKmerSetT& solidKmerSet,
     const AssemblyParams& params,
     std::ostream& out, bool longMode = false,
-	unsigned type = 0, size_t threshold = 0, double porportion = 0)
+	unsigned type = 0, size_t threshold = 0, double proportion = 0)
 {
 	//std::cerr << "checkpoint0" << std::endl;
 	/* k-mers in previously assembled contigs */
@@ -1364,7 +1423,7 @@ assemble(
 	AssemblyStreams<FastaConcat> streams(in, out, checkpointOut, traceOut, readLogOut);
 
 	/* run the assembly */
-	assemble(solidKmerSet, assembledKmerSet, counters, params, streams, longMode, type, threshold, porportion);
+	assemble(solidKmerSet, assembledKmerSet, counters, params, streams, longMode, type, threshold, proportion);
 }
 
 /**
@@ -1394,7 +1453,7 @@ assemble(
     AssemblyCounters& counters,
     const AssemblyParams& params,
     AssemblyStreams<InputReadStreamT>& streams, bool longMode = false,
-	unsigned type = 0, size_t threshold = 0, double porportion = 0)
+	unsigned type = 0, size_t threshold = 0, double proportion = 0)
 {
 	assert(params.initialized());
 	//std::cerr << "checkpoint0.1" << std::endl;
@@ -1411,6 +1470,9 @@ assemble(
 	contigEndKmers.rehash((size_t)pow(2, 28));
 
 	KmerHash visitedBranchKmers;
+	std::filebuf fb;
+	fb.open ("test.txt",std::ios::out);
+	std::ostream os(&fb);
 
 	/*
 	 * Print a progress message whenever `READS_PROGRESS_STEP`
@@ -1463,7 +1525,8 @@ assemble(
 				    streams,
 					type,
 					threshold,
-					porportion);
+					proportion,
+					os);
 				} else {
 				result = processRead(
 				    *it,
@@ -1511,6 +1574,7 @@ assemble(
 		createCheckpoint(goodKmerSet, assembledKmerSet, counters, params);
 
 	} /* for each batch of reads between checkpoints */
+	fb.close();
 
 	assert(in.eof());
 
