@@ -7,7 +7,7 @@ abyss_bloom_dbg_CPPFLAGS = -I$(top_srcdir) \
 
 abyss_bloom_dbg_CXXFLAGS = $(AM_CXXFLAGS) $(OPENMP_CXXFLAGS)
 
-abyss_bloom_dbg_LDADD = \
+abyss_bloom_dbg_LDADD =
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a
 

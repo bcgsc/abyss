@@ -6,10 +6,12 @@
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/SpacedSeed.h"
 #include "BloomDBG/bloom-dbg.h"
+#include "Common/Histogram.h"
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/Options.h"
 #include "vendor/btl_bloomfilter/CountingBloomFilter.hpp"
+#include "vendor/ntcard/ntcard.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -23,6 +25,39 @@
 #if _OPENMP
 #include <omp.h>
 #endif
+
+/** Calculate a k-mer coverage threshold from the given k-mer coverage
+ * histogram. */
+static inline
+float calculateCoverageThreshold(const Histogram& h)
+{
+	float cov = h.firstLocalMinimum();
+		if (cov == 0)
+			std::cerr << "Unable to determine minimum k-mer coverage\n";
+		else
+			std::cerr << "Minimum k-mer coverage is " << cov << std::endl;
+
+	for (unsigned iteration = 0; iteration < 100; iteration++) {
+		Histogram trimmed = h.trimLow((unsigned)roundf(cov));
+			std::cerr << "Coverage: " << cov << "\t"
+				"Reconstruction: " << trimmed.size() << std::endl;
+
+		unsigned median = trimmed.median();
+		float cov1 = sqrt(median);
+		if (cov1 == cov) {
+			// The coverage threshold has converged.
+			std::cout << "Using a coverage threshold of "
+				<< (unsigned)roundf(cov) << "...\n"
+				"The median k-mer coverage is " << median << "\n"
+				"The reconstruction is " << trimmed.size()
+				<< std::endl;
+			return cov;
+		}
+		cov = cov1;
+	}
+	return 0;
+}
+
 
 typedef uint8_t BloomCounterType;
 typedef CountingBloomFilter<BloomCounterType> CountingBloomFilterType;
@@ -541,6 +576,54 @@ main(int argc, char** argv)
 		assert_good(outputFile, params.outputPath);
 	}
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
+
+
+	vector<string> inFiles;
+	for (int i = optind; i < argc; ++i) {
+		string file(argv[i]);
+
+		inFiles.push_back(file);
+	}
+
+
+	size_t ntCard_histSize = 10002;
+	size_t histArray[ntCard_histSize];
+	getHist(inFiles, params.k, params.threads, histArray);
+
+	Histogram hi;
+
+	for (size_t i = 2; i < 10002; ++i) {
+		hi.insert(i - 1, histArray[i]);
+	}
+
+	float cov = calculateCoverageThreshold(hi);
+
+	std::cerr << cov << std::endl;
+
+	/*//first local minimum
+
+		const unsigned SMOOTHING = 4;
+		assert(!empty());
+		size_type count = 0;
+		size_type  minimum = 2;
+		for (size_t i = 2; i < ntCard_histSize; ++it) {
+			if (histArray[i] <= histArray[minimum]) {
+				minimum = i;
+				count = 0;
+			} else if (++count >= SMOOTHING)
+				break;
+		}
+		if (minimum == ntCard_histSize + offSet)
+			return 0;
+	//--minimum;
+
+		if (minimum == 0)
+			std::cout << "Unable to determine minimum k-mer coverage\n";
+		else
+			std::cout << "Minimum k-mer coverage is " << minimum - 1 << std::endl;
+*/
+	return 0;
+
 
 	/* load the Bloom filter and do the assembly */
 	if (params.checkpointsEnabled() && checkpointExists(params))
