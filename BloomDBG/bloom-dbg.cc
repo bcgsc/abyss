@@ -32,10 +32,10 @@ static inline
 float calculateCoverageThreshold(const Histogram& h)
 {
 	float cov = h.firstLocalMinimum();
-		if (cov == 0)
-			std::cerr << "Unable to determine minimum k-mer coverage\n";
-		else
-			std::cerr << "Minimum k-mer coverage is " << cov << std::endl;
+	if (cov == 0)
+		std::cerr << "Unable to determine minimum k-mer coverage\n";
+	else
+		std::cerr << "Minimum k-mer coverage is " << cov << std::endl;
 
 	for (unsigned iteration = 0; iteration < 100; iteration++) {
 		Histogram trimmed = h.trimLow((unsigned)roundf(cov));
@@ -598,31 +598,7 @@ main(int argc, char** argv)
 
 	float cov = calculateCoverageThreshold(hi);
 
-	std::cerr << cov << std::endl;
-
-	/*//first local minimum
-
-		const unsigned SMOOTHING = 4;
-		assert(!empty());
-		size_type count = 0;
-		size_type  minimum = 2;
-		for (size_t i = 2; i < ntCard_histSize; ++it) {
-			if (histArray[i] <= histArray[minimum]) {
-				minimum = i;
-				count = 0;
-			} else if (++count >= SMOOTHING)
-				break;
-		}
-		if (minimum == ntCard_histSize + offSet)
-			return 0;
-	//--minimum;
-
-		if (minimum == 0)
-			std::cout << "Unable to determine minimum k-mer coverage\n";
-		else
-			std::cout << "Minimum k-mer coverage is " << minimum - 1 << std::endl;
-*/
-	return 0;
+	params.minCov = (unsigned)roundf(cov);
 
 
 	/* load the Bloom filter and do the assembly */
