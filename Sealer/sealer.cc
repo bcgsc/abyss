@@ -727,7 +727,7 @@ void findFlanks(FastaRecord &record,
 
 		size_t endposition = seq.string::find_first_not_of(gap, startposition);
 		if (endposition == string::npos) {
-			std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
+			std::cerr << PROGRAM ": Warning: sequence ends with an " << gap << ": " << record.id << "\n";
 			break;
 		}
 
