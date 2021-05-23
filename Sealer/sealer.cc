@@ -251,9 +251,9 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:vX";
+static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_LOWER };
 
 static const struct option longopts[] = {
 	{ "detailed-stats",   no_argument, &opt::detailedStats, 1},
@@ -291,7 +291,7 @@ static const struct option longopts[] = {
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "gap-file",         required_argument, NULL, 'g' },
 	{ "verbose",          no_argument, NULL, 'v' },
-	{ "lower",            no_argument, NULL, 'X' },
+	{ "lower",            no_argument, NULL, OPT_LOWER },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -801,8 +801,6 @@ int main(int argc, char** argv)
 			opt::k = tempK;
 			break;
 			}
-		  case 'X':
-			opt::lower = true; break;
 		  case 'm':
 			setMaxOption(opt::maxFlankMismatches, arg); break;
 		  case 'n':
@@ -829,6 +827,8 @@ int main(int argc, char** argv)
 		    arg >> opt::gapfilePath; break;
 		  case 'v':
 			opt::verbose++; break;
+		  case OPT_LOWER:
+			opt::lower = true; break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
