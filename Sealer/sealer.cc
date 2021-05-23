@@ -228,7 +228,7 @@ namespace opt {
 	/** Output detailed stats */
 	static int detailedStats = 0;
 
-	/** Seal lower case iupac */
+	/** Seal sequences with atcgurykmswbdhvx chars */
 	bool lower = false;
 }
 
