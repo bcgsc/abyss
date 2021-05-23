@@ -72,14 +72,17 @@ namespace BloomDBG {
 		/** output path for trace file (-T) option */
 		std::string tracePath;
 
+		unsigned golidlocks_lower;
+		unsigned golidlocks_upper;
+
 		/** Default constructor */
 		AssemblyParams() : bloomSize(0),
 			readsPerCheckpoint(std::numeric_limits<size_t>::max()),
 			keepCheckpoint(false), checkpointPathPrefix("bloom-dbg-checkpoint"),
-			minCov(2), graphPath(), numHashes(1), threads(1),
+			minCov(), graphPath(), numHashes(1), threads(1),
 			k(0), K(0), qrSeedLen(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
-			verbose(0), outputPath(), tracePath() {}
+			verbose(0), outputPath(), tracePath(), golidlocks_lower(), golidlocks_upper() {}
 
 		/** Return true if all required members are initialized */
 		bool initialized() const {
