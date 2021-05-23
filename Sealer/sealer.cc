@@ -716,7 +716,7 @@ void findFlanks(FastaRecord &record,
 	const string& seq = record.seq;
 	std::string gap = "Nn";
 	if (lower) {
-		gap = "Nnatcgurykmswbdhvnx";
+		gap = "Nnatcgurykmswbdhvx";
 	}
 
 	// Iterate over the gaps.
