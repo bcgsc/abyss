@@ -424,6 +424,7 @@ int
 main(int argc, char** argv)
 {
 	bool die = false;
+	bool minCov_set = false;
 
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -485,6 +486,7 @@ main(int argc, char** argv)
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		case MIN_KMER_COV:
+			minCov_set = true;
 			arg >> params.minCov;
 			break;
 		case OPT_VERSION:
@@ -577,29 +579,29 @@ main(int argc, char** argv)
 	}
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
 
+	if (minCov_set == true) {
+		vector<string> inFiles;
+		for (int i = optind; i < argc; ++i) {
+			string file(argv[i]);
 
-	vector<string> inFiles;
-	for (int i = optind; i < argc; ++i) {
-		string file(argv[i]);
+			inFiles.push_back(file);
+		}
 
-		inFiles.push_back(file);
+
+		size_t ntCard_histSize = 10002;
+		size_t histArray[ntCard_histSize];
+		getHist(inFiles, params.k, params.threads, histArray);
+
+		Histogram hi;
+
+		for (size_t i = 2; i < 10002; ++i) {
+			hi.insert(i - 1, histArray[i]);
+		}
+
+		float cov = calculateCoverageThreshold(hi);
+
+		params.minCov = (unsigned)roundf(cov);
 	}
-
-
-	size_t ntCard_histSize = 10002;
-	size_t histArray[ntCard_histSize];
-	getHist(inFiles, params.k, params.threads, histArray);
-
-	Histogram hi;
-
-	for (size_t i = 2; i < 10002; ++i) {
-		hi.insert(i - 1, histArray[i]);
-	}
-
-	float cov = calculateCoverageThreshold(hi);
-
-	params.minCov = (unsigned)roundf(cov);
-
 
 	/* load the Bloom filter and do the assembly */
 	if (params.checkpointsEnabled() && checkpointExists(params))
