@@ -1100,8 +1100,14 @@ int main(int argc, char** argv)
 
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
 	map<int, map<string, string> >::reverse_iterator pos_it;
-	FastaReader reader2(scaffoldInputPath, FastaReader::FOLD_CASE);
-	unsigned gapsclosedfinal = 0;
+
+	auto case_flag = FastaReader::FOLD_CASE;
+	if (opt::lower) {
+		case_flag = FastaReader::NO_FOLD_CASE;
+		opt::trimMasked = 0;
+	}
+	FastaReader reader2(scaffoldInputPath, case_flag);
+	unsigned gapsclosedfinal = 0;	
 
 	/** creating new scaffold with gaps closed */
 	for (FastaRecord record;;) {
