@@ -983,7 +983,7 @@ int main(int argc, char** argv)
 		opt::trimMasked = 0;
 	}
 
-	FastaReader reader1(scaffoldInputPath, flag);
+	FastaReader reader1(scaffoldInputPath, case_flag);
 	unsigned gapsfound = 0;
 	string temp;
 
