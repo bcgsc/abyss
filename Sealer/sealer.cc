@@ -226,6 +226,9 @@ namespace opt {
 
 	/** Output detailed stats */
 	static int detailedStats = 0;
+
+	/** Seal lower case iupac */
+	bool lower = false;
 }
 
 /** Counters */
@@ -248,7 +251,7 @@ struct Counters {
 	size_t skipped;
 };
 
-static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
+static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:vX";
 
 enum { OPT_HELP = 1, OPT_VERSION };
 
@@ -288,6 +291,7 @@ static const struct option longopts[] = {
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "gap-file",         required_argument, NULL, 'g' },
 	{ "verbose",          no_argument, NULL, 'v' },
+	{ "lower",            no_argument, NULL, 'X' },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -705,24 +709,29 @@ bool operator<(const FastaRecord& a, const FastaRecord& b)
 void findFlanks(FastaRecord &record,
 	int flanklength,
 	unsigned &gapnumber,
-	map<FastaRecord, map<FastaRecord, Gap> > &flanks)
+	map<FastaRecord, map<FastaRecord, Gap> > &flanks,
+	bool lower)
 {
 	const string& seq = record.seq;
+	std::string gap = "Nn";
+	if (lower) {
+		gap = "Nnatcgurykmswbdhvnx";
+	}
 
 	// Iterate over the gaps.
 	for (size_t offset = 0;
-			seq.string::find_first_of("Nn", offset) != string::npos;) {
+			seq.string::find_first_of(gap, offset) != string::npos;) {
 #pragma omp atomic
 		gapnumber++;
-		size_t startposition = seq.string::find_first_of("Nn", offset);
+		size_t startposition = seq.string::find_first_of(gap, offset);
 
-		size_t endposition = seq.string::find_first_not_of("Nn", startposition);
+		size_t endposition = seq.string::find_first_not_of(gap, startposition);
 		if (endposition == string::npos) {
 			std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
 			break;
 		}
 
-		size_t right_end = seq.string::find_first_of("Nn", endposition);
+		size_t right_end = seq.string::find_first_of(gap, endposition);
 		if (right_end == string::npos)
 			right_end = seq.length();
 
@@ -792,6 +801,8 @@ int main(int argc, char** argv)
 			opt::k = tempK;
 			break;
 			}
+		  case 'X':
+			opt::lower = true; break;
 		  case 'm':
 			setMaxOption(opt::maxFlankMismatches, arg); break;
 		  case 'n':
@@ -965,7 +976,7 @@ int main(int argc, char** argv)
 
 	map<FastaRecord, map<FastaRecord, Gap> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
-	FastaReader reader1(scaffoldInputPath, FastaReader::FOLD_CASE);
+	FastaReader reader1(scaffoldInputPath, FastaReader::NO_FOLD_CASE);
 	unsigned gapsfound = 0;
 	string temp;
 
@@ -975,7 +986,7 @@ int main(int argc, char** argv)
 #pragma omp critical(reader1)
 		good = reader1 >> record;
 		if (good) {
-			findFlanks(record, opt::flankLength, gapsfound, flanks);
+			findFlanks(record, opt::flankLength, gapsfound, flanks, opt::lower);
 		}
 		else {
 			break;
