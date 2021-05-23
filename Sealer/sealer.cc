@@ -976,7 +976,14 @@ int main(int argc, char** argv)
 
 	map<FastaRecord, map<FastaRecord, Gap> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
-	FastaReader reader1(scaffoldInputPath, FastaReader::NO_FOLD_CASE);
+
+	auto case_flag = FastaReader::FOLD_CASE;
+	if (opt::lower) {
+		case_flag = FastaReader::NO_FOLD_CASE;
+		opt::trimMasked = 0;
+	}
+
+	FastaReader reader1(scaffoldInputPath, flag);
 	unsigned gapsfound = 0;
 	string temp;
 
@@ -1101,11 +1108,6 @@ int main(int argc, char** argv)
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
 	map<int, map<string, string> >::reverse_iterator pos_it;
 
-	auto case_flag = FastaReader::FOLD_CASE;
-	if (opt::lower) {
-		case_flag = FastaReader::NO_FOLD_CASE;
-		opt::trimMasked = 0;
-	}
 	FastaReader reader2(scaffoldInputPath, case_flag);
 	unsigned gapsclosedfinal = 0;	
 
