@@ -46,7 +46,7 @@ float calculateCoverageThreshold(const Histogram& h)
 		float cov1 = sqrt(median);
 		if (cov1 == cov) {
 			// The coverage threshold has converged.
-			std::cout << "Using a coverage threshold of "
+			std::cerr << "Using a coverage threshold of "
 				<< (unsigned)roundf(cov) << "...\n"
 				"The median k-mer coverage is " << median << "\n"
 				"The reconstruction is " << trimmed.size()
