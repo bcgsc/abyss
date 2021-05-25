@@ -710,14 +710,10 @@ bool operator<(const FastaRecord& a, const FastaRecord& b)
 void findFlanks(FastaRecord &record,
 	int flanklength,
 	unsigned &gapnumber,
-	map<FastaRecord, map<FastaRecord, Gap> > &flanks,
-	bool lower)
+	map<FastaRecord, map<FastaRecord, Gap> > &flanks)
 {
 	const string& seq = record.seq;
-	std::string gap = "Nn";
-	if (lower) {
-		gap = "Nnatcgurykmswbdhvx";
-	}
+	const std::string gap(opt::lower ? "Nnatcgurykmswbdhvx" : "Nn");
 
 	// Iterate over the gaps.
 	for (size_t offset = 0;
@@ -994,7 +990,7 @@ int main(int argc, char** argv)
 #pragma omp critical(reader1)
 		good = reader1 >> record;
 		if (good) {
-			findFlanks(record, opt::flankLength, gapsfound, flanks, opt::lower);
+			findFlanks(record, opt::flankLength, gapsfound, flanks);
 		}
 		else {
 			break;
