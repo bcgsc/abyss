@@ -99,7 +99,7 @@ static const char USAGE_MESSAGE[] =
     "  -k, --kmer=N                 the size of a k-mer [<=" STR(
         MAX_KMER) "]\n"
                   "      --kc=N                   ignore k-mers having a count < N,\n"
-                  "                               using a counting Bloom filter [2]\n"
+                  "                               using a counting Bloom filter [automatically detected using ntCard]\n"
                   "  -o, --out=FILE               write the contigs to FILE [STDOUT]\n"
                   "  -q, --trim-quality=N         trim bases from the ends of reads whose\n"
                   "                               quality is less than the threshold\n"
@@ -579,7 +579,7 @@ main(int argc, char** argv)
 	}
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
 
-	if (minCov_set == true) {
+	if (!minCov_set) {
 		vector<string> inFiles;
 		for (int i = optind; i < argc; ++i) {
 			string file(argv[i]);
