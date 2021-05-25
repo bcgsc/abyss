@@ -186,8 +186,9 @@ compEst(const uint16_t* t_Counter, double& F0Mean, double fMean[])
 void
 getHist(const vector<string>& inFiles, const unsigned kLen, const unsigned nThr, size_t histArray[])
 {
-
+#ifdef _OPENMP
 	double sTime = omp_get_wtime();
+#endif
 
 	nts::nThrd = nThr;
 	nts::kmLen = kLen;
@@ -237,7 +238,9 @@ getHist(const vector<string>& inFiles, const unsigned kLen, const unsigned nThr,
 	for (size_t i = 2; i <= nts::covMax + 1; i++)
 		histArray[i] = (size_t)fMean[i - 1];
 	delete[] t_Counter;
+#ifdef _OPENMP
 	std::cerr << "Reapeat profile estimated using ntCard in (sec): " << setprecision(4) << fixed
 	          << omp_get_wtime() - sTime << "\n";
+#endif
 }
 #endif /* NTCARD_H_ */
