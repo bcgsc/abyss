@@ -112,6 +112,7 @@ static const char USAGE_MESSAGE[] =
 "  -g, --gap-file=FILE          write sealed gaps to FILE\n"
 "  -t, --trace-file=FILE        write graph search stats to FILE\n"
 "  -v, --verbose                display verbose output\n"
+"      --lower                  seal sequences with lower-case IUPAC characters\n"
 "      --help                   display this help and exit\n"
 "      --version                output version information and exit\n"
 "\n"
@@ -226,6 +227,9 @@ namespace opt {
 
 	/** Output detailed stats */
 	static int detailedStats = 0;
+
+	/** Seal sequences with lower-case IUPAC characterss */
+	bool lower = false;
 }
 
 /** Counters */
@@ -250,7 +254,7 @@ struct Counters {
 
 static const char shortopts[] = "S:L:b:B:C:d:ef:F:G:g:i:Ij:k:lm:M:no:P:q:r:s:t:v";
 
-enum { OPT_HELP = 1, OPT_VERSION };
+enum { OPT_HELP = 1, OPT_VERSION, OPT_LOWER };
 
 static const struct option longopts[] = {
 	{ "detailed-stats",   no_argument, &opt::detailedStats, 1},
@@ -288,6 +292,7 @@ static const struct option longopts[] = {
 	{ "trace-file",       required_argument, NULL, 't' },
 	{ "gap-file",         required_argument, NULL, 'g' },
 	{ "verbose",          no_argument, NULL, 'v' },
+	{ "lower",            no_argument, NULL, OPT_LOWER },
 	{ "help",             no_argument, NULL, OPT_HELP },
 	{ "version",          no_argument, NULL, OPT_VERSION },
 	{ NULL, 0, NULL, 0 }
@@ -708,21 +713,22 @@ void findFlanks(FastaRecord &record,
 	map<FastaRecord, map<FastaRecord, Gap> > &flanks)
 {
 	const string& seq = record.seq;
+	const std::string gap(opt::lower ? "Nnatcgurykmswbdhvx" : "Nn");
 
 	// Iterate over the gaps.
 	for (size_t offset = 0;
-			seq.string::find_first_of("Nn", offset) != string::npos;) {
+			seq.string::find_first_of(gap, offset) != string::npos;) {
 #pragma omp atomic
 		gapnumber++;
-		size_t startposition = seq.string::find_first_of("Nn", offset);
+		size_t startposition = seq.string::find_first_of(gap, offset);
 
-		size_t endposition = seq.string::find_first_not_of("Nn", startposition);
+		size_t endposition = seq.string::find_first_not_of(gap, startposition);
 		if (endposition == string::npos) {
-			std::cerr << PROGRAM ": Warning: sequence ends with an N: " << record.id << "\n";
+			std::cerr << PROGRAM ": Warning: sequence ends with an " << gap << ": " << record.id << "\n";
 			break;
 		}
 
-		size_t right_end = seq.string::find_first_of("Nn", endposition);
+		size_t right_end = seq.string::find_first_of(gap, endposition);
 		if (right_end == string::npos)
 			right_end = seq.length();
 
@@ -818,6 +824,8 @@ int main(int argc, char** argv)
 		    arg >> opt::gapfilePath; break;
 		  case 'v':
 			opt::verbose++; break;
+		  case OPT_LOWER:
+			opt::lower = true; break;
 		  case OPT_HELP:
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
@@ -965,7 +973,14 @@ int main(int argc, char** argv)
 
 	map<FastaRecord, map<FastaRecord, Gap> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
-	FastaReader reader1(scaffoldInputPath, FastaReader::FOLD_CASE);
+
+	auto case_flag = FastaReader::FOLD_CASE;
+	if (opt::lower) {
+		case_flag = FastaReader::NO_FOLD_CASE;
+		opt::trimMasked = 0;
+	}
+
+	FastaReader reader1(scaffoldInputPath, case_flag);
 	unsigned gapsfound = 0;
 	string temp;
 
@@ -1089,8 +1104,9 @@ int main(int argc, char** argv)
 
 	map<string, map<int, map<string, string> > >::iterator scaf_it;
 	map<int, map<string, string> >::reverse_iterator pos_it;
-	FastaReader reader2(scaffoldInputPath, FastaReader::FOLD_CASE);
-	unsigned gapsclosedfinal = 0;
+
+	FastaReader reader2(scaffoldInputPath, case_flag);
+	unsigned gapsclosedfinal = 0;	
 
 	/** creating new scaffold with gaps closed */
 	for (FastaRecord record;;) {
