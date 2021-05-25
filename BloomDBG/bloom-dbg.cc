@@ -587,18 +587,19 @@ main(int argc, char** argv)
 			inFiles.push_back(file);
 		}
 
-
-		size_t ntCard_histSize = 10002;
+		/* indices 0 and 1 are reserved for F0 and 1.
+		   Indices 2 to 10001 store kmer multiplicities up to 10000 */
+		static const size_t DEFAULT_NTCARD_HIST_SIZE = 10002;
 		size_t histArray[ntCard_histSize];
 		getHist(inFiles, params.k, params.threads, histArray);
 
 		Histogram hi;
 
-		for (size_t i = 2; i < 10002; ++i) {
+		for (size_t i = 2; i < DEFAULT_NTCARD_HIST_SIZE; ++i) {
 			hi.insert(i - 1, histArray[i]);
 		}
 
-		float cov = calculateCoverageThreshold(hi);
+		const float cov = calculateCoverageThreshold(hi);
 
 		params.minCov = (unsigned)roundf(cov);
 	}
