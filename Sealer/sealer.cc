@@ -112,7 +112,7 @@ static const char USAGE_MESSAGE[] =
 "  -g, --gap-file=FILE          write sealed gaps to FILE\n"
 "  -t, --trace-file=FILE        write graph search stats to FILE\n"
 "  -v, --verbose                display verbose output\n"
-"      --lower                  seal sequences with atcgurykmswbdhvx chars\n"
+"      --lower                  seal sequences with lower-case IUPAC characters\n"
 "      --help                   display this help and exit\n"
 "      --version                output version information and exit\n"
 "\n"
