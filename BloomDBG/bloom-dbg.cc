@@ -590,7 +590,7 @@ main(int argc, char** argv)
 		/* indices 0 and 1 are reserved for F0 and 1.
 		   Indices 2 to 10001 store kmer multiplicities up to 10000 */
 		static const size_t DEFAULT_NTCARD_HIST_SIZE = 10002;
-		size_t histArray[ntCard_histSize];
+		size_t histArray[DEFAULT_NTCARD_HIST_SIZE];
 		getHist(inFiles, params.k, params.threads, histArray);
 
 		Histogram hi;
