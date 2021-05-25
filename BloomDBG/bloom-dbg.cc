@@ -6,10 +6,12 @@
 #include "BloomDBG/MaskedKmer.h"
 #include "BloomDBG/SpacedSeed.h"
 #include "BloomDBG/bloom-dbg.h"
+#include "Common/Histogram.h"
 #include "Common/Options.h"
 #include "Common/StringUtil.h"
 #include "DataLayer/Options.h"
 #include "vendor/btl_bloomfilter/CountingBloomFilter.hpp"
+#include "vendor/ntcard/ntcard.hpp"
 
 #include <cstdlib>
 #include <cstring>
@@ -23,6 +25,39 @@
 #if _OPENMP
 #include <omp.h>
 #endif
+
+/** Calculate a k-mer coverage threshold from the given k-mer coverage
+ * histogram. */
+static inline
+float calculateCoverageThreshold(const Histogram& h)
+{
+	float cov = h.firstLocalMinimum();
+	if (cov == 0)
+		std::cerr << "Unable to determine minimum k-mer coverage\n";
+	else
+		std::cerr << "Minimum k-mer coverage is " << cov << std::endl;
+
+	for (unsigned iteration = 0; iteration < 100; iteration++) {
+		Histogram trimmed = h.trimLow((unsigned)roundf(cov));
+			std::cerr << "Coverage: " << cov << "\t"
+				"Reconstruction: " << trimmed.size() << std::endl;
+
+		unsigned median = trimmed.median();
+		float cov1 = sqrt(median);
+		if (cov1 == cov) {
+			// The coverage threshold has converged.
+			std::cerr << "Using a coverage threshold of "
+				<< (unsigned)roundf(cov) << "...\n"
+				"The median k-mer coverage is " << median << "\n"
+				"The reconstruction is " << trimmed.size()
+				<< std::endl;
+			return cov;
+		}
+		cov = cov1;
+	}
+	return 0;
+}
+
 
 typedef uint8_t BloomCounterType;
 typedef CountingBloomFilter<BloomCounterType> CountingBloomFilterType;
@@ -64,7 +99,7 @@ static const char USAGE_MESSAGE[] =
     "  -k, --kmer=N                 the size of a k-mer [<=" STR(
         MAX_KMER) "]\n"
                   "      --kc=N                   ignore k-mers having a count < N,\n"
-                  "                               using a counting Bloom filter [2]\n"
+                  "                               using a counting Bloom filter [automatically detected using ntCard]\n"
                   "  -o, --out=FILE               write the contigs to FILE [STDOUT]\n"
                   "  -q, --trim-quality=N         trim bases from the ends of reads whose\n"
                   "                               quality is less than the threshold\n"
@@ -389,6 +424,7 @@ int
 main(int argc, char** argv)
 {
 	bool die = false;
+	bool minCov_set = false;
 
 	for (int c; (c = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1;) {
 		istringstream arg(optarg != NULL ? optarg : "");
@@ -450,6 +486,7 @@ main(int argc, char** argv)
 			cout << USAGE_MESSAGE;
 			exit(EXIT_SUCCESS);
 		case MIN_KMER_COV:
+			minCov_set = true;
 			arg >> params.minCov;
 			break;
 		case OPT_VERSION:
@@ -541,6 +578,31 @@ main(int argc, char** argv)
 		assert_good(outputFile, params.outputPath);
 	}
 	ostream& out = params.outputPath.empty() ? cout : outputFile;
+
+	if (!minCov_set) {
+		vector<string> inFiles;
+		for (int i = optind; i < argc; ++i) {
+			string file(argv[i]);
+
+			inFiles.push_back(file);
+		}
+
+		/* indices 0 and 1 are reserved for F0 and 1.
+		   Indices 2 to 10001 store kmer multiplicities up to 10000 */
+		static const size_t DEFAULT_NTCARD_HIST_SIZE = 10002;
+		size_t histArray[DEFAULT_NTCARD_HIST_SIZE];
+		getHist(inFiles, params.k, params.threads, histArray);
+
+		Histogram hi;
+
+		for (size_t i = 2; i < DEFAULT_NTCARD_HIST_SIZE; ++i) {
+			hi.insert(i - 1, histArray[i]);
+		}
+
+		const float cov = calculateCoverageThreshold(hi);
+
+		params.minCov = (unsigned)roundf(cov);
+	}
 
 	/* load the Bloom filter and do the assembly */
 	if (params.checkpointsEnabled() && checkpointExists(params))
