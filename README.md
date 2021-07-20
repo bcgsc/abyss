@@ -7,7 +7,7 @@ ABySS
 =====
 
 ABySS is a *de novo* sequence assembler intended for short paired-end
-reads and large genomes, but it also works well for smaller bacterial genomes.
+reads and large genomes, but it also works well for small (e.g. bacterial) genomes.
 
 Please [cite our papers](#citation).
 
