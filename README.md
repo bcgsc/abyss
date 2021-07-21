@@ -586,8 +586,8 @@ Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones (2009).
 Support
 =======
 
-[Ask a question](https://www.biostars.org/p/new/post/?tag_val=abyss,assembly)
-on [Biostars](https://www.biostars.org/t/abyss/).
+[Ask a question](https://www.biostars.org/new/post/?tag_val=abyss,assembly)
+on [Biostars](https://www.biostars.org/tag/abyss/).
 
 [Create a new issue](https://github.com/bcgsc/abyss/issues) on GitHub.
 
