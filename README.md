@@ -6,8 +6,7 @@
 ABySS
 =====
 
-ABySS is a *de novo* sequence assembler intended for short paired-end
-reads and large genomes.
+ABySS is a *de novo* sequence assembler intended for short paired-end reads and genomes of all sizes.
 
 Please [cite our papers](#citation).
 
@@ -510,7 +509,7 @@ ABySS programs
  * `abyss-scaffold`: scaffold contigs using distance estimates
  * `abyss-todot`: convert graph formats and merge graphs
 
-This [flowchart](https://github.com/bcgsc/abyss/blob/master/doc/flowchart.pdf) shows the ABySS assembly pipeline its intermediate files.
+This [flowchart](https://github.com/bcgsc/abyss/blob/master/doc/flowchart.pdf) shows the ABySS assembly pipeline and its intermediate files.
 
 Export to SQLite Database
 =========================
@@ -586,8 +585,8 @@ Nielsen, Cydney B., Shaun D. Jackman, Inanc Birol, and Steven JM Jones (2009).
 Support
 =======
 
-[Ask a question](https://www.biostars.org/p/new/post/?tag_val=abyss,assembly)
-on [Biostars](https://www.biostars.org/t/abyss/).
+[Ask a question](https://www.biostars.org/new/post/?tag_val=abyss,assembly)
+on [Biostars](https://www.biostars.org/tag/abyss/).
 
 [Create a new issue](https://github.com/bcgsc/abyss/issues) on GitHub.
 
