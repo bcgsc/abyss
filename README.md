@@ -451,7 +451,7 @@ Parameters of the driver script, `abyss-pe`
  * `kc`: minimum k-mer count threshold for Bloom filter assembly [`2`]
  * `K`: the length of a single k-mer in a k-mer pair (bp)
  * `l`: minimum alignment length of a read (bp) [`40`]
- * `m`: minimum overlap of two unitigs (bp) [`k-1`]
+ * `m`: minimum overlap of two unitigs (bp) [`0`]
  * `n`: minimum number of pairs required for building contigs [`10`]
  * `N`: minimum number of pairs required for building scaffolds [`n`]
  * `np`: number of MPI processes [`1`]
