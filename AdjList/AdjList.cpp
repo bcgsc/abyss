@@ -53,6 +53,7 @@ static const char USAGE_MESSAGE[] =
 "                        or the span of a k-mer pair (when -K is set)\n"
 "  -K, --single-kmer=N   the length of a single k-mer in a k-mer pair\n"
 "  -m, --min-overlap=M   require a minimum overlap of M bases [50]\n"
+"                        value of 0 is interpreted as k - 1\n"
 "      --adj             output the graph in ADJ format [default]\n"
 "      --asqg            output the graph in ASQG format\n"
 "      --dot             output the graph in GraphViz format\n"
