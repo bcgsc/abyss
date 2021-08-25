@@ -55,7 +55,7 @@ static const char USAGE_MESSAGE[] =
     "      --no-chastity            do not discard unchaste reads\n"
     "  -g  --graph=FILE             write de Bruijn graph to FILE (GraphViz)\n"
     "      --help                   display this help and exit\n"
-    "  -H  --num-hashes=N           number of Bloom filter hash functions [1]\n"
+    "  -H  --num-hashes=N           number of Bloom filter hash functions [4]\n"
     "  -i  --input-bloom=FILE       load Bloom filter from FILE\n"
     "  -j, --threads=N              use N parallel threads [1]\n"
     "      --trim-masked            trim masked bases from the ends of reads\n"

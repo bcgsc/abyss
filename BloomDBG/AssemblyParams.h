@@ -76,7 +76,7 @@ namespace BloomDBG {
 		AssemblyParams() : bloomSize(0),
 			readsPerCheckpoint(std::numeric_limits<size_t>::max()),
 			keepCheckpoint(false), checkpointPathPrefix("bloom-dbg-checkpoint"),
-			minCov(2), graphPath(), numHashes(1), threads(1),
+			minCov(2), graphPath(), numHashes(4), threads(1),
 			k(0), K(0), qrSeedLen(0), spacedSeed(),
 			trim(std::numeric_limits<unsigned>::max()),
 			verbose(0), outputPath(), tracePath() {}
