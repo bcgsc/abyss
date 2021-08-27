@@ -415,11 +415,11 @@ For `kc`, 2 is most often a good value, but can go as high as 4.
 
 The following shell snippet will assemble for `k` values 2 and 3, and every eighth value of `k` from 50 to 90. In the end, we calculate the contiguity statistics, as a proxy for identifying the optimal assembly. Other metrics can be used, as needed.
 
-  for kc in 2 3; do
-	  for k in `seq 50 8 90`; do
-	  	mkdir k$k
-	  	abyss-pe -C k$k name=ecoli -B2G k=$k kc=$kc in=../reads.fa
-	  done
+	for kc in 2 3; do
+		for k in `seq 50 8 90`; do
+			mkdir k$k
+			abyss-pe -C k$k name=ecoli -B2G k=$k kc=$kc in=../reads.fa
+		done
 	done
 	abyss-fac k*/ecoli-scaffolds.fa
 
