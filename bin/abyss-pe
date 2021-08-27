@@ -378,6 +378,13 @@ error::
 	@>&2 echo 'abyss-pe: missing parameter `lib`, `in`, `se`, or `lr`'
 endif
 
+ifndef B
+ifndef np
+error::
+	@>&2 echo 'abyss-pe: must specify either `B` or `np` for the Bloom filter and MPI modes respectively. Bloom filter mode is recommended.'
+endif
+endif
+
 default:
 
 error::
@@ -389,11 +396,11 @@ error::
 help:
 	@echo 'Usage: abyss-pe [OPTION]... [PARAMETER=VALUE]... [COMMAND]...'
 	@echo 'Assemble reads into contigs and scaffolds. ABySS is a de novo'
-	@echo 'sequence assembler intended for short paired-end reads and large'
-	@echo 'genomes. See the abyss-pe man page for documentation of assembly'
-	@echo 'parameters and commands. abyss-pe is a Makefile script, and so'
-	@echo 'options of `make` may also be used with abyss-pe. See the `make`'
-	@echo 'man page for documentation.'
+	@echo 'sequence assembler intended for short paired-end reads and'
+	@echo 'genomes of all sizes. See the abyss-pe man page for documentation'
+	@echo 'of assembly parameters and commands. abyss-pe is a Makefile'
+	@echo 'script, and so options of `make` may also be used with abyss-pe.'
+	@echo 'See the `make` man page for documentation.'
 	@echo
 	@echo 'Report bugs to https://github.com/bcgsc/abyss/issues or abyss-users@bcgsc.ca.'
 
