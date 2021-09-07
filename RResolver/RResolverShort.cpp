@@ -48,10 +48,11 @@ static const char USAGE_MESSAGE[] =
     "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [20]\n"
     "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [36]\n"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]\n"
-		"  -r, --rmer=N                explicitly set r value (k value used by rresolver). The number of set r values should be equal to the number of read sizes.\n"
-		"  -a, --approx-factor         explicitly set coverage approximation factor.\n"
-		"  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)\n"
+    "  -r, --rmer=N                explicitly set r value (k value used by rresolver). The number of set r values should be equal to the number of read sizes.\n"
+    "  -a, --approx-factor         explicitly set coverage approximation factor.\n"
+    "  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)\n"
     "  -e, --error-correction      enable correction of a 1bp error in kmers. [false]\n"
+    "  -R, --max-read-size         upper limit on read size to consider for use with RResolver. [300]\n"
     "  -S, --supported=FILE        write supported paths to FILE.\n"
     "  -U, --unsupported=FILE      write unsupported paths to FILE.\n"
     "                              Used for path sequence quality check.\n"
@@ -113,6 +114,9 @@ int readQualityThreshold = 35;
 /** Flag indicating whether error correction is enabled */
 int errorCorrection = 0;
 
+/** Upper limit on read size to consider for use with RResolver. */
+unsigned maxReadSize = 300;
+
 /** Name of the file to write supported paths to */
 std::string outputSupportedPathsPath;
 
@@ -125,7 +129,7 @@ int format; // used by ContigProperties
 
 }
 
-static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:a:q:eS:U:v";
+static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:a:q:eR:S:U:v";
 
 enum
 {
@@ -149,6 +153,7 @@ static const struct option longopts[] = {
 	{ "approx-factor", required_argument, NULL, 'a' },
 	{ "quality-threshold", required_argument, NULL, 'q' },
 	{ "error-correction", no_argument, &opt::errorCorrection, 1 },
+	{ "max-read-size", required_argument, NULL, 'R' },
 	{ "supported", required_argument, NULL, 'S' },
 	{ "unsupported", required_argument, NULL, 'U' },
 	{ "adj", no_argument, &opt::format, ADJ },
@@ -317,6 +322,9 @@ main(int argc, char** argv)
 		  int r;
 			arg >> r;
 			opt::rValues.push_back(r);
+			break;
+		case 'R':
+		  arg >> opt::maxReadSize;
 			break;
 		case 'a':
 			double a;

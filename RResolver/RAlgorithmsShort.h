@@ -26,7 +26,6 @@ const long PATH_COMBINATIONS_MULTITHREAD_THRESHOLD = 5000;
 const double SUPPORTED_PATHS_MIN = 0.15;
 const double COV_APPROX_FORMULA_FACTOR = 4.00;
 const double SPACED_SEEDS_SNP_FRACTION = 1.00;
-const int MAX_READ_SIZE = 300;
 
 namespace opt {
 
@@ -71,6 +70,9 @@ extern int readQualityThreshold;
 
 /** Flag indicating whether error correction is enabled */
 extern int errorCorrection;
+
+/** Upper limit on read size to consider for use with RResolver. */
+extern unsigned maxReadSize;
 
 /** Name of the file to write supported paths to */
 extern std::string outputSupportedPathsPath;

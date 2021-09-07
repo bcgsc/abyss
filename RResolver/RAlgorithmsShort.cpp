@@ -117,7 +117,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 				btllib::SeqReader reader(filename);
 				for (btllib::SeqReader::Record record;
 				     (record = reader.read()) && (record.num < READ_STATS_SAMPLE_SIZE);) {
-					if (record.seq.size() > MAX_READ_SIZE) {
+					if (record.seq.size() > opt::maxReadSize) {
 						continue;
 					}
 					hist.insert(record.seq.size());
