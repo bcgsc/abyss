@@ -235,6 +235,7 @@ jobs:
     vmImage: macOS-10.14
   steps:
   - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc
     displayName: Install common
@@ -249,6 +250,7 @@ jobs:
     vmImage: macOS-10.14
   steps:
   - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
     displayName: Install common
