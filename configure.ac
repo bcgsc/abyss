@@ -321,7 +321,7 @@ AC_CONFIG_FILES([
 if test "$with_sparsehash" != "no" -a "$ac_cv_header_google_sparse_hash_map" != "yes"; then
 	AC_MSG_ERROR([ABySS should be compiled with Google sparsehash to
 	reduce memory usage. It may be downloaded here:
-	https://code.google.com/p/sparsehash/
+	https://github.com/sparsehash/sparsehash
 
 	If you do not wish to use sparsehash, specify --without-sparsehash.])
 fi
