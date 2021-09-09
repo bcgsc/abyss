@@ -577,7 +577,7 @@ else
 %-1-rr.fa: %-1.fa
 	ln -s $< $@
 
-%-1-rr.$g:  %-1.$g
+%-1-rr.$g: %-1.$g
 	ln -s $< $@
 endif
 
