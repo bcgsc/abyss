@@ -974,7 +974,7 @@ int main(int argc, char** argv)
 	map<FastaRecord, map<FastaRecord, Gap> > flanks;
 	const char* scaffoldInputPath = opt::inputScaffold.c_str();
 
-	const auto case_flag = FastaReader::FOLD_CASE;
+	auto case_flag = FastaReader::FOLD_CASE;
 	if (opt::lower) {
 		case_flag = FastaReader::NO_FOLD_CASE;
 		opt::trimMasked = 0;
