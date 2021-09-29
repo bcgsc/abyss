@@ -68,16 +68,11 @@ public class Indexlr {
       this(btllibJNI.new_IndexlrFlag(), true);
     }
   
-    public final static long ID = btllibJNI.Indexlr_IndexlrFlag_ID_get();
     public final static long NO_ID = btllibJNI.Indexlr_IndexlrFlag_NO_ID_get();
     public final static long BX = btllibJNI.Indexlr_IndexlrFlag_BX_get();
-    public final static long NO_BX = btllibJNI.Indexlr_IndexlrFlag_NO_BX_get();
     public final static long SEQ = btllibJNI.Indexlr_IndexlrFlag_SEQ_get();
-    public final static long NO_SEQ = btllibJNI.Indexlr_IndexlrFlag_NO_SEQ_get();
     public final static long FILTER_IN = btllibJNI.Indexlr_IndexlrFlag_FILTER_IN_get();
-    public final static long NO_FILTER_IN = btllibJNI.Indexlr_IndexlrFlag_NO_FILTER_IN_get();
     public final static long FILTER_OUT = btllibJNI.Indexlr_IndexlrFlag_FILTER_OUT_get();
-    public final static long NO_FILTER_OUT = btllibJNI.Indexlr_IndexlrFlag_NO_FILTER_OUT_get();
     public final static long SHORT_MODE = btllibJNI.Indexlr_IndexlrFlag_SHORT_MODE_get();
     public final static long LONG_MODE = btllibJNI.Indexlr_IndexlrFlag_LONG_MODE_get();
   }
@@ -142,24 +137,24 @@ public class Indexlr {
       this(btllibJNI.new_Indexlr_Minimizer__SWIG_0(), true);
     }
   
-    public Minimizer(SWIGTYPE_p_uint64_t min_hash, SWIGTYPE_p_uint64_t out_hash, long pos, boolean forward, String seq) {
-      this(btllibJNI.new_Indexlr_Minimizer__SWIG_1(SWIGTYPE_p_uint64_t.getCPtr(min_hash), SWIGTYPE_p_uint64_t.getCPtr(out_hash), pos, forward, seq), true);
+    public Minimizer(java.math.BigInteger min_hash, java.math.BigInteger out_hash, long pos, boolean forward, String seq) {
+      this(btllibJNI.new_Indexlr_Minimizer__SWIG_1(min_hash, out_hash, pos, forward, seq), true);
     }
   
-    public void setMin_hash(SWIGTYPE_p_uint64_t value) {
-      btllibJNI.Indexlr_Minimizer_min_hash_set(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(value));
+    public void setMin_hash(java.math.BigInteger value) {
+      btllibJNI.Indexlr_Minimizer_min_hash_set(swigCPtr, this, value);
     }
   
-    public SWIGTYPE_p_uint64_t getMin_hash() {
-      return new SWIGTYPE_p_uint64_t(btllibJNI.Indexlr_Minimizer_min_hash_get(swigCPtr, this), true);
+    public java.math.BigInteger getMin_hash() {
+      return btllibJNI.Indexlr_Minimizer_min_hash_get(swigCPtr, this);
     }
   
-    public void setOut_hash(SWIGTYPE_p_uint64_t value) {
-      btllibJNI.Indexlr_Minimizer_out_hash_set(swigCPtr, this, SWIGTYPE_p_uint64_t.getCPtr(value));
+    public void setOut_hash(java.math.BigInteger value) {
+      btllibJNI.Indexlr_Minimizer_out_hash_set(swigCPtr, this, value);
     }
   
-    public SWIGTYPE_p_uint64_t getOut_hash() {
-      return new SWIGTYPE_p_uint64_t(btllibJNI.Indexlr_Minimizer_out_hash_get(swigCPtr, this), true);
+    public java.math.BigInteger getOut_hash() {
+      return btllibJNI.Indexlr_Minimizer_out_hash_get(swigCPtr, this);
     }
   
     public void setPos(long value) {

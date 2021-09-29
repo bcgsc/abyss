@@ -103,9 +103,12 @@ public:
 
   void close()
   {
-    closed = true;
-    for (auto& slot : this->slots) {
-      slot.occupancy_changed.notify_all();
+    bool closed_expected = false;
+    if (closed.compare_exchange_strong(closed_expected, true)) {
+      for (auto& slot : this->slots) {
+        std::unique_lock<std::mutex> busy_lock(slot.busy);
+        slot.occupancy_changed.notify_all();
+      }
     }
   }
 

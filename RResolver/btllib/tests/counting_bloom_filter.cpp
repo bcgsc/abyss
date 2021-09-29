@@ -2,7 +2,6 @@
 
 #include "helpers.hpp"
 
-#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <mutex>
@@ -18,31 +17,37 @@ main()
   cbf.insert({ 1, 10, 100 });
   cbf.insert({ 100, 200, 300 });
 
-  assert(cbf.contains({ 1, 10, 100 }) == 2);
-  assert(cbf.contains({ 100, 200, 300 }) == 1);
-  assert(cbf.contains({ 1, 20, 100 }) == 0);
+  TEST_ASSERT_EQ(cbf.contains({ 1, 10, 100 }), 2);
+  TEST_ASSERT_EQ(cbf.contains({ 100, 200, 300 }), 1);
+  TEST_ASSERT_EQ(cbf.contains({ 1, 20, 100 }), 0);
 
   auto filename = get_random_name(64);
-  cbf.write(filename);
+  cbf.save(filename);
 
   btllib::CountingBloomFilter8 cbf2(filename);
 
-  assert(cbf2.contains({ 1, 10, 100 }) == 2);
-  assert(cbf2.contains({ 100, 200, 300 }) == 1);
-  assert(cbf2.contains({ 1, 20, 100 }) == 0);
+  TEST_ASSERT_EQ(cbf2.contains({ 1, 10, 100 }), 2);
+  TEST_ASSERT_EQ(cbf2.contains({ 100, 200, 300 }), 1);
+  TEST_ASSERT_EQ(cbf2.contains({ 1, 20, 100 }), 0);
+
+  TEST_ASSERT_EQ(cbf2.contains_insert({ 9, 99, 999 }), 0);
+  TEST_ASSERT_EQ(cbf2.contains_insert({ 9, 99, 999 }), 1);
+  TEST_ASSERT_EQ(cbf2.contains_insert({ 9, 99, 999 }), 2);
+  TEST_ASSERT_EQ(cbf2.contains_insert({ 9, 99, 999 }), 3);
 
   std::remove(filename.c_str());
 
   std::string seq = "CACTATCGACGATCATTCGAGCATCAGCGACTG";
   std::string seq2 = "GTAGTACGATCAGCGACTATCGAGCTACGAGCA";
-  assert(seq.size() == seq2.size());
+  TEST_ASSERT_EQ(seq.size(), seq2.size());
 
   std::cerr << "Testing KmerCountingBloomFilter" << std::endl;
   btllib::KmerCountingBloomFilter8 kmer_counting_bf(
     1024 * 1024, 4, seq.size() / 2);
   kmer_counting_bf.insert(seq);
-  assert(kmer_counting_bf.contains(seq) == (seq.size() - seq.size() / 2 + 1));
-  assert(kmer_counting_bf.contains(seq2) <= 1);
+  TEST_ASSERT_EQ(kmer_counting_bf.contains(seq),
+                 (seq.size() - seq.size() / 2 + 1));
+  TEST_ASSERT_LE(kmer_counting_bf.contains(seq2), 1);
 
   std::cerr << "Testing KmerCountingBloomfilter with multiple threads"
             << std::endl;
@@ -108,7 +113,7 @@ main()
     }
   }
   std::cerr << "False positives = " << false_positives << std::endl;
-  assert(false_positives < 10);
+  TEST_ASSERT_LT(false_positives, 10);
 
   std::atomic<int> more_than_1(0);
 #pragma omp parallel shared(present_seqs,                                      \
@@ -132,11 +137,11 @@ main()
       if (kmer_counting_bf2.contains(seq) > 1) {
         more_than_1++;
       }
-      assert(kmer_counting_bf2.contains(seq));
+      TEST_ASSERT(kmer_counting_bf2.contains(seq));
     }
   }
   std::cerr << "Seqs with more than 1 presence = " << more_than_1 << std::endl;
-  assert(more_than_1 > 5);
+  TEST_ASSERT_GT(more_than_1, 5);
 
   return 0;
 }

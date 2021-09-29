@@ -114,7 +114,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 				Histogram hist;
 				std::map<int, Histogram> qualThresholdPositionsHists;
 
-				btllib::SeqReader reader(filename);
+				btllib::SeqReader reader(filename, btllib::SeqReader::Flag::SHORT_MODE);
 				for (btllib::SeqReader::Record record;
 				     (record = reader.read()) && (record.num < READ_STATS_SAMPLE_SIZE);) {
 					if (record.seq.size() > opt::maxReadSize) {
@@ -271,7 +271,7 @@ testSequence(const Sequence& sequence)
 		tests = sequence.size() - r + 1;
 		int offset = 0;
 		if (opt::errorCorrection) {
-			btllib::NtHash nthash(sequence, r, g_vanillaBloom->get_hash_num());
+			btllib::NtHash nthash(sequence, g_vanillaBloom->get_hash_num(), r);
 			for (const auto& hitSeeds : g_spacedSeedsBloom->contains(sequence)) {
 				nthash.roll();
 				if (hitSeeds.size() > 0) {

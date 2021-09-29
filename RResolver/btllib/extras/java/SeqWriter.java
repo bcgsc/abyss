@@ -52,12 +52,12 @@ public class SeqWriter {
     btllibJNI.SeqWriter_close(swigCPtr, this);
   }
 
-  public void write(String name, String comment, String seq, String qual) {
-    btllibJNI.SeqWriter_write__SWIG_0(swigCPtr, this, name, comment, seq, qual);
+  public void write(String id, String comment, String seq, String qual) {
+    btllibJNI.SeqWriter_write__SWIG_0(swigCPtr, this, id, comment, seq, qual);
   }
 
-  public void write(String name, String comment, String seq) {
-    btllibJNI.SeqWriter_write__SWIG_1(swigCPtr, this, name, comment, seq);
+  public void write(String id, String comment, String seq) {
+    btllibJNI.SeqWriter_write__SWIG_1(swigCPtr, this, id, comment, seq);
   }
 
   public final static class Format {

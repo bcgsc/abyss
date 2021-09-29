@@ -15,12 +15,12 @@ Documentation
 
 Download
 ---
-The recommended way is to download the latest release, but if you want the latest master branch, ensure that submodules are cloned: `git clone https://github.com/bcgsc/btllib --recurse-submodules`.
+The recommended way is to download the [latest release](https://github.com/bcgsc/btllib/releases/latest).
 
 C++
 ---
 - Dependencies
-  * GCC 4.8.1+ or Clang 3.3.0+ with OpenMP
+  * GCC 5+ or Clang 4+ with OpenMP
 - Copy the root `btllib` directory into your project
 - Use any header from the `btllib/include` directory (pass `-I btllib/include` flag to the compiler)
 - `btllib` uses `C++11` features, so that standard should be enabled at a minimum.
@@ -28,12 +28,12 @@ C++
 Python and Java
 ---
 - Dependencies
-  * GCC 4.8.1+ or Clang 3.3.0+ with OpenMP
+  * GCC 5+ or Clang 4+ with OpenMP
   * Python 3.5+
-  * Meson and Ninja Python3 packages (optional - if they are missing, they will be automatically downloaded to a temporary directory)
+  * Meson and Ninja Python3 packages, and CMake (optional -- if they are missing, they will be automatically downloaded to a temporary directory)
 - Copy the root `btllib` directory into your project
-- Run `btllib/compile`
-- The wrappers correspond one-to-one with C++ code so any functions and classes can be used under the same name.
+- Run `btllib/compile-wrappers`
+- The wrappers correspond one-to-one with C++ code so any functions and classes can be used under the same name. The only exception are nested classes which are prefixed with outer class name (e.g. `btllib::SeqReader::Flag` in C++ versus `btllib.SeqReaderFlag` in Python).
 - Python
   * Use Python's `sys.path.append()` to include `btllib/python` directory
   * Include the library with `import btllib`
@@ -43,11 +43,9 @@ Python and Java
 
 Contributing
 ---
-If you want to contribute code to this repo, before making a pull request, make sure to:
-- Create a build directory by running `meson build` in `btllib` directory
-- Run `ninja complete` in the `build` directory to generate wrappers, docs, format the code, check for any errors, etc.
+If you want to make changes to the btllib code, first create a build directory by running `meson build` in `btllib` directory. `cd` to `build` directory and run `ninja build-sdsl` once to build the `sdsl` dependency. After that, every time you want to build the tests and wrappers, run `ninja` in `build` directory. To run the tests, run `ninja test`.
 
-`ninja complete` does the following steps, in order:
+The following are the available `ninja` commands which can be run within `build` directory:
 - `ninja build-sdsl` builds the sdsl-lite dependency library
 - `ninja format` formats the whitespace in code (requires clang-format 8+)
 - `ninja wrap` wraps C++ code for Python and Java (requires SWIG 4.0+)
@@ -56,14 +54,13 @@ If you want to contribute code to this repo, before making a pull request, make 
 - `ninja` builds the tests and wrapper libraries / makes sure they compile
 - `ninja test` runs the tests
 - `ninja docs` generates code documentation from comments (requires Doxygen)
+- `ninja complete` runs all of the above commands in the listed order
 
-Any of these can be run individually within `build` directory.
-
-In order to build tests and wrappers, you need to run `ninja build-sdsl` once to build the sdsl dependency library.
+Before making a pull request, make sure to run `ninja complete` to make sure the code passes the CI test.
 
 Credits
 ---
-- Author: [Vladimir Nikolic](https://github.com/schutzekatze)
+- Author: [Vladimir Nikolic](https://github.com/vlad0x00)
 - Components:
   - [Hamid Mohamadi](https://github.com/mohamadi) for [ntHash](https://github.com/bcgsc/ntHash)
   - [Justin Chu](https://github.com/JustinChu) for [MIBloomFilter](https://github.com/bcgsc/btl_bloomfilter)

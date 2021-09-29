@@ -9,7 +9,8 @@ if python3.found()
 
     java_home = run_command(python3, '-c', 'import os; print(os.environ["JAVA_HOME"])').stdout().strip()
     if java_home != ''
-        subdir('java')
+        message('Java wrappers currently disabled.')
+        #subdir('java')
     else
         message('JAVA_HOME environment variable not set, skipping Java wrappers.')
     endif

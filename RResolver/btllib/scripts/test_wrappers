@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ -z "${MESON_SOURCE_ROOT}" ]; then
+  echo "[ERROR] This script can only be ran with meson!"
+  exit 1
+fi
+
+set -e
+
+cd "${MESON_SOURCE_ROOT}"
+
+cd python
+python3 -c 'import btllib; nt = btllib.NtHash("ACTG", 2, 3); nt.roll(); b = btllib.BloomFilter(1024, 2); b.insert(nt.hashes())'

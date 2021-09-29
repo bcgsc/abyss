@@ -12,6 +12,8 @@ namespace btllib {
 
 inline std::vector<std::string>
 split(const std::string& s, const std::string& delim);
+inline std::string
+join(const std::vector<std::string>& s, const std::string& delim);
 inline void
 ltrim(std::string& s);
 inline void
@@ -19,9 +21,9 @@ rtrim(std::string& s);
 inline void
 trim(std::string& s);
 inline bool
-starts_with(std::string s, std::string prefix);
+startswith(std::string s, std::string prefix);
 inline bool
-ends_with(std::string s, std::string suffix);
+endswith(std::string s, std::string suffix);
 
 inline std::vector<std::string>
 split(const std::string& s, const std::string& delim)
@@ -35,6 +37,17 @@ split(const std::string& s, const std::string& delim)
   }
   tokens.push_back(s.substr(pos1));
   return tokens;
+}
+
+inline std::string
+join(const std::vector<std::string>& s, const std::string& delim)
+{
+  std::string joined = s[0];
+  for (size_t i = 1; i < s.size(); i++) {
+    joined += delim;
+    joined += s[i];
+  }
+  return joined;
 }
 
 inline void
@@ -63,7 +76,7 @@ trim(std::string& s)
 }
 
 inline bool
-starts_with(std::string s, std::string prefix)
+startswith(std::string s, std::string prefix)
 {
   std::transform(s.begin(), s.end(), s.begin(), ::tolower);
   std::transform(prefix.begin(), prefix.end(), prefix.begin(), ::tolower);
@@ -71,7 +84,7 @@ starts_with(std::string s, std::string prefix)
 }
 
 inline bool
-ends_with(std::string s, std::string suffix)
+endswith(std::string s, std::string suffix)
 {
   std::transform(s.begin(), s.end(), s.begin(), ::tolower);
   std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);

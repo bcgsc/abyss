@@ -17,19 +17,21 @@
 
 namespace btllib {
 
-static const unsigned char BIT_MASKS[CHAR_BIT] = {
+static const uint8_t BIT_MASKS[CHAR_BIT] = {
   // NOLINT
   0x01, 0x02, 0x04, 0x08, // NOLINT
   0x10, 0x20, 0x40, 0x80  // NOLINT
 };
 
-static const char* const BLOOM_FILTER_MAGIC_HEADER = "BTLBloomFilter_v2";
+static const char* const BLOOM_FILTER_MAGIC_HEADER = "BTLBloomFilter_v5";
 static const char* const KMER_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLKmerBloomFilter_v2";
+  "BTLKmerBloomFilter_v5";
 static const char* const SEED_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLSeedBloomFilter_v2";
+  "BTLSeedBloomFilter_v5";
+static const char* const HASH_FN = "ntHash_v1";
 
 static const unsigned MAX_HASH_VALUES = 1024;
+static const unsigned PLACEHOLDER_NEWLINES = 50;
 
 inline unsigned
 pop_cnt_byte(uint8_t x)
@@ -52,8 +54,9 @@ public:
    *
    * @param bytes Filter size in bytes.
    * @param hash_num Number of hash values per element.
+   * @param hash_fn Name of the hash function used. Used for metadata. Optional.
    */
-  BloomFilter(size_t bytes, unsigned hash_num);
+  BloomFilter(size_t bytes, unsigned hash_num, std::string hash_fn = "");
 
   /**
    * Load a Bloom filter from a file.
@@ -107,6 +110,28 @@ public:
     return contains(hashes.data());
   }
 
+  /**
+   * Check for the presence of an element's hash values and insert if missing.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const uint64_t* hashes);
+
+  /**
+   * Check for the presence of an element's hash values and insert if missing.
+   *
+   * @param hashes Integer vector of hash values.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const std::vector<uint64_t>& hashes)
+  {
+    return contains_insert(hashes.data());
+  }
+
   /** Get filter size in bytes. */
   size_t get_bytes() const { return bytes; }
   /** Get population count, i.e. the number of 1 bits in the filter. */
@@ -117,13 +142,15 @@ public:
   unsigned get_hash_num() const { return hash_num; }
   /** Get the query false positive rate. */
   double get_fpr() const;
+  /** Get the name of the hash function used. */
+  const std::string& get_hash_fn() const { return hash_fn; }
 
   /**
-   * Write the Bloom filter to a file that can be loaded in the future.
+   * Save the Bloom filter to a file that can be loaded in the future.
    *
    * @param path Filepath to store filter at.
    */
-  void write(const std::string& path);
+  void save(const std::string& path);
 
   /** Parse a Bloom filter file header. Useful for implementing Bloom filter
    * variants. */
@@ -141,6 +168,7 @@ private:
     0; // Should be equal to bytes, but not guaranteed by standard
   size_t array_bits = 0;
   unsigned hash_num = 0;
+  std::string hash_fn;
 };
 
 /**
@@ -191,6 +219,24 @@ public:
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }
 
   /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   */
+  void insert(const uint64_t* hashes) { bloom_filter.insert(hashes); }
+
+  /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer vector of hash values.
+   */
+  void insert(const std::vector<uint64_t>& hashes)
+  {
+    bloom_filter.insert(hashes);
+  }
+
+  /**
    * Query the presence of k-mers of a sequence.
    *
    * @param seq Sequence to k-merize.
@@ -233,6 +279,53 @@ public:
     return bloom_filter.contains(hashes);
   }
 
+  /**
+   * Query the presence of k-mers of a sequence and insert if missing.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   *
+   * @return The number of seq's k-mers found in the filter before insertion.
+   */
+  unsigned contains_insert(const char* seq, size_t seq_len);
+
+  /**
+   * Query the presence of k-mers of a sequence and insert if missing.
+   *
+   * @param seq Sequence to k-merize.
+   *
+   * @return The number of seq's k-mers found in the filter before insertion.
+   */
+  unsigned contains_insert(const std::string& seq)
+  {
+    return contains_insert(seq.c_str(), seq.size());
+  }
+
+  /**
+   * Check for the presence of an element's hash values and insert if missing.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const uint64_t* hashes)
+  {
+    return bloom_filter.contains_insert(hashes);
+  }
+
+  /**
+   * Check for the presence of an element's hash values and insert if missing.
+   *
+   * @param hashes Integer vector of hash values.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const std::vector<uint64_t>& hashes)
+  {
+    return bloom_filter.contains_insert(hashes);
+  }
+
   /** Get filter size in bytes. */
   size_t get_bytes() const { return bloom_filter.get_bytes(); }
   /** Get population count, i.e. the number of 1 bits in the filter. */
@@ -245,15 +338,17 @@ public:
   double get_fpr() const { return bloom_filter.get_fpr(); }
   /** Get the k-mer size used. */
   unsigned get_k() const { return k; }
+  /** Get the name of the hash function used. */
+  const std::string& get_hash_fn() const { return bloom_filter.get_hash_fn(); }
   /** Get a reference to the underlying vanilla Bloom filter. */
   BloomFilter& get_bloom_filter() { return bloom_filter; }
 
   /**
-   * Write the Bloom filter to a file that can be loaded in the future.
+   * Save the Bloom filter to a file that can be loaded in the future.
    *
    * @param path Filepath to store filter at.
    */
-  void write(const std::string& path);
+  void save(const std::string& path);
 
 private:
   friend class SeedBloomFilter;
@@ -314,6 +409,24 @@ public:
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }
 
   /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num argument used when the Bloom filter was constructed.
+   */
+  void insert(const uint64_t* hashes) { kmer_bloom_filter.insert(hashes); }
+
+  /**
+   * Insert an element's hash values.
+   *
+   * @param hashes Integer vector of hash values.
+   */
+  void insert(const std::vector<uint64_t>& hashes)
+  {
+    kmer_bloom_filter.insert(hashes);
+  }
+
+  /**
    * Query the presence of spaced seed k-mers of a sequence.
    *
    * @param seq Sequence to k-merize.
@@ -363,6 +476,62 @@ public:
     return kmer_bloom_filter.contains(hashes);
   }
 
+  /**
+   * Query the presence of spaced seed k-mers of a sequence and insert if
+   * missing.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   *
+   * @return A vector indicating which seeds had a hit for every k-mer before
+   * insertion. The indices of the outer vector are indices of seq k-mers. The
+   * indices of inner vector are indices of spaced seeds hit for that k-mer.
+   */
+  std::vector<std::vector<unsigned>> contains_insert(const char* seq,
+                                                     size_t seq_len);
+
+  /**
+   * Query the presence of spaced seed k-mers of a sequence and insert if
+   * missing.
+   *
+   * @param seq Sequence to k-merize.
+   *
+   * @return A vector indicating which seeds had a hit for every k-mer before
+   * insertion. The indices of the outer vector are indices of seq k-mers. The
+   * indices of inner vector are indices of spaced seeds hit for that k-mer.
+   */
+  std::vector<std::vector<unsigned>> contains_insert(const std::string& seq)
+  {
+    return contains_insert(seq.c_str(), seq.size());
+  }
+
+  /**
+   * Check for the presence of an element's hash values and insert if missing. A
+   * single spaced seed is an element here.
+   *
+   * @param hashes Integer array of hash values. Array size should equal the
+   * hash_num_per_seed argument used when the Bloom filter was constructed.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const uint64_t* hashes)
+  {
+    return kmer_bloom_filter.contains_insert(hashes);
+  }
+
+  /**
+   * Check for the presence of an element's hash values and insert if missing. A
+   * single spaced seed is an element here.
+   *
+   * @param hashes Integer vector of hash values.
+   *
+   * @return True if present before insertion, false otherwise.
+   */
+  bool contains_insert(const std::vector<uint64_t>& hashes)
+  {
+    return kmer_bloom_filter.contains_insert(hashes);
+  }
+
   /** Get filter size in bytes. */
   size_t get_bytes() const { return kmer_bloom_filter.get_bytes(); }
   /** Get population count, i.e. the number of 1 bits in the filter. */
@@ -393,15 +562,20 @@ public:
   {
     return kmer_bloom_filter.get_hash_num();
   }
+  /** Get the name of the hash function used. */
+  const std::string& get_hash_fn() const
+  {
+    return kmer_bloom_filter.get_hash_fn();
+  }
   /** Get a reference to the underlying Kmer Bloom filter. */
   KmerBloomFilter& get_kmer_bloom_filter() { return kmer_bloom_filter; }
 
   /**
-   * Write the Bloom filter to a file that can be loaded in the future.
+   * Save the Bloom filter to a file that can be loaded in the future.
    *
    * @param path Filepath to store filter at.
    */
-  void write(const std::string& path);
+  void save(const std::string& path);
 
 private:
   KmerBloomFilter kmer_bloom_filter;
@@ -409,11 +583,15 @@ private:
   std::vector<SpacedSeed> parsed_seeds;
 };
 
-inline BloomFilter::BloomFilter(size_t bytes, unsigned hash_num)
-  : bytes(std::ceil(bytes / sizeof(uint64_t)) * sizeof(uint64_t))
+inline BloomFilter::BloomFilter(size_t bytes,
+                                unsigned hash_num,
+                                std::string hash_fn)
+  : bytes(
+      size_t(std::ceil(double(bytes) / sizeof(uint64_t)) * sizeof(uint64_t)))
   , array_size(get_bytes() / sizeof(array[0]))
   , array_bits(array_size * CHAR_BIT)
   , hash_num(hash_num)
+  , hash_fn(std::move(hash_fn))
 {
   check_error(bytes == 0, "BloomFilter: memory budget must be >0!");
   check_error(hash_num == 0, "BloomFilter: number of hash values must be >0!");
@@ -447,6 +625,19 @@ BloomFilter::contains(const uint64_t* hashes) const
     }
   }
   return true;
+}
+
+inline bool
+BloomFilter::contains_insert(const uint64_t* hashes)
+{
+  uint8_t found = 1;
+  for (unsigned i = 0; i < hash_num; ++i) {
+    const auto normalized = hashes[i] % array_bits;
+    const auto bitpos = normalized % CHAR_BIT;
+    const auto mask = BIT_MASKS[bitpos];
+    found &= ((array[normalized / CHAR_BIT].fetch_or(mask) >> bitpos) & 1);
+  }
+  return bool(found);
 }
 
 inline uint64_t
@@ -484,7 +675,7 @@ BloomFilter::parse_header(std::ifstream& file, const std::string& magic_string)
       std::string("Magic string does not match (likely version mismatch)\n") +
       "File magic string:\t" + line + "\n" + "Loader magic string:\t" +
       magic_with_brackets);
-    std::exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
   }
 
   /* Read bloom filter line by line until it sees "[HeaderEnd]"
@@ -501,7 +692,10 @@ BloomFilter::parse_header(std::ifstream& file, const std::string& magic_string)
   }
   if (!header_end_found) {
     log_error("Pre-built bloom filter does not have the correct header end.");
-    std::exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
+  }
+  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
+    std::getline(file, line);
   }
 
   // Send the char array to a stringstream for the cpptoml parser to parse
@@ -526,13 +720,16 @@ inline BloomFilter::BloomFilter(const std::string& path)
   array_size = bytes / sizeof(std::atomic<uint8_t>);
   array_bits = array_size * CHAR_BIT;
   hash_num = *(table->get_as<decltype(hash_num)>("hash_num"));
+  if (table->contains("hash_fn")) {
+    hash_fn = *(table->get_as<std::string>("hash_fn"));
+  }
 
   array = new std::atomic<uint8_t>[array_size];
-  file.read((char*)array, array_size * sizeof(array[0]));
+  file.read((char*)array, std::streamsize(array_size * sizeof(array[0])));
 }
 
 inline void
-BloomFilter::write(const std::string& path)
+BloomFilter::save(const std::string& path)
 {
   std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
 
@@ -547,23 +744,32 @@ BloomFilter::write(const std::string& path)
   auto header = cpptoml::make_table();
   header->insert("bytes", get_bytes());
   header->insert("hash_num", get_hash_num());
+  if (!hash_fn.empty()) {
+    header->insert("hash_fn", get_hash_fn());
+  }
   root->insert(BLOOM_FILTER_MAGIC_HEADER, header);
   file << *root << "[HeaderEnd]\n";
+  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
+    if (i == 1) {
+      file << "  <binary data>";
+    }
+    file << '\n';
+  }
 
-  file.write((char*)array, array_size * sizeof(array[0]));
+  file.write((char*)array, std::streamsize(array_size * sizeof(array[0])));
 }
 
 inline KmerBloomFilter::KmerBloomFilter(size_t bytes,
                                         unsigned hash_num,
                                         unsigned k)
-  : bloom_filter(bytes, hash_num)
+  : bloom_filter(bytes, hash_num, HASH_FN)
   , k(k)
 {}
 
 inline void
 KmerBloomFilter::insert(const char* seq, size_t seq_len)
 {
-  NtHash nthash(seq, seq_len, get_k(), get_hash_num());
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
   while (nthash.roll()) {
     bloom_filter.insert(nthash.hashes());
   }
@@ -573,9 +779,22 @@ inline unsigned
 KmerBloomFilter::contains(const char* seq, size_t seq_len) const
 {
   unsigned count = 0;
-  NtHash nthash(seq, seq_len, get_k(), get_hash_num());
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
   while (nthash.roll()) {
     if (bloom_filter.contains(nthash.hashes())) {
+      count++;
+    }
+  }
+  return count;
+}
+
+inline unsigned
+KmerBloomFilter::contains_insert(const char* seq, size_t seq_len)
+{
+  unsigned count = 0;
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
+  while (nthash.roll()) {
+    if (bloom_filter.contains_insert(nthash.hashes())) {
       count++;
     }
   }
@@ -588,23 +807,31 @@ inline KmerBloomFilter::KmerBloomFilter(const std::string& path)
 
   auto table = bloom_filter.parse_header(file, KMER_BLOOM_FILTER_MAGIC_HEADER);
   bloom_filter.bytes = *(table->get_as<decltype(bloom_filter.bytes)>("bytes"));
-  check_warning(
-    sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
-    "Atomic primitives take extra memory. BloomFilter will have less than " +
-      std::to_string(get_bytes()) + " for bit array.");
+  check_warning(sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
+                "KmerBloomFilter: Atomic primitives take extra memory. "
+                "KmerBloomFilter will have less than " +
+                  std::to_string(get_bytes()) + " for bit array.");
   bloom_filter.array_size = get_bytes() / sizeof(bloom_filter.array[0]);
   bloom_filter.array_bits = bloom_filter.array_size * CHAR_BIT;
   bloom_filter.hash_num =
     *(table->get_as<decltype(bloom_filter.hash_num)>("hash_num"));
+  const std::string loaded_hash_fn = *(table->get_as<std::string>("hash_fn"));
+  check_error(loaded_hash_fn != HASH_FN,
+              "KmerBloomFilter: loaded hash function (" + loaded_hash_fn +
+                ") is different from the one used by default (" + HASH_FN +
+                ").");
+  bloom_filter.hash_fn = loaded_hash_fn;
+
   k = *(table->get_as<decltype(k)>("k"));
 
   bloom_filter.array = new std::atomic<uint8_t>[bloom_filter.array_size];
-  file.read((char*)bloom_filter.array,
-            bloom_filter.array_size * sizeof(bloom_filter.array[0]));
+  file.read(
+    (char*)bloom_filter.array,
+    std::streamsize(bloom_filter.array_size * sizeof(bloom_filter.array[0])));
 }
 
 inline void
-KmerBloomFilter::write(const std::string& path)
+KmerBloomFilter::save(const std::string& path)
 {
   std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
 
@@ -618,13 +845,21 @@ KmerBloomFilter::write(const std::string& path)
       and output to ostream */
   auto header = cpptoml::make_table();
   header->insert("bytes", get_bytes());
+  header->insert("hash_fn", get_hash_fn());
   header->insert("hash_num", get_hash_num());
   header->insert("k", get_k());
   root->insert(KMER_BLOOM_FILTER_MAGIC_HEADER, header);
   file << *root << "[HeaderEnd]\n";
+  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
+    if (i == 1) {
+      file << "  <binary data>";
+    }
+    file << '\n';
+  }
 
-  file.write((char*)bloom_filter.array,
-             bloom_filter.array_size * sizeof(bloom_filter.array[0]));
+  file.write(
+    (char*)bloom_filter.array,
+    std::streamsize(bloom_filter.array_size * sizeof(bloom_filter.array[0])));
 }
 
 inline SeedBloomFilter::SeedBloomFilter(size_t bytes,
@@ -647,7 +882,7 @@ inline void
 SeedBloomFilter::insert(const char* seq, size_t seq_len)
 {
   SeedNtHash nthash(
-    seq, seq_len, get_k(), parsed_seeds, get_hash_num_per_seed());
+    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
   while (nthash.roll()) {
     for (size_t s = 0; s < seeds.size(); s++) {
       kmer_bloom_filter.bloom_filter.insert(nthash.hashes() +
@@ -661,11 +896,29 @@ SeedBloomFilter::contains(const char* seq, size_t seq_len) const
 {
   std::vector<std::vector<unsigned>> hit_seeds;
   SeedNtHash nthash(
-    seq, seq_len, get_k(), parsed_seeds, get_hash_num_per_seed());
+    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
   while (nthash.roll()) {
     hit_seeds.emplace_back();
     for (size_t s = 0; s < seeds.size(); s++) {
       if (kmer_bloom_filter.bloom_filter.contains(
+            nthash.hashes() + s * get_hash_num_per_seed())) {
+        hit_seeds.back().push_back(s);
+      }
+    }
+  }
+  return hit_seeds;
+}
+
+inline std::vector<std::vector<unsigned>>
+SeedBloomFilter::contains_insert(const char* seq, size_t seq_len)
+{
+  std::vector<std::vector<unsigned>> hit_seeds;
+  SeedNtHash nthash(
+    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
+  while (nthash.roll()) {
+    hit_seeds.emplace_back();
+    for (size_t s = 0; s < seeds.size(); s++) {
+      if (kmer_bloom_filter.bloom_filter.contains_insert(
             nthash.hashes() + s * get_hash_num_per_seed())) {
         hit_seeds.back().push_back(s);
       }
@@ -690,10 +943,10 @@ inline SeedBloomFilter::SeedBloomFilter(const std::string& path)
     file, SEED_BLOOM_FILTER_MAGIC_HEADER);
   kmer_bloom_filter.bloom_filter.bytes =
     *(table->get_as<decltype(kmer_bloom_filter.bloom_filter.bytes)>("bytes"));
-  check_warning(
-    sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
-    "Atomic primitives take extra memory. BloomFilter will have less than " +
-      std::to_string(get_bytes()) + " for bit array.");
+  check_warning(sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
+                "SeedBloomFilter: Atomic primitives take extra memory. "
+                "SeedBloomFilter will have less than " +
+                  std::to_string(get_bytes()) + " for bit array.");
   kmer_bloom_filter.bloom_filter.array_size =
     get_bytes() / sizeof(kmer_bloom_filter.bloom_filter.array[0]);
   kmer_bloom_filter.bloom_filter.array_bits =
@@ -704,6 +957,12 @@ inline SeedBloomFilter::SeedBloomFilter(const std::string& path)
   const auto hash_num =
     *(table->get_as<decltype(kmer_bloom_filter.bloom_filter.hash_num)>(
       "hash_num"));
+  const std::string loaded_hash_fn = *(table->get_as<std::string>("hash_fn"));
+  check_error(loaded_hash_fn != HASH_FN,
+              "SeedBloomFilter: loaded hash function (" + loaded_hash_fn +
+                ") is different from the one used by default (" + HASH_FN +
+                ").");
+  kmer_bloom_filter.bloom_filter.hash_fn = loaded_hash_fn;
   kmer_bloom_filter.k = *(table->get_as<decltype(kmer_bloom_filter.k)>("k"));
   seeds = *(table->get_array_of<std::string>("seeds"));
   parsed_seeds = parse_seeds(seeds);
@@ -714,12 +973,12 @@ inline SeedBloomFilter::SeedBloomFilter(const std::string& path)
   kmer_bloom_filter.bloom_filter.array =
     new std::atomic<uint8_t>[kmer_bloom_filter.bloom_filter.array_size];
   file.read((char*)kmer_bloom_filter.bloom_filter.array,
-            kmer_bloom_filter.bloom_filter.array_size *
-              sizeof(kmer_bloom_filter.bloom_filter.array[0]));
+            std::streamsize(kmer_bloom_filter.bloom_filter.array_size *
+                            sizeof(kmer_bloom_filter.bloom_filter.array[0])));
 }
 
 inline void
-SeedBloomFilter::write(const std::string& path)
+SeedBloomFilter::save(const std::string& path)
 {
   std::ofstream file(path.c_str(), std::ios::out | std::ios::binary);
 
@@ -733,6 +992,7 @@ SeedBloomFilter::write(const std::string& path)
       and output to ostream */
   auto header = cpptoml::make_table();
   header->insert("bytes", get_bytes());
+  header->insert("hash_fn", get_hash_fn());
   header->insert("hash_num", get_hash_num());
   header->insert("hash_num_per_seed", get_hash_num_per_seed());
   header->insert("k", get_k());
@@ -743,10 +1003,16 @@ SeedBloomFilter::write(const std::string& path)
   header->insert("seeds", seeds_array);
   root->insert(SEED_BLOOM_FILTER_MAGIC_HEADER, header);
   file << *root << "[HeaderEnd]\n";
+  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
+    if (i == 1) {
+      file << "  <binary data>";
+    }
+    file << '\n';
+  }
 
   file.write((char*)kmer_bloom_filter.bloom_filter.array,
-             kmer_bloom_filter.bloom_filter.array_size *
-               sizeof(kmer_bloom_filter.bloom_filter.array[0]));
+             std::streamsize(kmer_bloom_filter.bloom_filter.array_size *
+                             sizeof(kmer_bloom_filter.bloom_filter.array[0])));
 }
 
 } // namespace btllib

@@ -5,6 +5,8 @@ if [ -z "${MESON_SOURCE_ROOT}" ]; then
   exit 1
 fi
 
+set -e
+
 cd "${MESON_SOURCE_ROOT}"
 
 set -e

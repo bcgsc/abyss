@@ -10,6 +10,8 @@ if [ "$#" -ne 1 ]; then
   exit 1
 fi
 
+set -e
+
 cd "${MESON_SOURCE_ROOT}"
 
 echo -n $(dirname ${1#"${MESON_SOURCE_ROOT}/include/"})

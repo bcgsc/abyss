@@ -69,8 +69,6 @@ public class SeqReader {
     }
   
     public final static long FOLD_CASE = btllibJNI.SeqReader_SeqReaderFlag_FOLD_CASE_get();
-    public final static long NO_FOLD_CASE = btllibJNI.SeqReader_SeqReaderFlag_NO_FOLD_CASE_get();
-    public final static long NO_TRIM_MASKED = btllibJNI.SeqReader_SeqReaderFlag_NO_TRIM_MASKED_get();
     public final static long TRIM_MASKED = btllibJNI.SeqReader_SeqReaderFlag_TRIM_MASKED_get();
     public final static long SHORT_MODE = btllibJNI.SeqReader_SeqReaderFlag_SHORT_MODE_get();
     public final static long LONG_MODE = btllibJNI.SeqReader_SeqReaderFlag_LONG_MODE_get();
@@ -82,10 +80,6 @@ public class SeqReader {
 
   public SeqReader(String source_path, long flags) {
     this(btllibJNI.new_SeqReader__SWIG_1(source_path, flags), true);
-  }
-
-  public SeqReader(String source_path) {
-    this(btllibJNI.new_SeqReader__SWIG_2(source_path), true);
   }
 
   public void close() {
@@ -148,12 +142,12 @@ public class SeqReader {
       return btllibJNI.SeqReader_SeqReaderRecord_num_get(swigCPtr, this);
     }
   
-    public void setName(String value) {
-      btllibJNI.SeqReader_SeqReaderRecord_name_set(swigCPtr, this, value);
+    public void setId(String value) {
+      btllibJNI.SeqReader_SeqReaderRecord_id_set(swigCPtr, this, value);
     }
   
-    public String getName() {
-      return btllibJNI.SeqReader_SeqReaderRecord_name_get(swigCPtr, this);
+    public String getId() {
+      return btllibJNI.SeqReader_SeqReaderRecord_id_get(swigCPtr, this);
     }
   
     public void setComment(String value) {
@@ -190,9 +184,52 @@ public class SeqReader {
     return new SeqReader.SeqReaderRecord(btllibJNI.SeqReader_read(swigCPtr, this), true);
   }
 
+  static public class RecordIterator {
+    private transient long swigCPtr;
+    protected transient boolean swigCMemOwn;
+  
+    protected RecordIterator(long cPtr, boolean cMemoryOwn) {
+      swigCMemOwn = cMemoryOwn;
+      swigCPtr = cPtr;
+    }
+  
+    protected static long getCPtr(RecordIterator obj) {
+      return (obj == null) ? 0 : obj.swigCPtr;
+    }
+  
+    @SuppressWarnings("deprecation")
+    protected void finalize() {
+      delete();
+    }
+  
+    public synchronized void delete() {
+      if (swigCPtr != 0) {
+        if (swigCMemOwn) {
+          swigCMemOwn = false;
+          btllibJNI.delete_SeqReader_RecordIterator(swigCPtr);
+        }
+        swigCPtr = 0;
+      }
+    }
+  
+    public SeqReader.SeqReaderRecord next() {
+      return new SeqReader.SeqReaderRecord(btllibJNI.SeqReader_RecordIterator_next(swigCPtr, this), true);
+    }
+  
+  }
+
+  public SeqReader.RecordIterator begin() {
+    return new SeqReader.RecordIterator(btllibJNI.SeqReader_begin(swigCPtr, this), true);
+  }
+
+  public SeqReader.RecordIterator end() {
+    return new SeqReader.RecordIterator(btllibJNI.SeqReader_end(swigCPtr, this), true);
+  }
+
   public final static class Format {
     public final static SeqReader.Format UNDETERMINED = new SeqReader.Format("UNDETERMINED");
     public final static SeqReader.Format FASTA = new SeqReader.Format("FASTA");
+    public final static SeqReader.Format MULTILINE_FASTA = new SeqReader.Format("MULTILINE_FASTA");
     public final static SeqReader.Format FASTQ = new SeqReader.Format("FASTQ");
     public final static SeqReader.Format SAM = new SeqReader.Format("SAM");
     public final static SeqReader.Format GFA2 = new SeqReader.Format("GFA2");
@@ -232,7 +269,7 @@ public class SeqReader {
       swigNext = this.swigValue+1;
     }
 
-    private static Format[] swigValues = { UNDETERMINED, FASTA, FASTQ, SAM, GFA2, INVALID };
+    private static Format[] swigValues = { UNDETERMINED, FASTA, MULTILINE_FASTA, FASTQ, SAM, GFA2, INVALID };
     private static int swigNext = 0;
     private final int swigValue;
     private final String swigName;

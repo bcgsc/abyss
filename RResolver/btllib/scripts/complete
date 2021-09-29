@@ -5,9 +5,9 @@ if [ -z "${MESON_BUILD_ROOT}" ]; then
   exit 1
 fi
 
-cd "${MESON_BUILD_ROOT}"
-
 set -e
+
+cd "${MESON_BUILD_ROOT}"
 
 ninja build-sdsl format wrap tidycheck cppcheck
 ninja test

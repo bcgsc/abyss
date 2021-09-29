@@ -1,6 +1,6 @@
 #include "btllib/seq.hpp"
+#include "helpers.hpp"
 
-#include <cassert>
 #include <string>
 
 int
@@ -8,6 +8,6 @@ main()
 {
   std::string seq = "ACGTACACTGGACTGAGTCT";
   std::string rc = "AGACTCAGTCCAGTGTACGT";
-  assert(btllib::get_reverse_complement(seq) == rc);
+  TEST_ASSERT_EQ(btllib::get_reverse_complement(seq), rc);
   return 0;
 }

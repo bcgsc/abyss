@@ -1,59 +1,86 @@
 #!/bin/bash
 
+PYTHON_DIR_SUBPATH="extras/python"
+
 if [ -z "${MESON_SOURCE_ROOT}" ]; then
   echo "[ERROR] This script can only be ran with meson!"
   exit 1
 fi
 
+strip_libpaths() {
+  local stripped=()
+  local libpaths=()
+  for arg in $1; do
+    if [[ $arg == "-L"* ]]; then
+      libpaths+=(${arg:2})
+    else
+      stripped+=($arg)
+    fi
+  done
+  printf "%s\n%s\n" "${stripped[*]}" "${libpaths[*]}"
+}
+
+get_libs() {
+  local libpath=$1
+  local libname=$2
+  local libsfound=
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    libsfound="$(find "$libpath" -maxdepth 1 -regextype sed -regex ".*/lib${libname}\.\(so\|a\)")"
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    libsfound="$(find -E "$libpath" -maxdepth 1 -regex ".*/lib${libname}\.(so|dylib|tbd|a)")"
+  fi
+  echo "$libsfound"
+}
+
+set -e
+
 cd "${MESON_SOURCE_ROOT}"
 
 if [[ -n "$BTLLIB_PYTHON_CFLAGS" ]]; then
-  cflags=$BTLLIB_PYTHON_CFLAGS
-  ldflags=$BTLLIB_PYTHON_LDFLAGS
+  cflags="$BTLLIB_PYTHON_CFLAGS"
+  ldflags="$BTLLIB_PYTHON_LDFLAGS"
 else
-  cflags=$(python3-config --cflags)
-  ldflags=$(python3-config --ldflags)
+  cflags="$(python3-config --cflags)"
+  ldflags="$(python3-config --ldflags)"
 fi
 
-found_libpython=false
+libpython_required=0
 for flag in $ldflags; do
   if [[ $flag == "-lpython"* ]]; then
-    found_libpython=true
+    libpython_required=${flag:2}
   fi
 done
 
-if [[ $found_libpython == false ]]; then
-  if [[ -n "$BTLLIB_PYTHON_VERSION" ]]; then
-    py_version="python$BTLLIB_PYTHON_VERSION"
-  else
-    py_version=python$(python3 --version | awk '{print $2}' | awk -F '.' '{print $1 "." $2}')
-  fi
-  py_version_major=$(echo $py_version | sed 's~python\([[:digit:]]\).[[:digit:]]~python\1~')
+if [[ $libpython_required != 0 ]]; then
+  stripped_libpaths="$(strip_libpaths "${ldflags}")"
 
-  pylibs=( "${py_version}" "${py_version}m" "${py_version_major}" "python" )
-  libdetects=( "" "" "" "" )
+  ldflags="$(echo "$stripped_libpaths" | head -n1)"
+  libpaths="$(echo "$stripped_libpaths" | tail -n1)"
 
-  if [[ $OSTYPE == "linux-gnu"* ]]; then
-    for i in $(seq 0 3); do
-      libdetects[$i]="rm -f btllib_py_lib_check.tmp; ld ${ldflags} -l${pylibs[$i]} -o btllib_py_lib_check.tmp"
-    done
-  elif [[ $OSTYPE == "darwin"* ]]; then
-    for i in $(seq 0 3); do
-      libdetects[$i]="rm -f btllib_py_lib_check.tmp; ld ${ldflags} -l${pylibs[$i]} -dylib -arch x86_64 -o btllib_py_lib_check.tmp"
-    done
-  fi
+  sysconfig_libdir="$(python -c 'from distutils import sysconfig; print (sysconfig.get_config_var("LIBDIR"))')"
+  libpaths+=" $sysconfig_libdir"
 
-  for i in $(seq 0 3); do
-    if [[ -n ${libdetects[$i]} ]]; then
-      eval ${libdetects[$i]}
-      if [[ $? -eq 0 ]]; then
-        ldflags+=" -l${pylibs[$i]}"
-        break
-      fi
+  found=0
+  for libpath in ${libpaths}; do
+    libsfound="$(get_libs $libpath $libpython_required)"
+    if [[ -n "$libsfound" ]]; then
+      found=1
+      break
     fi
   done
-  rm -f btllib_py_lib_check.tmp
+  if [[ $found -eq 0 ]]; then
+    echo "ERROR"
+    echo "libpython (.so, .dylib, .tbd, or .a) not found!"
+    exit 1
+  fi
+
+  param_libpaths=
+  for libpath in ${libpaths}; do
+    param_libpaths+="-L${libpath} "
+  done
+  ldflags="$param_libpaths $ldflags"
 fi
 
+echo "SUCCESS"
 echo "$cflags"
 echo "$ldflags"

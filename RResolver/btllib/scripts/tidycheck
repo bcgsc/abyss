@@ -5,6 +5,8 @@ if [ -z "${MESON_SOURCE_ROOT}" ]; then
     exit 1
 fi
 
+set -e
+
 cd "${MESON_SOURCE_ROOT}"
 
 tidy_checks="*,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-hicpp-no-array-decay,\
@@ -22,16 +24,16 @@ tidy_checks="*,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-hicpp-no-ar
 -cppcoreguidelines-non-private-member-variables-in-classes,-fuchsia-statically-constructed-objects,\
 -modernize-return-braced-init-list,-clang-analyzer-unix.Vfork,-clang-analyzer-security.insecureAPI.vfork,\
 -cppcoreguidelines-init-variables,readability-identifier-naming,-google-readability-todo,\
--cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-type-reinterpret-cast,-llvmlibc-*"
+-cppcoreguidelines-macro-usage,-cppcoreguidelines-pro-type-reinterpret-cast,-llvmlibc-*,-readability-function-cognitive-complexity,-altera-struct-pack-align"
 
 tidy_options="[
   { key: readability-identifier-naming.ClassCase,                 value: CamelCase },
   { key: readability-identifier-naming.VariableCase,              value: lower_case },
   { key: readability-identifier-naming.FunctionCase,              value: lower_case },
   { key: readability-identifier-naming.ParameterCase,             value: lower_case },
+  { key: readability-identifier-naming.StaticConstantCase,        value: lower_case },
   { key: readability-identifier-naming.GlobalConstantCase,        value: UPPER_CASE },
   { key: readability-identifier-naming.GlobalConstantPointerCase, value: UPPER_CASE },
-  { key: readability-identifier-naming.StaticConstantCase,        value: UPPER_CASE },
   { key: readability-identifier-naming.ConstexprVariableCase,     value: UPPER_CASE },
 ]"
 

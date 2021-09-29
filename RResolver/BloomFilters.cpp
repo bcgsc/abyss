@@ -167,7 +167,7 @@ loadReads(const std::vector<std::string>& readFilepaths, int r)
 					std::cerr << "Loading reads from `" << path << "'...\n";
 				}
 
-				btllib::SeqReader reader(path);
+				btllib::SeqReader reader(path, btllib::SeqReader::Flag::SHORT_MODE);
 				uint64_t readCount = 0;
 #pragma omp parallel num_threads(threads_per_task)
 				for (btllib::SeqReader::Record record; (record = reader.read());) {

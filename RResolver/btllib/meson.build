@@ -1,19 +1,16 @@
 project('btllib', 'cpp',
-        version : '1.0.6',
+        version : '1.1.5',
         license : 'GPL3',
         default_options : [ 'cpp_std=c++11', 'warning_level=3', 'werror=true' ])
 
-global_args = [ '-pthread' ]
-global_link_args = [ '-ldl', '-pthread', '-lpthread' ]
-if build_machine.system() == 'darwin'
-  global_args += [ '-Xpreprocessor', '-fopenmp' ]
-  global_link_args += [ '-Xpreprocessor', '-fopenmp', '-lomp' ]
-else
-  global_args += [ '-fopenmp' ]
-  global_link_args += [ '-fopenmp' ]
-endif
+threads_dep = dependency('threads')
+openmp_dep = dependency('openmp', required : false)
+deps = [ threads_dep, openmp_dep ]
 
-sdsl = meson.get_compiler('cpp').find_library('sdsl', required : false, dirs : meson.source_root()+ '/external/sdsl-lite/installdir/lib')
+global_args = []
+global_link_args = [ '-ldl' ]
+
+sdsl_lib = meson.get_compiler('cpp').find_library('sdsl', required : false, dirs : meson.source_root() + '/external/sdsl-lite/installdir/lib')
 global_args += [ '-I' + meson.source_root() + '/external/sdsl-lite/installdir/include' ]
 global_link_args += [ '-L' + meson.source_root() + '/external/sdsl-lite/installdir/lib', '-lsdsl', '-ldivsufsort', '-ldivsufsort64' ]
 
@@ -23,11 +20,11 @@ add_global_link_arguments(global_link_args, language : 'cpp')
 compiler = meson.get_compiler('cpp')
 compiler_id = compiler.get_id()
 compiler_version = compiler.version()
-if compiler_id == 'gcc' and compiler_version.version_compare('<4.8.1')
-  error('GCC ' + compiler_version + ' doesn\'t fully support C++11')
+if compiler_id == 'gcc' and compiler_version.version_compare('<5.0.0')
+  error('GCC ' + compiler_version + ' is unsupported.')
 endif
-if compiler_id == 'clang' and compiler_version.version_compare('<3.3.0')
-  error('Clang ' + compiler_version + ' doesn\'t fully support C++11')
+if compiler_id == 'clang' and compiler_version.version_compare('<4.0.0')
+  error('Clang ' + compiler_version + ' is unsupported.')
 endif
 
 btllib_include = include_directories('include')
@@ -68,6 +65,10 @@ endif
 
 run_target('complete', command: join_paths(rootpath, 'scripts/complete'))
 
+run_target('test-wrappers', command: join_paths(rootpath, 'scripts/test_wrappers'))
+
 subdir('include')
-subdir('tests')
 subdir('extras')
+if get_option('buildtype') != 'release'
+  subdir('tests')
+endif

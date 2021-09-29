@@ -140,15 +140,33 @@ check_error(bool condition, const std::string& msg)
 {
   if (condition) {
     log_error(msg);
-    std::exit(EXIT_FAILURE);
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
   }
+}
+
+inline std::string
+get_strerror()
+{
+  static const size_t buflen = 1024;
+  char buf[buflen];
+// POSIX and GNU implementation of strerror_r differ, even in function signature
+// and so we need to check which one is used
+#if __APPLE__ ||                                                               \
+  ((_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && !_GNU_SOURCE)
+  strerror_r(errno, buf, buflen);
+  return buf;
+#else
+  return strerror_r(errno, buf, buflen);
+#endif
 }
 
 inline void
 check_stream(const std::ios& stream, const std::string& name)
 {
-  check_error(!stream.good(),
-              "'" + name + "' stream error: " + std::strerror(errno));
+  if (!stream.good()) {
+    log_error("'" + name + "' stream error: " + get_strerror());
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
+  }
 }
 
 } // namespace btllib

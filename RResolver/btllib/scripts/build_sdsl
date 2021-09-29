@@ -5,7 +5,16 @@ if [ -z "${MESON_SOURCE_ROOT}" ]; then
   exit 1
 fi
 
+set -e
+
 cd "${MESON_SOURCE_ROOT}/external/sdsl-lite"
-sed -i 's~^\(.*\) -DCMAKE_POSITION_INDEPENDENT_CODE=ON \(.*\)$~\1 \2~' install.sh
-sed -i 's~^cmake\(.*\) \.\.~cmake\1 -DCMAKE_POSITION_INDEPENDENT_CODE=ON ..~' install.sh
+
+# Enable PIC in order to link wrapper shared modules with sdsl lib
+sed -i'' -e 's~^\(.*\) -DCMAKE_POSITION_INDEPENDENT_CODE=ON \(.*\)$~\1 \2~' install.sh
+sed -i'' -e 's~^cmake\(.*\) \.\.~cmake\1 -DCMAKE_POSITION_INDEPENDENT_CODE=ON ..~' install.sh
+
+# Disable git submodule mechanism, since we're not using submodules
+# Currently, github does not include submodules in releases, hence this decision
+sed -i'' -e 's~\(.*EXECUTE_PROCESS(COMMAND\) git .*~\1 ;~' external/CMakeLists.txt
+
 ./install.sh installdir

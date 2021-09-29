@@ -498,7 +498,7 @@ public:
     unsigned misses = 0;
     for (unsigned i = 0; i < m_hash_num; ++i) {
       uint64_t pos = hashes[i] % m_bv.size();
-      if (m_bv[pos]) {
+      if (bool(m_bv[pos])) {
         rank_pos[i] = m_rank_support(pos);
         hits[i] = true;
       } else {
@@ -520,7 +520,7 @@ public:
   {
     for (unsigned i = 0; i < m_hash_num; ++i) {
       uint64_t pos = hashes[i] % m_bv.size();
-      if (m_bv[pos]) {
+      if (bool(m_bv[pos])) {
         rank_pos[i] = m_rank_support(pos);
       } else {
         return false;

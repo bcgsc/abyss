@@ -15,8 +15,8 @@ namespace btllib {
  * An example of writing a gzipped fastq file.
  */
 
-/** Write FASTA or FASTQ sequences to a file. Capable of writing gzipped (.gz),
- * bzipped (.bz2), xzipped (.xz), zipped (.zip), and 7zipped (.7z) files. Add
+/** Write FASTA or FASTQ sequences to a file. Capable of writing gzip (.gz),
+ * bzip2 (.bz2), xz (.xz), zip (.zip), 7zip (.7z), and lrzip (.lrz) files. Add
  * the appropriate extension to the output filename to automatically compress.
  * Threadsafe. */
 class SeqWriter
@@ -42,7 +42,7 @@ public:
 
   void close();
 
-  void write(const std::string& name,
+  void write(const std::string& id,
              const std::string& comment,
              const std::string& seq,
              const std::string& qual = "");
@@ -76,7 +76,7 @@ SeqWriter::close()
 }
 
 inline void
-SeqWriter::write(const std::string& name,
+SeqWriter::write(const std::string& id,
                  const std::string& comment,
                  const std::string& seq,
                  const std::string& qual)
@@ -86,16 +86,16 @@ SeqWriter::write(const std::string& name,
     if (!bool(COMPLEMENTS[(unsigned char)(c)])) {
       log_error(std::string("A sequence contains invalid IUPAC character: ") +
                 c);
-      std::exit(EXIT_FAILURE);
+      std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
     }
   }
 
   std::string output;
-  output.reserve(1 + name.size() + 1 + comment.size() + 1 + seq.size() + 3 +
+  output.reserve(1 + id.size() + 1 + comment.size() + 1 + seq.size() + 3 +
                  qual.size() + 1);
   output += headerchar;
-  if (!name.empty()) {
-    output += name;
+  if (!id.empty()) {
+    output += id;
   }
   if (!comment.empty()) {
     output += " ";
