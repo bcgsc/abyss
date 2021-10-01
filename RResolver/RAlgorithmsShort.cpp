@@ -741,7 +741,7 @@ resolveRepeats()
 			          << percentOrZero(pathsUnknown, pathsTotal) << "%)\n";
 			for (size_t i = 0; i < unknownReasons; i++) {
 				if (i > 0) { std::cerr << ", "; }
-				std::cerr << unknownReasonLabels[i] << ": " << double(unknownReasonCounts[i]) / pathsUnknown * 100.0 << "%";
+				std::cerr << unknownReasonLabels[i] << ": " << percentOrZero(unknownReasonCounts[i], pathsUnknown) << "%";
 			}
 			std::cerr << "\n";
 			std::cerr << "Supported paths ~= " << pathsSupported << "/" << pathsKnown << " ("
@@ -770,7 +770,7 @@ resolveRepeats()
 			          << percentOrZero(pathsUnknown, pathsTotal) << "%)\n";
 			for (size_t i = 0; i < unknownReasons; i++) {
 				if (i > 0) { std::cerr << ", "; }
-				std::cerr << unknownReasonLabels[i] << ": " << double(unknownReasonCounts[i]) / pathsUnknown * 100.0 << "%";
+				std::cerr << unknownReasonLabels[i] << ": " << percentOrZero(unknownReasonCounts[i], pathsUnknown) << "%";
 			}
 			std::cerr << "\n" << std::defaultfloat << std::flush;
 		}
