@@ -748,7 +748,25 @@ resolveRepeats()
 			resolution.failed = true;
 		}
 	} else {
-		std::cerr << "No small junctions were found!\n";
+		std::cerr << "No small resolveable junctions were found!" << std::endl;
+
+		if (opt::verbose) {
+			std::cerr << std::fixed;
+			std::cerr << "Small repeats = " << repeats << "/" << total << " ("
+			          << double(repeats) / total * 100.0 << "%)\n";
+			std::cerr << "Known support paths = " << pathsKnown << " / "
+			          << pathsTotal << " ("
+			          << double(pathsKnown) / pathsTotal * 100.0 << "%)\n";
+			std::cerr << "Unknown support paths = " << pathsUnknown << " / "
+			          << pathsTotal << " ("
+			          << double(pathsUnknown) / pathsTotal * 100.0 << "%)\n";
+			for (size_t i = 0; i < unknownReasons; i++) {
+				if (i > 0) { std::cerr << ", "; }
+				std::cerr << unknownReasonLabels[i] << ": " << double(unknownReasonCounts[i]) / pathsUnknown * 100.0 << "%";
+			}
+			std::cerr << "\n" << std::defaultfloat << std::flush;
+		}
+
 		resolution.failed = true;
 	}
 
