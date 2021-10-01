@@ -706,6 +706,14 @@ resolveRepeats()
 	}
 	pathsTotal = pathsKnown + pathsUnknown;
 
+	const auto percentOrZero = [](const long num, const long denom) {
+		if (denom == 0) {
+			return 0.0;
+		} else {
+			return 100.0 * double(num) / double(denom);
+		}
+	};
+
 	if (repeats > 0 && pathsKnown > 0) {
 		for (const auto& findsAndCount : resolution.findsHistogram) {
 			const auto& finds = findsAndCount.first;
@@ -724,22 +732,22 @@ resolveRepeats()
 		if (opt::verbose) {
 			std::cerr << std::fixed;
 			std::cerr << "Small repeats = " << repeats << "/" << total << " ("
-			          << double(repeats) / total * 100.0 << "%)\n";
+			          << percentOrZero(repeats, total) << "%)\n";
 			std::cerr << "Known support paths = " << pathsKnown << " / "
 			          << pathsTotal << " ("
-			          << double(pathsKnown) / pathsTotal * 100.0 << "%)\n";
+			          << percentOrZero(pathsKnown, pathsTotal) << "%)\n";
 			std::cerr << "Unknown support paths = " << pathsUnknown << " / "
 			          << pathsTotal << " ("
-			          << double(pathsUnknown) / pathsTotal * 100.0 << "%)\n";
+			          << percentOrZero(pathsUnknown, pathsTotal) << "%)\n";
 			for (size_t i = 0; i < unknownReasons; i++) {
 				if (i > 0) { std::cerr << ", "; }
 				std::cerr << unknownReasonLabels[i] << ": " << double(unknownReasonCounts[i]) / pathsUnknown * 100.0 << "%";
 			}
 			std::cerr << "\n";
 			std::cerr << "Supported paths ~= " << pathsSupported << "/" << pathsKnown << " ("
-			          << double(pathsSupported) / pathsKnown * 100.0 << "%)\n";
+			          << percentOrZero(pathsSupported, pathsKnown) << "%)\n";
 			std::cerr << "Unsupported paths ~= " << pathsUnsupported << "/" << pathsKnown << " ("
-			          << double(pathsUnsupported) / pathsKnown * 100.0 << "%)\n";
+			          << percentOrZero(pathsUnsupported, pathsKnown) << "%)\n";
 			std::cerr << std::defaultfloat << std::flush;
 		}
 
@@ -753,13 +761,13 @@ resolveRepeats()
 		if (opt::verbose) {
 			std::cerr << std::fixed;
 			std::cerr << "Small repeats = " << repeats << "/" << total << " ("
-			          << double(repeats) / total * 100.0 << "%)\n";
+			          << percentOrZero(repeats, total) << "%)\n";
 			std::cerr << "Known support paths = " << pathsKnown << " / "
 			          << pathsTotal << " ("
-			          << double(pathsKnown) / pathsTotal * 100.0 << "%)\n";
+			          << percentOrZero(pathsKnown, pathsTotal) << "%)\n";
 			std::cerr << "Unknown support paths = " << pathsUnknown << " / "
 			          << pathsTotal << " ("
-			          << double(pathsUnknown) / pathsTotal * 100.0 << "%)\n";
+			          << percentOrZero(pathsUnknown, pathsTotal) << "%)\n";
 			for (size_t i = 0; i < unknownReasons; i++) {
 				if (i > 0) { std::cerr << ", "; }
 				std::cerr << unknownReasonLabels[i] << ": " << double(unknownReasonCounts[i]) / pathsUnknown * 100.0 << "%";
