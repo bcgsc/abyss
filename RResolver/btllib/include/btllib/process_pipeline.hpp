@@ -175,7 +175,7 @@ extract_io_redirection(std::string& cmd)
   auto& err_append = redirection.err_append;
 
   auto args = split(cmd, " ");
-  std::for_each(args.begin(), args.end(), trim);
+  std::for_each(args.begin(), args.end(), (void (*)(decltype(args[0])&))trim);
   args.erase(std::remove_if(args.begin(),
                             args.end(),
                             [](const std::string& arg) { return arg.empty(); }),
@@ -556,7 +556,9 @@ run_cmd()
 
   auto individual_cmds = split(buf, "|");
   check_error(individual_cmds.empty(), "Process spawner: Invalid command.");
-  std::for_each(individual_cmds.begin(), individual_cmds.end(), trim);
+  std::for_each(individual_cmds.begin(),
+                individual_cmds.end(),
+                (void (*)(decltype(individual_cmds[0])&))trim);
 
   const auto original_cmds = individual_cmds;
 
@@ -599,13 +601,13 @@ run_cmd()
     const auto& individual_cmd = individual_cmds[idx];
 
     auto args = split(individual_cmd, " ");
-    std::for_each(args.begin(), args.end(), trim);
+    std::for_each(args.begin(), args.end(), (void (*)(decltype(args[0])&))trim);
     args.erase(
       std::remove_if(args.begin(),
                      args.end(),
                      [](const std::string& arg) { return arg.empty(); }),
       args.end());
-    std::for_each(args.begin(), args.end(), [](std::string& s) {
+    std::for_each(args.begin(), args.end(), [](decltype(args[0])& s) {
       if ((startswith(s, "'") && endswith(s, "'")) ||
           (startswith(s, "\"") && endswith(s, "\""))) {
         s.erase(0, 1);

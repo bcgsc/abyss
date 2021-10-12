@@ -186,7 +186,7 @@ template<typename ReaderType, typename RecordType>
 inline bool
 SeqReaderFastqModule::read_file(ReaderType& reader, RecordType& record)
 {
-  if (std::ferror(reader.source) == 0 && std::feof(reader.source) == 0) {
+  if (!reader.file_at_end(reader.source)) {
     reader.readline_file(record.header, reader.source);
     reader.readline_file(record.seq, reader.source);
     reader.readline_file(tmp, reader.source);

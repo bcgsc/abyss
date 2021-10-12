@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <string>
 
 namespace btllib {
@@ -21,7 +22,7 @@ struct CString
       change_cap(cstr.s_size + 1);
     }
     s_size = cstr.s_size;
-    memcpy(s, cstr.s, s_size + 1);
+    std::memcpy(s, cstr.s, s_size + 1);
   }
 
   CString(CString&& cstr) noexcept
@@ -32,13 +33,13 @@ struct CString
     std::swap(s_cap, cstr.s_cap);
   }
 
-  CString(const std::string& str)
+  explicit CString(const std::string& str)
   {
     if (str.size() + 1 > s_cap) {
       change_cap(str.size() + 1);
     }
     s_size = str.size();
-    memcpy(s, str.c_str(), s_size + 1);
+    std::memcpy(s, str.c_str(), s_size + 1);
   }
 
   CString& operator=(const CString& cstr)
@@ -50,7 +51,7 @@ struct CString
       change_cap(cstr.s_size + 1);
     }
     s_size = cstr.s_size;
-    memcpy(s, cstr.s, s_size + 1);
+    std::memcpy(s, cstr.s, s_size + 1);
     return *this;
   }
 
@@ -69,7 +70,7 @@ struct CString
       change_cap(str.size() + 1);
     }
     s_size = str.size();
-    memcpy(s, str.c_str(), s_size + 1);
+    std::memcpy(s, str.c_str(), s_size + 1);
     return *this;
   }
 
@@ -83,7 +84,7 @@ struct CString
                                   std::log2(double(s_size)))));
       change_cap(s_size * factor);
     }
-    memcpy(s + s_size, cstr.s, cstr.s_size);
+    std::memcpy(s + s_size, cstr.s, cstr.s_size);
     s_size = new_size;
     return *this;
   }
@@ -98,7 +99,7 @@ struct CString
                                   std::log2(double(s_size)))));
       change_cap(s_size * factor);
     }
-    memcpy(s + s_size, str.c_str(), str.size());
+    std::memcpy(s + s_size, str.c_str(), str.size());
     s[new_size] = '\0';
     s_size = new_size;
     return *this;
@@ -120,12 +121,14 @@ struct CString
     return *this;
   }
 
+  char& operator[](const size_t pos) const { return s[pos]; }
+
   ~CString() { free(s); } // NOLINT
 
   void clear()
   {
-    s[0] = '\0';
     s_size = 0;
+    s[0] = '\0';
   }
   bool empty() const { return (ssize_t)s_size <= 0; }
   size_t size() const { return s_size; }
@@ -143,6 +146,32 @@ struct CString
   {
     s_cap = new_cap;
     s = (char*)std::realloc(s, new_cap); // NOLINT
+  }
+
+  void resize(const size_t n, const char c = '\0')
+  {
+    if (n > s_size) {
+      change_cap(n + 1);
+      for (size_t i = s_size; i < n; i++) {
+        s[i] = c;
+      }
+    }
+    s_size = n;
+    s[s_size] = '\0';
+  }
+
+  CString& erase(const size_t pos = 0,
+                 size_t len = std::numeric_limits<size_t>::max())
+  {
+    if (pos + len > size()) {
+      len = size() - pos;
+    }
+    const ssize_t to_move = ssize_t(size()) - ssize_t(pos) - ssize_t(len);
+    if (to_move > 0 && to_move < ssize_t(size())) {
+      std::memmove(s + pos, s + pos + len, to_move);
+    }
+    resize(size() - len);
+    return *this;
   }
 
   char* s = (char*)std::malloc(CSTRING_DEFAULT_CAP); // NOLINT

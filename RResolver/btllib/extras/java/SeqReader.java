@@ -229,7 +229,6 @@ public class SeqReader {
   public final static class Format {
     public final static SeqReader.Format UNDETERMINED = new SeqReader.Format("UNDETERMINED");
     public final static SeqReader.Format FASTA = new SeqReader.Format("FASTA");
-    public final static SeqReader.Format MULTILINE_FASTA = new SeqReader.Format("MULTILINE_FASTA");
     public final static SeqReader.Format FASTQ = new SeqReader.Format("FASTQ");
     public final static SeqReader.Format SAM = new SeqReader.Format("SAM");
     public final static SeqReader.Format GFA2 = new SeqReader.Format("GFA2");
@@ -269,7 +268,7 @@ public class SeqReader {
       swigNext = this.swigValue+1;
     }
 
-    private static Format[] swigValues = { UNDETERMINED, FASTA, MULTILINE_FASTA, FASTQ, SAM, GFA2, INVALID };
+    private static Format[] swigValues = { UNDETERMINED, FASTA, FASTQ, SAM, GFA2, INVALID };
     private static int swigNext = 0;
     private final int swigValue;
     private final String swigName;

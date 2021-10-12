@@ -500,14 +500,17 @@ Indexlr::get_minimizers()
     ready_blocks_owners()[id % MAX_SIMULTANEOUS_INDEXLRS] = id;
   }
   auto& block = *(ready_blocks_array()[id % MAX_SIMULTANEOUS_INDEXLRS]);
-  if (block.count <= block.current) {
-    output_queue.read(block);
-    if (block.count <= block.current) {
+  if (block.count <= block.current) { // cppcheck-suppress danglingTempReference
+    output_queue.read(block);         // cppcheck-suppress danglingTempReference
+    if (block.count <=                // cppcheck-suppress danglingTempReference
+        block.current) {              // cppcheck-suppress danglingTempReference
       output_queue.close();
+      // cppcheck-suppress danglingTempReference
       block = decltype(output_queue)::Block(block_size);
       return Record();
     }
   }
+  // cppcheck-suppress danglingTempReference
   return std::move(block.data[block.current++]);
 }
 

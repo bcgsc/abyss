@@ -9,6 +9,7 @@
 #include "seq_reader_fastq_module.hpp"
 #include "seq_reader_gfa2_module.hpp"
 #include "seq_reader_multiline_fasta_module.hpp"
+#include "seq_reader_multiline_fastq_module.hpp"
 #include "seq_reader_sam_module.hpp"
 #include "status.hpp"
 
@@ -18,6 +19,7 @@
 #include <cctype>
 #include <condition_variable>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <mutex>
@@ -89,7 +91,6 @@ public:
   {
     UNDETERMINED,
     FASTA,
-    MULTILINE_FASTA,
     FASTQ,
     SAM,
     GFA2,
@@ -162,7 +163,7 @@ private:
   static const size_t LONG_MODE_BUFFER_SIZE = 4;
   static const size_t LONG_MODE_BLOCK_SIZE = 1;
 
-  static const size_t FORMAT_BUFFER_SIZE = 2048;
+  static const size_t FORMAT_BUFFER_SIZE = 16384;
 
   struct Buffer
   {
@@ -236,6 +237,7 @@ private:
   bool readline_buffer_append(CString& s);
   static void readline_file(CString& s, FILE* f);
   void readline_file_append(CString& s, FILE* f);
+  static bool file_at_end(FILE* f);
   int getc_buffer();
   int ungetc_buffer(int c);
 
@@ -267,11 +269,16 @@ private:
   friend class SeqReaderFastqModule;
   SeqReaderFastqModule fastq_module;
 
+  friend class SeqReaderMultilineFastqModule;
+  SeqReaderMultilineFastqModule multiline_fastq_module;
+
   friend class SeqReaderSamModule;
   SeqReaderSamModule sam_module;
 
   friend class SeqReaderGfa2Module;
   SeqReaderGfa2Module gfa2_module;
+
+  int module_in_use = 0;
 
   void postprocess();
 };
@@ -355,37 +362,6 @@ SeqReader::load_buffer()
   return bool(buffer.end);
 }
 
-inline void
-SeqReader::determine_format()
-{
-  load_buffer();
-  bool empty = buffer.end - buffer.start == 1;
-  check_warning(empty, std::string(source_path) + " is empty.");
-
-  if (empty) {
-    return;
-  }
-
-  auto* const buf = buffer.data.data() + buffer.start;
-  const auto bufsize = buffer.end - buffer.start;
-
-  if (fasta_module.buffer_valid(buf, bufsize)) {
-    format = Format::FASTA;
-  } else if (multiline_fasta_module.buffer_valid(buf, bufsize)) {
-    format = Format::MULTILINE_FASTA;
-  } else if (fastq_module.buffer_valid(buf, bufsize)) {
-    format = Format::FASTQ;
-  } else if (sam_module.buffer_valid(buf, bufsize)) {
-    format = Format::SAM;
-  } else if (gfa2_module.buffer_valid(buf, bufsize)) {
-    format = Format::GFA2;
-  } else {
-    format = Format::INVALID;
-    log_error(std::string(source_path) + " source file is in invalid format!");
-    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
-  }
-}
-
 inline bool
 SeqReader::readline_buffer_append(CString& s)
 {
@@ -423,6 +399,20 @@ SeqReader::readline_file_append(CString& s, FILE* f)
   }
   memcpy(s.s + s.s_size, tmp.s, tmp.s_size + 1);
   s.s_size += tmp.s_size;
+}
+
+inline bool
+SeqReader::file_at_end(FILE* f)
+{
+  if (std::ferror(f) == 0) {
+    auto c = std::fgetc(f);
+    if (c == EOF) {
+      return true;
+    }
+    std::ungetc(c, f);
+    return false;
+  }
+  return true;
 }
 
 inline int
@@ -508,13 +498,47 @@ SeqReader::read_from_file(Module& module,
   }
 }
 
-#define BTLLIB_SEQREADER_FORMAT_READ(INPUT_FORMAT, READ_MODULE)                \
-  case Format::INPUT_FORMAT: {                                                 \
+#define BTLLIB_SEQREADER_FORMAT_CHECK(INPUT_FORMAT, READ_MODULE)               \
+  if ((++module_counter, (READ_MODULE).buffer_valid(buf, bufsize))) {          \
+    format = Format::INPUT_FORMAT;                                             \
+    module_in_use = module_counter;                                            \
+  } else
+
+#define BTLLIB_SEQREADER_FORMAT_READ(READ_MODULE)                              \
+  if (module_in_use == ++module_counter) {                                     \
     read_from_buffer(READ_MODULE, records, counter);                           \
     read_transition(READ_MODULE, records, counter);                            \
     read_from_file(READ_MODULE, records, counter);                             \
-    break;                                                                     \
+  } else
+
+inline void
+SeqReader::determine_format()
+{
+  load_buffer();
+  bool empty = buffer.end - buffer.start == 1;
+  check_warning(empty, std::string(source_path) + " is empty.");
+
+  if (empty) {
+    return;
   }
+
+  auto* const buf = buffer.data.data() + buffer.start;
+  const auto bufsize = buffer.end - buffer.start;
+
+  int module_counter = 0;
+
+  BTLLIB_SEQREADER_FORMAT_CHECK(FASTA, fasta_module)
+  BTLLIB_SEQREADER_FORMAT_CHECK(FASTA, multiline_fasta_module)
+  BTLLIB_SEQREADER_FORMAT_CHECK(FASTQ, fastq_module)
+  BTLLIB_SEQREADER_FORMAT_CHECK(FASTQ, multiline_fastq_module)
+  BTLLIB_SEQREADER_FORMAT_CHECK(SAM, sam_module)
+  BTLLIB_SEQREADER_FORMAT_CHECK(GFA2, gfa2_module)
+  {
+    format = Format::INVALID;
+    log_error(std::string(source_path) + " source file is in invalid format!");
+    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
+  }
+}
 
 inline void
 SeqReader::start_reader()
@@ -528,14 +552,19 @@ SeqReader::start_reader()
 
     size_t counter = 0;
     decltype(cstring_queue)::Block records(block_size);
-    switch (format) {
-      BTLLIB_SEQREADER_FORMAT_READ(FASTA, fasta_module)
-      BTLLIB_SEQREADER_FORMAT_READ(MULTILINE_FASTA, multiline_fasta_module)
-      BTLLIB_SEQREADER_FORMAT_READ(FASTQ, fastq_module)
-      BTLLIB_SEQREADER_FORMAT_READ(SAM, sam_module)
-      BTLLIB_SEQREADER_FORMAT_READ(GFA2, gfa2_module)
-      default: {
-        break;
+
+    if (get_format() != Format::UNDETERMINED) {
+      int module_counter = 0;
+
+      BTLLIB_SEQREADER_FORMAT_READ(fasta_module)
+      BTLLIB_SEQREADER_FORMAT_READ(multiline_fasta_module)
+      BTLLIB_SEQREADER_FORMAT_READ(fastq_module)
+      BTLLIB_SEQREADER_FORMAT_READ(multiline_fastq_module)
+      BTLLIB_SEQREADER_FORMAT_READ(sam_module)
+      BTLLIB_SEQREADER_FORMAT_READ(gfa2_module)
+      {
+        log_error("SeqReader: No reading module was enabled.");
+        std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
       }
     }
 
@@ -558,6 +587,7 @@ SeqReader::start_reader()
   }));
 }
 
+#undef BTLLIB_SEQREADER_FORMAT_CHECK
 #undef BTLLIB_SEQREADER_FORMAT_READ
 
 inline void
@@ -575,17 +605,12 @@ SeqReader::start_processors()
             records_out.data[i].seq = std::string(
               records_in.data[i].seq, records_in.data[i].seq.size());
             auto& seq = records_out.data[i].seq;
-            while (!seq.empty() && (seq.back() == '\r' || seq.back() == '\n')) {
-              seq.pop_back();
-            }
+            rtrim(seq);
 
             records_out.data[i].qual = std::string(
               records_in.data[i].qual, records_in.data[i].qual.size());
             auto& qual = records_out.data[i].qual;
-            while (!qual.empty() &&
-                   (qual.back() == '\r' || qual.back() == '\n')) {
-              qual.pop_back();
-            }
+            rtrim(qual);
 
             char *first_whitespace = nullptr, *last_whitespace = nullptr;
             for (size_t j = 0; j < records_in.data[i].header.size(); j++) {
@@ -598,11 +623,27 @@ SeqReader::start_processors()
                 break;
               }
             }
-            size_t id_start =
-              (format == Format::FASTA || format == Format::MULTILINE_FASTA ||
-               format == Format::FASTQ || format == Format::SAM)
-                ? 1
-                : 0;
+            size_t id_start = (format == Format::FASTA ||
+                               format == Format::FASTQ || format == Format::SAM)
+                                ? 1
+                                : 0;
+
+            switch (format) {
+              case Format::FASTA:
+                check_error(records_in.data[i].header.empty(),
+                            "SeqReader: Invalid FASTA header");
+                check_error(records_in.data[i].header[0] != '>',
+                            "SeqReader: Unexpected character in a FASTA file.");
+                break;
+              case Format::FASTQ:
+                check_error(records_in.data[i].header.empty(),
+                            "SeqReader: Invalid FASTQ header");
+                check_error(records_in.data[i].header[0] != '@',
+                            "SeqReader: Unexpected character in a FASTQ file.");
+                break;
+              default:
+                break;
+            }
 
             if (first_whitespace == nullptr) {
               records_out.data[i].id =
@@ -622,13 +663,8 @@ SeqReader::start_processors()
 
             auto& id = records_out.data[i].id;
             auto& comment = records_out.data[i].comment;
-            while (!id.empty() && (id.back() == '\r' || id.back() == '\n')) {
-              id.pop_back();
-            }
-            while (!comment.empty() &&
-                   (comment.back() == '\r' || comment.back() == '\n')) {
-              comment.pop_back();
-            }
+            rtrim(id);
+            rtrim(comment);
 
             if (trim_masked()) {
               const auto len = seq.length();
@@ -686,14 +722,18 @@ SeqReader::read()
   }
   auto& ready_records =
     *(ready_records_array()[id % MAX_SIMULTANEOUS_SEQREADERS]);
-  if (ready_records.count <= ready_records.current) {
-    output_queue.read(ready_records);
-    if (ready_records.count <= ready_records.current) {
+  if (ready_records.count <=          // cppcheck-suppress danglingTempReference
+      ready_records.current) {        // cppcheck-suppress danglingTempReference
+    output_queue.read(ready_records); // cppcheck-suppress danglingTempReference
+    if (ready_records.count <=        // cppcheck-suppress danglingTempReference
+        ready_records.current) {      // cppcheck-suppress danglingTempReference
       close();
+      // cppcheck-suppress danglingTempReference
       ready_records = decltype(output_queue)::Block(block_size);
       return Record();
     }
   }
+  // cppcheck-suppress danglingTempReference
   return std::move(ready_records.data[ready_records.current++]);
 }
 

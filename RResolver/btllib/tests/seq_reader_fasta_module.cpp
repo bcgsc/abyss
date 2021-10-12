@@ -20,9 +20,11 @@ main()
     size_t i = 0;
     for (const auto record : reader) {
       TEST_ASSERT_EQ(record.id, ids[i]);
-      TEST_ASSERT_EQ(record.seq, seqs[i])
+      TEST_ASSERT_EQ(record.seq, seqs[i]);
+      TEST_ASSERT_EQ(record.qual, "");
       i++;
     }
+    TEST_ASSERT_EQ(i, 2);
   }
 
   return 0;

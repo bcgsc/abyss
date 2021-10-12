@@ -240,6 +240,7 @@ static void SWIGUNUSED SWIG_JavaThrowException(JNIEnv *jenv, SWIG_JavaExceptionC
 #include "btllib/counting_bloom_filter.hpp"
 #include "btllib/indexlr.hpp"
 #include "btllib/seq_reader_fastq_module.hpp"
+#include "btllib/seq_reader_multiline_fastq_module.hpp"
 #include "btllib/seq_reader_fasta_module.hpp"
 #include "btllib/seq_reader_multiline_fasta_module.hpp"
 #include "btllib/nthash.hpp"
@@ -3833,6 +3834,28 @@ SWIGEXPORT void JNICALL Java_btllib_btllibJNI_delete_1SeqReaderFastqModule(JNIEn
   (void)jenv;
   (void)jcls;
   arg1 = *(btllib::SeqReaderFastqModule **)&jarg1; 
+  delete arg1;
+}
+
+
+SWIGEXPORT jlong JNICALL Java_btllib_btllibJNI_new_1SeqReaderMultilineFastqModule(JNIEnv *jenv, jclass jcls) {
+  jlong jresult = 0 ;
+  btllib::SeqReaderMultilineFastqModule *result = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  result = (btllib::SeqReaderMultilineFastqModule *)new btllib::SeqReaderMultilineFastqModule();
+  *(btllib::SeqReaderMultilineFastqModule **)&jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_delete_1SeqReaderMultilineFastqModule(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  btllib::SeqReaderMultilineFastqModule *arg1 = (btllib::SeqReaderMultilineFastqModule *) 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(btllib::SeqReaderMultilineFastqModule **)&jarg1; 
   delete arg1;
 }
 
@@ -7858,7 +7881,7 @@ SWIGEXPORT jstring JNICALL Java_btllib_btllibJNI_join(JNIEnv *jenv, jclass jcls,
 }
 
 
-SWIGEXPORT void JNICALL Java_btllib_btllibJNI_ltrim(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_ltrim_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   std::string *arg1 = 0 ;
   
   (void)jenv;
@@ -7872,7 +7895,21 @@ SWIGEXPORT void JNICALL Java_btllib_btllibJNI_ltrim(JNIEnv *jenv, jclass jcls, j
 }
 
 
-SWIGEXPORT void JNICALL Java_btllib_btllibJNI_rtrim(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_ltrim_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  btllib::CString *arg1 = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(btllib::CString **)&jarg1;
+  if (!arg1) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "btllib::CString & reference is null");
+    return ;
+  } 
+  btllib::ltrim(*arg1);
+}
+
+
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_rtrim_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   std::string *arg1 = 0 ;
   
   (void)jenv;
@@ -7886,7 +7923,21 @@ SWIGEXPORT void JNICALL Java_btllib_btllibJNI_rtrim(JNIEnv *jenv, jclass jcls, j
 }
 
 
-SWIGEXPORT void JNICALL Java_btllib_btllibJNI_trim(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_rtrim_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  btllib::CString *arg1 = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(btllib::CString **)&jarg1;
+  if (!arg1) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "btllib::CString & reference is null");
+    return ;
+  } 
+  btllib::rtrim(*arg1);
+}
+
+
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_trim_1_1SWIG_10(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   std::string *arg1 = 0 ;
   
   (void)jenv;
@@ -7894,6 +7945,20 @@ SWIGEXPORT void JNICALL Java_btllib_btllibJNI_trim(JNIEnv *jenv, jclass jcls, jl
   arg1 = *(std::string **)&jarg1;
   if (!arg1) {
     SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "std::string & reference is null");
+    return ;
+  } 
+  btllib::trim(*arg1);
+}
+
+
+SWIGEXPORT void JNICALL Java_btllib_btllibJNI_trim_1_1SWIG_11(JNIEnv *jenv, jclass jcls, jlong jarg1) {
+  btllib::CString *arg1 = 0 ;
+  
+  (void)jenv;
+  (void)jcls;
+  arg1 = *(btllib::CString **)&jarg1;
+  if (!arg1) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "btllib::CString & reference is null");
     return ;
   } 
   btllib::trim(*arg1);

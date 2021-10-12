@@ -67,9 +67,10 @@ main()
       seq = get_random_seq(seq_size);
       qual = get_random_name(seq_size);
 
-      random_seqs << '@' << id << comment_spaces << comment << '\n'
-                  << seq << "\n+\n"
-                  << qual << '\n';
+      std::string newline = get_random(0, 1) == 1 ? "\r\n" : "\n";
+
+      random_seqs << '@' << id << comment_spaces << comment << newline << seq
+                  << newline << '+' << newline << qual << newline;
 
       generated_ids.push_back(id);
       generated_comments.push_back(comment);

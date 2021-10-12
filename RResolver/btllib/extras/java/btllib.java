@@ -568,15 +568,27 @@ public class btllib {
   }
 
   public static void ltrim(SWIGTYPE_p_std__string s) {
-    btllibJNI.ltrim(SWIGTYPE_p_std__string.getCPtr(s));
+    btllibJNI.ltrim__SWIG_0(SWIGTYPE_p_std__string.getCPtr(s));
+  }
+
+  public static void ltrim(SWIGTYPE_p_btllib__CString s) {
+    btllibJNI.ltrim__SWIG_1(SWIGTYPE_p_btllib__CString.getCPtr(s));
   }
 
   public static void rtrim(SWIGTYPE_p_std__string s) {
-    btllibJNI.rtrim(SWIGTYPE_p_std__string.getCPtr(s));
+    btllibJNI.rtrim__SWIG_0(SWIGTYPE_p_std__string.getCPtr(s));
+  }
+
+  public static void rtrim(SWIGTYPE_p_btllib__CString s) {
+    btllibJNI.rtrim__SWIG_1(SWIGTYPE_p_btllib__CString.getCPtr(s));
   }
 
   public static void trim(SWIGTYPE_p_std__string s) {
-    btllibJNI.trim(SWIGTYPE_p_std__string.getCPtr(s));
+    btllibJNI.trim__SWIG_0(SWIGTYPE_p_std__string.getCPtr(s));
+  }
+
+  public static void trim(SWIGTYPE_p_btllib__CString s) {
+    btllibJNI.trim__SWIG_1(SWIGTYPE_p_btllib__CString.getCPtr(s));
   }
 
   public static boolean startswith(String s, String prefix) {

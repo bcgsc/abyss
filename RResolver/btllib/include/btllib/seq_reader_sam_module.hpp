@@ -214,8 +214,7 @@ template<typename ReaderType, typename RecordType>
 inline bool
 SeqReaderSamModule::read_file(ReaderType& reader, RecordType& record)
 {
-  if (std::ferror(samtools_process->out) == 0 &&
-      std::feof(samtools_process->out) == 0) {
+  if (!reader.file_at_end(samtools_process->out)) {
     reader.readline_file(record.header, samtools_process->out);
     reader.readline_file(record.seq, samtools_process->out);
     reader.readline_file(tmp, samtools_process->out);

@@ -4,6 +4,8 @@
 #ifndef BTLLIB_UTIL_HPP
 #define BTLLIB_UTIL_HPP
 
+#include "cstring.hpp"
+
 #include <algorithm>
 #include <string>
 #include <vector>
@@ -17,9 +19,15 @@ join(const std::vector<std::string>& s, const std::string& delim);
 inline void
 ltrim(std::string& s);
 inline void
+ltrim(CString& s);
+inline void
 rtrim(std::string& s);
 inline void
+rtrim(CString& s);
+inline void
 trim(std::string& s);
+inline void
+trim(CString& s);
 inline bool
 startswith(std::string s, std::string prefix);
 inline bool
@@ -59,6 +67,16 @@ ltrim(std::string& s)
 }
 
 inline void
+ltrim(CString& s)
+{
+  decltype(s.size()) i = 0;
+  while (i < s.size() && bool(std::isspace(s[i]))) {
+    i++;
+  }
+  s.erase(0, i);
+}
+
+inline void
 rtrim(std::string& s)
 {
   s.erase(std::find_if(s.rbegin(),
@@ -69,7 +87,24 @@ rtrim(std::string& s)
 }
 
 inline void
+rtrim(CString& s)
+{
+  auto i = s.size();
+  while (i > 0 && bool(std::isspace(s[i - 1]))) {
+    i--;
+  }
+  s.resize(i);
+}
+
+inline void
 trim(std::string& s)
+{
+  ltrim(s);
+  rtrim(s);
+}
+
+inline void
+trim(CString& s)
 {
   ltrim(s);
   rtrim(s);

@@ -1,13 +1,14 @@
-#ifndef BTLLIB_SEQ_READER_MULTILINE_FASTA_MODULE_HPP
-#define BTLLIB_SEQ_READER_MULTILINE_FASTA_MODULE_HPP
+#ifndef BTLLIB_SEQ_READER_MULTILINE_FASTQ_MODULE_HPP
+#define BTLLIB_SEQ_READER_MULTILINE_FASTQ_MODULE_HPP
 
 #include "cstring.hpp"
 #include "seq.hpp"
+#include <cstdlib>
 
 namespace btllib {
 
 /// @cond HIDDEN_SYMBOLS
-class SeqReaderMultilineFastaModule
+class SeqReaderMultilineFastqModule
 {
 
 private:
@@ -18,9 +19,12 @@ private:
     HEADER,
     SEQ,
     TRANSITION,
+    SEP,
+    QUAL
   };
 
   Stage stage = Stage::HEADER;
+  CString tmp;
 
   static bool buffer_valid(const char* buffer, size_t size);
   template<typename ReaderType, typename RecordType>
@@ -32,7 +36,7 @@ private:
 };
 
 inline bool
-SeqReaderMultilineFastaModule::buffer_valid(const char* buffer,
+SeqReaderMultilineFastqModule::buffer_valid(const char* buffer,
                                             const size_t size)
 {
   size_t current = 0;
@@ -42,14 +46,17 @@ SeqReaderMultilineFastaModule::buffer_valid(const char* buffer,
     IN_HEADER_1,
     IN_HEADER_2,
     IN_SEQ,
-    IN_TRANSITION
+    IN_TRANSITION,
+    IN_PLUS_2,
+    IN_QUAL
   };
+  size_t seqlen = 0, quallen = 0;
   State state = IN_HEADER_1;
   while (current < size) {
     c = buffer[current];
     switch (state) {
       case IN_HEADER_1:
-        if (c == '>') {
+        if (c == '@') {
           state = IN_HEADER_2;
         } else {
           return false;
@@ -63,18 +70,43 @@ SeqReaderMultilineFastaModule::buffer_valid(const char* buffer,
       case IN_SEQ:
         if (c == '\n') {
           state = IN_TRANSITION;
-        } else if (c != '\r' && !bool(COMPLEMENTS[c])) {
-          return false;
+        } else if (c != '\r') {
+          if (!bool(COMPLEMENTS[c])) {
+            return false;
+          }
+          seqlen++;
         }
         break;
       case IN_TRANSITION:
-        if (c == '>') {
-          state = IN_HEADER_2;
+        if (c == '+') {
+          state = IN_PLUS_2;
           break;
         } else if (c != '\r' && !bool(COMPLEMENTS[c])) {
           return false;
         }
+        seqlen++;
         state = IN_SEQ;
+        break;
+      case IN_PLUS_2:
+        if (c == '\n') {
+          state = IN_QUAL;
+        }
+        break;
+      case IN_QUAL:
+        if (quallen < seqlen) {
+          if (c != '\r' && c != '\n') {
+            if (c < '!' || c > '~') {
+              return false;
+            }
+            quallen++;
+          }
+        } else if (c == '\n') {
+          seqlen = 0;
+          quallen = 0;
+          state = IN_HEADER_1;
+        } else if (c != '\r') {
+          return false;
+        }
         break;
     }
     current++;
@@ -84,7 +116,7 @@ SeqReaderMultilineFastaModule::buffer_valid(const char* buffer,
 
 template<typename ReaderType, typename RecordType>
 inline bool
-SeqReaderMultilineFastaModule::read_buffer(ReaderType& reader,
+SeqReaderMultilineFastqModule::read_buffer(ReaderType& reader,
                                            RecordType& record)
 {
   record.header.clear();
@@ -115,11 +147,33 @@ SeqReaderMultilineFastaModule::read_buffer(ReaderType& reader,
             return false;
           }
           reader.ungetc_buffer(c);
-          if (c == '>') {
+          if (c == '+') {
+            stage = Stage::SEP;
+          } else {
+            stage = Stage::SEQ;
+          }
+          break;
+        }
+        case Stage::SEP: {
+          if (!reader.readline_buffer_append(tmp)) {
+            return false;
+          }
+          stage = Stage::QUAL;
+          tmp.clear();
+        }
+        // fallthrough
+        case Stage::QUAL: {
+          if (!reader.readline_buffer_append(record.qual)) {
+            return false;
+          }
+          rtrim(record.qual);
+          if (record.qual.size() == record.seq.size()) {
             stage = Stage::HEADER;
             return true;
           }
-          stage = Stage::SEQ;
+          check_error(record.qual.size() > record.seq.size(),
+                      "SeqReader: Multiline FASTQ reader: Quality string is "
+                      "longer than sequence string.");
           break;
         }
         default: {
@@ -134,7 +188,7 @@ SeqReaderMultilineFastaModule::read_buffer(ReaderType& reader,
 
 template<typename ReaderType, typename RecordType>
 inline bool
-SeqReaderMultilineFastaModule::read_transition(ReaderType& reader,
+SeqReaderMultilineFastqModule::read_transition(ReaderType& reader,
                                                RecordType& record)
 {
   if (std::ferror(reader.source) == 0 && std::feof(reader.source) == 0) {
@@ -161,11 +215,29 @@ SeqReaderMultilineFastaModule::read_transition(ReaderType& reader,
               return false;
             }
             std::ungetc(c, reader.source);
-            if (c == '>') {
+            if (c == '+') {
+              stage = Stage::SEP;
+            } else {
+              stage = Stage::SEQ;
+            }
+            break;
+          }
+          case Stage::SEP: {
+            reader.readline_file_append(tmp, reader.source);
+            stage = Stage::QUAL;
+            tmp.clear();
+          }
+          // fallthrough
+          case Stage::QUAL: {
+            reader.readline_file_append(record.qual, reader.source);
+            rtrim(record.qual);
+            if (record.qual.size() == record.seq.size()) {
               stage = Stage::HEADER;
               return true;
             }
-            stage = Stage::SEQ;
+            check_error(record.qual.size() > record.seq.size(),
+                        "SeqReader: Multiline FASTQ reader: Quality string is "
+                        "longer than sequence string.");
             break;
           }
           default: {
@@ -181,7 +253,7 @@ SeqReaderMultilineFastaModule::read_transition(ReaderType& reader,
 
 template<typename ReaderType, typename RecordType>
 inline bool
-SeqReaderMultilineFastaModule::read_file(ReaderType& reader, RecordType& record)
+SeqReaderMultilineFastqModule::read_file(ReaderType& reader, RecordType& record)
 {
   if (!reader.file_at_end(reader.source)) {
     reader.readline_file(record.header, reader.source);
@@ -190,11 +262,25 @@ SeqReaderMultilineFastaModule::read_file(ReaderType& reader, RecordType& record)
     rtrim(record.seq);
     for (;;) {
       c = std::fgetc(reader.source);
-      if (c == EOF) {
-        return true;
-      }
+      check_error(c == EOF,
+                  "SeqReader: Multiline FASTQ reader: Unexpected end.");
       std::ungetc(c, reader.source);
-      if (c == '>') {
+      if (c == '+') {
+        reader.readline_file(tmp, reader.source);
+        reader.readline_file(record.qual, reader.source);
+        rtrim(record.qual);
+        size_t prevlen;
+        while (record.qual.size() < record.seq.size()) {
+          prevlen = record.qual.size();
+          reader.readline_file_append(record.qual, reader.source);
+          check_error(prevlen == record.qual.size(),
+                      "SeqReader: Multiline FASTQ reader: Failed to read the "
+                      "quality string.");
+          rtrim(record.qual);
+        }
+        check_error(record.qual.size() > record.seq.size(),
+                    "SeqReader: Multiline FASTQ reader: Quality string is "
+                    "longer than sequence string.");
         return true;
       }
       reader.readline_file_append(record.seq, reader.source);

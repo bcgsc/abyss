@@ -218,6 +218,8 @@ public class btllibJNI {
   public final static native void calc_minimizer(long jarg1, long jarg2, long jarg3, long jarg4, long jarg5, long jarg6, long jarg7, long jarg8);
   public final static native long new_SeqReaderFastqModule();
   public final static native void delete_SeqReaderFastqModule(long jarg1);
+  public final static native long new_SeqReaderMultilineFastqModule();
+  public final static native void delete_SeqReaderMultilineFastqModule(long jarg1);
   public final static native long new_SeqReaderFastaModule();
   public final static native void delete_SeqReaderFastaModule(long jarg1);
   public final static native long new_SeqReaderMultilineFastaModule();
@@ -373,9 +375,12 @@ public class btllibJNI {
   public final static native String get_strerror();
   public final static native long split(String jarg1, String jarg2);
   public final static native String join(long jarg1, String jarg2);
-  public final static native void ltrim(long jarg1);
-  public final static native void rtrim(long jarg1);
-  public final static native void trim(long jarg1);
+  public final static native void ltrim__SWIG_0(long jarg1);
+  public final static native void ltrim__SWIG_1(long jarg1);
+  public final static native void rtrim__SWIG_0(long jarg1);
+  public final static native void rtrim__SWIG_1(long jarg1);
+  public final static native void trim__SWIG_0(long jarg1);
+  public final static native void trim__SWIG_1(long jarg1);
   public final static native boolean startswith(String jarg1, String jarg2);
   public final static native boolean endswith(String jarg1, String jarg2);
   public final static native long DataSource_SWIGUpcast(long jarg1);
