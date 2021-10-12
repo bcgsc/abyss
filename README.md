@@ -474,14 +474,14 @@ Parameters of the driver script, `abyss-pe`
  * `kc`: minimum k-mer count threshold for Bloom filter assembly [`2`]
  * `K`: the length of a single k-mer in a k-mer pair (bp)
  * `l`: minimum alignment length of a read (bp) [`40`]
- * `m`: minimum overlap of two unitigs (bp) [`0` (interpreted as `k - 1`)]
+ * `m`: minimum overlap of two unitigs (bp) [`0` (interpreted as `k - 1`) if `mp` is provided or if `k<=50`, `50` otherwise]
  * `n`: minimum number of pairs required for building contigs [`10`]
- * `N`: minimum number of pairs required for building scaffolds [`n`]
+ * `N`: minimum number of pairs required for building scaffolds [`15-20`]
  * `np`: number of MPI processes [`1`]
  * `p`: minimum sequence identity of a bubble [`0.9`]
  * `q`: minimum base quality [`3`]
  * `s`: minimum unitig size required for building contigs (bp) [`1000`]
- * `S`: minimum contig size required for building scaffolds (bp) [`1000-10000`]
+ * `S`: minimum contig size required for building scaffolds (bp) [`100-5000`]
  * `t`: maximum length of blunt contigs to trim [`k`]
  * `v`: use `v=-v` for verbose logging, `v=-vv` for extra verbose
  * `x`: spaced seed (Bloom filter assembly only)
