@@ -153,6 +153,9 @@ endif
 endif
 
 pe?=$(lib)
+ifdef mp
+  mp_provided=1
+endif
 mp?=$(pe)
 
 # Strip spaces from the file paths
@@ -233,7 +236,13 @@ abyssopt += $(dbopt) $(SS) --coverage-hist=coverage.hist -s $*-bubbles.fa
 endif
 
 # AdjList parameters
-m?=0
+ifdef mp_provided
+  m?=0
+else ifeq ($(shell test $(k) -le 50; echo $$?),0)
+  m?=0
+else
+  m?=50
+endif
 alopt += $v $(dbopt) $(SS) -k$k -m$m
 ifndef B
 ifdef K
@@ -337,8 +346,8 @@ mcopt += $v $(dbopt) -k$k
 
 # Scaffold parameters
 L?=$l
-S?=1000-10000
-N?=$n
+S?=100-5000
+N?=15-20
 SCAFFOLD_DE_S?=$(shell echo $S | sed 's/-.*//')
 SCAFFOLD_DE_N?=$N
 SCAFFOLD_DE_OPTIONS?=$(DISTANCEEST_OPTIONS)
