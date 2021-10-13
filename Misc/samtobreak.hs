@@ -279,7 +279,7 @@ parseArgs = do
   where
   help = putStr (usageInfo usage options) >> exitSuccess
   tryHelp = "Try 'abyss-samtobreak --help' for more information."
-  version = "abyss-samtobreak (ABySS) 2.3.1\n"
+  version = "abyss-samtobreak (ABySS) 2.3.2\n"
   usage = "Usage: samtobreak [OPTION]... [FILE]...\n\
 \Calculate contig and scaffold contiguity and correctness metrics.\n"
 

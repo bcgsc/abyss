@@ -1,3 +1,13 @@
+2021-10-13 Vladimir Nikolic <vnikolic@bcgsc.ca>
+
+  * Release version 2.3.2
+
+	General:
+	* Updated the `m` parameter and the `S` and `N` scaffolding parameters to better defaults.
+
+	abyss-rresolver-short:
+  * Updated btllib to 1.1.7
+
 2021-04-21 Vladimir Nikolic <vnikolic@bcgsc.ca>
 
   * Release version 2.3.1
