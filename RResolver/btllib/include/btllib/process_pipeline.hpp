@@ -22,12 +22,12 @@
 #include <tuple>
 #include <vector>
 
-#include <dlfcn.h>
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include <dlfcn.h>     // NOLINT
+#include <fcntl.h>     // NOLINT
+#include <sys/stat.h>  // NOLINT
+#include <sys/types.h> // NOLINT
+#include <sys/wait.h>  // NOLINT
+#include <unistd.h>    // NOLINT
 
 namespace btllib {
 

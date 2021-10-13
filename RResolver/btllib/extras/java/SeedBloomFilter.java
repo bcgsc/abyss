@@ -108,8 +108,8 @@ public class SeedBloomFilter {
     return btllibJNI.SeedBloomFilter_get_occupancy(swigCPtr, this);
   }
 
-  public long get_hash_num() {
-    return btllibJNI.SeedBloomFilter_get_hash_num(swigCPtr, this);
+  public long get_total_hash_num() {
+    return btllibJNI.SeedBloomFilter_get_total_hash_num(swigCPtr, this);
   }
 
   public double get_fpr() {
@@ -130,6 +130,10 @@ public class SeedBloomFilter {
 
   public long get_hash_num_per_seed() {
     return btllibJNI.SeedBloomFilter_get_hash_num_per_seed(swigCPtr, this);
+  }
+
+  public long get_hash_num() {
+    return btllibJNI.SeedBloomFilter_get_hash_num(swigCPtr, this);
   }
 
   public String get_hash_fn() {

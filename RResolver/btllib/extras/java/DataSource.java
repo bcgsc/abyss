@@ -8,11 +8,12 @@
 
 package btllib;
 
-public class DataSource extends DataStream {
+public class DataSource {
   private transient long swigCPtr;
+  protected transient boolean swigCMemOwn;
 
   protected DataSource(long cPtr, boolean cMemoryOwn) {
-    super(btllibJNI.DataSource_SWIGUpcast(cPtr), cMemoryOwn);
+    swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
@@ -33,7 +34,6 @@ public class DataSource extends DataStream {
       }
       swigCPtr = 0;
     }
-    super.delete();
   }
 
   public DataSource(String path) {

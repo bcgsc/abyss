@@ -33,6 +33,7 @@ echo "%}
 %include <std_string.i>
 %include <stdint.i>
 
+%include \"../extra_common.i\"
 %include \"extra.i\"
 " >> extras/java/btllib.i
 
@@ -83,6 +84,7 @@ echo "%}
 %include <carrays.i>
 %include <std_vector.i>
 
+%include \"../extra_common.i\"
 %include \"extra.i\"
 " >> extras/python/btllib.i
 

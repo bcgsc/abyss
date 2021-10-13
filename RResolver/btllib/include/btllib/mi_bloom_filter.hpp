@@ -18,7 +18,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <sys/stat.h>
+#include <sys/stat.h> // NOLINT
 #include <vector>
 
 namespace btllib {

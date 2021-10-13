@@ -491,19 +491,19 @@ public class btllib {
     return (cPtr == 0) ? null : new Datatype(cPtr, false);
   }
 
-  public static String get_pipeline_cmd(String path, DataStream.Operation op) {
+  public static String get_pipeline_cmd(String path, Operation op) {
     return btllibJNI.get_pipeline_cmd(path, op.swigValue());
   }
 
-  public static String get_datatype_cmd(String path, Datatype datatype, DataStream.Operation op) {
+  public static String get_datatype_cmd(String path, Datatype datatype, Operation op) {
     return btllibJNI.get_datatype_cmd(path, Datatype.getCPtr(datatype), datatype, op.swigValue());
   }
 
-  public static SWIGTYPE_p_std__vectorT_std__string_t peel_datatype(String path, DataStream.Operation op) {
+  public static SWIGTYPE_p_std__vectorT_std__string_t peel_datatype(String path, Operation op) {
     return new SWIGTYPE_p_std__vectorT_std__string_t(btllibJNI.peel_datatype(path, op.swigValue()), true);
   }
 
-  public static String form_string_cmd(SWIGTYPE_p_std__vectorT_std__string_t cmd_layers, DataStream.Operation op, String path) {
+  public static String form_string_cmd(SWIGTYPE_p_std__vectorT_std__string_t cmd_layers, Operation op, String path) {
     return btllibJNI.form_string_cmd(SWIGTYPE_p_std__vectorT_std__string_t.getCPtr(cmd_layers), op.swigValue(), path);
   }
 

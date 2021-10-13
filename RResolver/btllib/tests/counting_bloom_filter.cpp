@@ -42,12 +42,19 @@ main()
   TEST_ASSERT_EQ(seq.size(), seq2.size());
 
   std::cerr << "Testing KmerCountingBloomFilter" << std::endl;
-  btllib::KmerCountingBloomFilter8 kmer_counting_bf(
-    1024 * 1024, 4, seq.size() / 2);
-  kmer_counting_bf.insert(seq);
-  TEST_ASSERT_EQ(kmer_counting_bf.contains(seq),
-                 (seq.size() - seq.size() / 2 + 1));
-  TEST_ASSERT_LE(kmer_counting_bf.contains(seq2), 1);
+  btllib::KmerCountingBloomFilter8 kbf(1024 * 1024, 4, seq.size() / 2);
+  kbf.insert(seq);
+  TEST_ASSERT_EQ(kbf.contains(seq), (seq.size() - seq.size() / 2 + 1));
+  TEST_ASSERT_LE(kbf.contains(seq2), 1);
+
+  filename = get_random_name(64);
+  kbf.save(filename);
+
+  btllib::KmerCountingBloomFilter8 kbf2(filename);
+  TEST_ASSERT_EQ(kbf2.contains(seq), (seq.size() - seq.size() / 2 + 1));
+  TEST_ASSERT_LE(kbf2.contains(seq2), 1);
+
+  std::remove(filename.c_str());
 
   std::cerr << "Testing KmerCountingBloomfilter with multiple threads"
             << std::endl;
@@ -63,13 +70,13 @@ main()
   std::vector<std::string> present_seqs2 = present_seqs;
 
   std::mutex seqs_lock;
-  btllib::KmerCountingBloomFilter8 kmer_counting_bf2(100 * 1024 * 1024, 4, 100);
+  btllib::KmerCountingBloomFilter8 kbf_multithreads(100 * 1024 * 1024, 4, 100);
 #pragma omp parallel shared(present_seqs,                                      \
                             present_seqs2,                                     \
                             inserts,                                           \
                             absent_seqs,                                       \
                             seqs_lock,                                         \
-                            kmer_counting_bf2)
+                            kbf_multithreads)
   {
     while (true) {
       std::string seq;
@@ -85,7 +92,7 @@ main()
         inserts.pop_back();
       }
       for (size_t i = 0; i < insert_count; i++) {
-        kmer_counting_bf2.insert(seq);
+        kbf_multithreads.insert(seq);
       }
     }
   }
@@ -96,7 +103,7 @@ main()
                             inserts,                                           \
                             absent_seqs,                                       \
                             seqs_lock,                                         \
-                            kmer_counting_bf2,                                 \
+                            kbf_multithreads,                                  \
                             false_positives)
   {
     while (true) {
@@ -109,7 +116,7 @@ main()
         seq = absent_seqs.back();
         absent_seqs.pop_back();
       }
-      false_positives += kmer_counting_bf2.contains(seq);
+      false_positives += kbf_multithreads.contains(seq);
     }
   }
   std::cerr << "False positives = " << false_positives << std::endl;
@@ -121,7 +128,7 @@ main()
                             inserts,                                           \
                             absent_seqs,                                       \
                             seqs_lock,                                         \
-                            kmer_counting_bf2,                                 \
+                            kbf_multithreads,                                  \
                             more_than_1)
   {
     while (true) {
@@ -134,10 +141,10 @@ main()
         seq = present_seqs2.back();
         present_seqs2.pop_back();
       }
-      if (kmer_counting_bf2.contains(seq) > 1) {
+      if (kbf_multithreads.contains(seq) > 1) {
         more_than_1++;
       }
-      TEST_ASSERT(kmer_counting_bf2.contains(seq));
+      TEST_ASSERT(kbf_multithreads.contains(seq));
     }
   }
   std::cerr << "Seqs with more than 1 presence = " << more_than_1 << std::endl;

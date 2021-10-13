@@ -8,11 +8,12 @@
 
 package btllib;
 
-public class DataSink extends DataStream {
+public class DataSink {
   private transient long swigCPtr;
+  protected transient boolean swigCMemOwn;
 
   protected DataSink(long cPtr, boolean cMemoryOwn) {
-    super(btllibJNI.DataSink_SWIGUpcast(cPtr), cMemoryOwn);
+    swigCMemOwn = cMemoryOwn;
     swigCPtr = cPtr;
   }
 
@@ -33,7 +34,6 @@ public class DataSink extends DataStream {
       }
       swigCPtr = 0;
     }
-    super.delete();
   }
 
   public DataSink(String path, boolean append) {

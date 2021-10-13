@@ -101,11 +101,11 @@ public class BloomFilter {
   }
 
   public void save(String path) {
-    btllibJNI.BloomFilter_save(swigCPtr, this, path);
+    btllibJNI.BloomFilter_save__SWIG_0(swigCPtr, this, path);
   }
 
-  public static SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t parse_header(SWIGTYPE_p_std__ifstream file, String magic_string) {
-    return new SWIGTYPE_p_std__shared_ptrT_cpptoml__table_t(btllibJNI.BloomFilter_parse_header(SWIGTYPE_p_std__ifstream.getCPtr(file), magic_string), true);
+  public static void save(String path, SWIGTYPE_p_cpptoml__table table, String data, long n) {
+    btllibJNI.BloomFilter_save__SWIG_1(path, SWIGTYPE_p_cpptoml__table.getCPtr(table), data, n);
   }
 
 }

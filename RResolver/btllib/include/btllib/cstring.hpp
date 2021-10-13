@@ -26,9 +26,9 @@ struct CString
   }
 
   CString(CString&& cstr) noexcept
+    : s_size(cstr.s_size)
   {
     std::swap(s, cstr.s);
-    s_size = cstr.s_size;
     cstr.clear();
     std::swap(s_cap, cstr.s_cap);
   }
@@ -120,8 +120,6 @@ struct CString
     s_size = new_size;
     return *this;
   }
-
-  char& operator[](const size_t pos) const { return s[pos]; }
 
   ~CString() { free(s); } // NOLINT
 

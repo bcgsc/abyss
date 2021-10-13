@@ -1210,9 +1210,9 @@ ntmsm64(const char* kmer_seq,
                  MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
     }
-    h_val[j * m2] = rs_val < fs_val ? rs_val : fs_val;
+    h_val[size_t(j) * m2] = rs_val < fs_val ? rs_val : fs_val;
     for (unsigned j2 = 1; j2 < m2; j2++) {
-      uint64_t t_val = h_val[j * m2] * (j2 ^ k * MULTISEED);
+      uint64_t t_val = h_val[size_t(j) * m2] * (j2 ^ k * MULTISEED);
       t_val ^= t_val >> MULTISHIFT;
       h_val[j * m2 + j2] = t_val;
     }
@@ -1247,9 +1247,9 @@ ntmsm64(const char* kmer_seq,
                  MS_TAB_33R[(unsigned char)kmer_seq[seed_pos] & CP_OFF]
                            [seed_pos % 33]); // NOLINT
     }
-    h_val[j * m2] = rs_val < fs_val ? rs_val : fs_val;
+    h_val[size_t(j) * m2] = rs_val < fs_val ? rs_val : fs_val;
     for (unsigned j2 = 1; j2 < m2; j2++) {
-      uint64_t t_val = h_val[j * m2] * (j2 ^ k * MULTISEED);
+      uint64_t t_val = h_val[size_t(j) * m2] * (j2 ^ k * MULTISEED);
       t_val ^= t_val >> MULTISHIFT;
       h_val[j * m2 + j2] = t_val;
     }
