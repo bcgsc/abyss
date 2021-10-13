@@ -27,7 +27,7 @@ Options
 
 Authors
 ===================
-+ [**Vladimir Nikolic**](https://github.com/schutzekatze)
++ [**Vladimir Nikolic**](https://github.com/vlad0x00)
 + Supervised by [**Dr. Inanc Birol**](https://www.bcgsc.ca/people/inanc-birol).
 
 Copyright 2021 Canada's Michael Smith Genome Sciences Centre

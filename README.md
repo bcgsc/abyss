@@ -621,7 +621,7 @@ Authors
 + **Ben Vandervalk** - [GitHub/benvvalk ](https://github.com/benvvalk)
 + **Jared Simpson** - [GitHub/jts](https://github.com/jts)
 + **Johnathan Wong** - [GitHub/jowong4](https://github.com/jowong4)
-+ **Vladimir Nikolić** - [GitHub/schutzekatze](https://github.com/schutzekatze)
++ **Vladimir Nikolić** - [GitHub/vlad0x00](https://github.com/vlad0x00)
 
 Supervised by [**Dr. Inanc Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 

@@ -175,8 +175,8 @@
 
 	abyss-sealer:
 	* parallelize gap sealing with OpenMP (thanks to
-	@schutzekatze!)
-	* add `--gap-file` option (thanks to @schutzekatze!)
+	@vlad0x00!)
+	* add `--gap-file` option (thanks to @vlad0x00!)
 
 	DistanceEst:
 	* add support for GFA output
