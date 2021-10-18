@@ -252,7 +252,7 @@ jobs:
     displayName: Install common
   - script: |
       ./autogen.sh
-      ./configure --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
+      ./configure --with-boost=/usr/local/Cellar/boost --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
 
@@ -268,7 +268,7 @@ jobs:
   - script: |
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
-      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/opt/boost/include --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
+      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/Cellar/boost --with-mpi=/usr/local/Cellar/open-mpi/4.0.1_2 CPPFLAGS=-I/usr/local/Cellar/google-sparsehash/2.0.3/include
       make -j12 distcheck
     displayName: Compiling ABySS with default clang
 
