@@ -171,7 +171,7 @@ struct Distance {
 template <typename T>
 ContigProperties& operator+=(ContigProperties& a, const T& b)
 {
-	assert((int)a.length + (int)b.distance > 0);
+	assert((int)a.length + (int)b.distance >= 0);
 	a.length += b.distance;
 	return a;
 }
