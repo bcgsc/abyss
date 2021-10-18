@@ -1,7 +1,7 @@
 jobs:
 - job: linux_gcc8_32bit
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -23,7 +23,7 @@ jobs:
 
 - job: linux_clang6
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -43,7 +43,7 @@ jobs:
     
 - job: linux_clang7
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -67,7 +67,7 @@ jobs:
 
 - job: linux_clang8
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -87,7 +87,7 @@ jobs:
 
 - job: linux_clang9
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -107,7 +107,7 @@ jobs:
 
 - job: linux_clang10
   pool:
-    vmImage: Ubuntu 18.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -127,7 +127,7 @@ jobs:
 
 - job: linux_gcc5
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -147,7 +147,7 @@ jobs:
 
 - job: linux_gcc6
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -167,7 +167,7 @@ jobs:
 
 - job: linux_gcc7
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -187,7 +187,7 @@ jobs:
 
 - job: linux_gcc8
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -207,7 +207,7 @@ jobs:
 
 - job: clang_format
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
@@ -232,7 +232,7 @@ jobs:
 
 - job: macOS_default_gcc
   pool:
-    vmImage: macOS-10.14
+    vmImage: 'macOS-11'
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
@@ -247,7 +247,7 @@ jobs:
 
 - job: macOS_default_clang
   pool:
-    vmImage: macOS-10.14
+    vmImage: 'macOS-11'
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
@@ -263,7 +263,7 @@ jobs:
 
 - job: linux_gcc9
   pool:
-    vmImage: Ubuntu 16.04
+    vmImage: 'ubuntu-20.04'
   steps:
   - script: |
       sudo apt-get update -qq
