@@ -249,9 +249,6 @@ jobs:
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc
-      ls -l /usr/local
-      ls -l /usr/local/opt
-      ls -l /usr/local/opt/boost
     displayName: Install common
   - script: |
       ./autogen.sh
@@ -267,9 +264,6 @@ jobs:
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
-      ls -l /usr/local
-      ls -l /usr/local/opt
-      ls -l /usr/local/opt/boost
     displayName: Install common
   - script: |
       ./autogen.sh

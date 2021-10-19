@@ -96,10 +96,7 @@ AC_ARG_WITH(boost, AS_HELP_STRING([--with-boost=PATH],
 			[specify directory for the boost header files]))
 if test "$with_boost" -a -d "$with_boost"; then
 	boost_cppflags="-isystem$with_boost -isystem$with_boost/include"
-	AC_MSG_NOTICE([setting flags])
 fi
-AC_MSG_NOTICE([printing flags])
-AC_MSG_NOTICE([$boost_cppflags])
 
 # MPI
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
@@ -161,8 +158,7 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 # Set compiler flags.
 boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
-AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+AC_SUBST(CPPFLAGS, "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
 
 # Check for pthread.h / libpthread
