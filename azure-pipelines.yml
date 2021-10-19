@@ -1,7 +1,7 @@
 jobs:
 - job: linux_gcc8_32bit
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -24,7 +24,7 @@ jobs:
 
 - job: linux_clang6
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -45,7 +45,7 @@ jobs:
     
 - job: linux_clang7
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -70,7 +70,7 @@ jobs:
 
 - job: linux_clang8
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -91,7 +91,7 @@ jobs:
 
 - job: linux_clang9
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -112,7 +112,7 @@ jobs:
 
 - job: linux_clang10
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -133,7 +133,7 @@ jobs:
 
 - job: linux_gcc5
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -154,7 +154,7 @@ jobs:
 
 - job: linux_gcc6
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -175,7 +175,7 @@ jobs:
 
 - job: linux_gcc7
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -196,7 +196,7 @@ jobs:
 
 - job: linux_gcc8
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -217,7 +217,7 @@ jobs:
 
 - job: clang_format
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -241,40 +241,9 @@ jobs:
   - script: make clang-format
     displayName: Run clang-format
 
-- job: macOS_default_gcc
-  pool:
-    vmImage: 'macOS-10.14'
-  steps:
-  - script: |
-      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
-      brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc
-    displayName: Install common
-  - script: |
-      ./autogen.sh
-      ./configure --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash
-      make -j12 distcheck
-    displayName: Compiling ABySS with default gcc
-
-- job: macOS_default_clang
-  pool:
-    vmImage: 'macOS-10.14'
-  steps:
-  - script: |
-      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
-      brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
-    displayName: Install common
-  - script: |
-      ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
-      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash
-      make -j12 distcheck
-    displayName: Compiling ABySS with default clang
-
 - job: linux_gcc9
   pool:
-    vmImage: 'ubuntu-20.04'
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -292,3 +261,34 @@ jobs:
       ./configure CC=gcc-9 CXX=g++-9 --with-mpi=/usr/lib/openmpi
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-9
+
+- job: macOS_default_gcc
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc
+    displayName: Install common
+  - script: |
+      ./autogen.sh
+      ./configure --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash
+      make -j12 distcheck
+    displayName: Compiling ABySS with default gcc
+
+- job: macOS_default_clang
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
+    displayName: Install common
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash
+      make -j12 distcheck
+    displayName: Compiling ABySS with default clang
