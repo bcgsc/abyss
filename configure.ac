@@ -96,7 +96,10 @@ AC_ARG_WITH(boost, AS_HELP_STRING([--with-boost=PATH],
 			[specify directory for the boost header files]))
 if test "$with_boost" -a -d "$with_boost"; then
 	boost_cppflags="-isystem$with_boost -isystem$with_boost/include"
+	AC_MSG_NOTICE([setting flags])
 fi
+AC_MSG_NOTICE([printing flags])
+AC_MSG_NOTICE([$boost_cppflags])
 
 # MPI
 AC_ARG_WITH(mpi, AS_HELP_STRING([--with-mpi=PATH],
