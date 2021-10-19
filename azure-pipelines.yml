@@ -243,7 +243,7 @@ jobs:
 
 - job: macOS_default_gcc
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-10.14'
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
@@ -258,7 +258,7 @@ jobs:
 
 - job: macOS_default_clang
   pool:
-    vmImage: 'macOS-11'
+    vmImage: 'macOS-10.14'
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
