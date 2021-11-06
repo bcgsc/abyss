@@ -131,6 +131,7 @@ getTreeTraces(
 	SequenceTreeNode root(start, overlap, maxLength, forward);
 
 	int level = 1;
+	(void)level;
 	int leaves = 1;
 	traces.push_back({ root });
 	queue.push(traces.back());

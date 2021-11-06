@@ -991,6 +991,7 @@ int main(int argc, char** argv)
 		for (NewVertices::const_iterator it = g_newVertices.begin();
 				it != g_newVertices.end(); ++it) {
 			Graph::vertex_descriptor u = add_vertex(it->vpu, g);
+			(void)u;
 			assert(u == it->u);
 			add_edge(it->t, it->u, it->eptu, g);
 			add_edge(it->u, it->v, it->epuv, g);

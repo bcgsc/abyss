@@ -246,6 +246,7 @@ buildFilters(
 			const auto patterns =
 				generateSpacedSeedsPatterns(SPACED_SEEDS_COUNT, r, SPACED_SEEDS_MISSES);
 			for (const auto& pattern : patterns) {
+				(void)pattern;
 				assert(pattern.size() == size_t(r));
 			}
 			if (SPACED_SEEDS_QC) {
