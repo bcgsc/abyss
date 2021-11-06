@@ -170,7 +170,7 @@ class ReadSize
 
 	int size;
 	std::vector<int> rValues;
-	Histogram qualThresholdPositions;
+	//Histogram qualThresholdPositions;
 	long sampleCount = 0;
 	double covApproxFactor = COV_APPROX_FORMULA_FACTOR;
 

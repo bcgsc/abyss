@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 template<std::size_t N, class T>
 constexpr std::size_t countof(T(&)[N]) { return N; }
@@ -112,7 +113,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 #pragma omp task firstprivate(filename)
 			{
 				Histogram hist;
-				std::map<int, Histogram> qualThresholdPositionsHists;
+				//std::map<int, Histogram> qualThresholdPositionsHists;
 
 				btllib::SeqReader reader(filename, btllib::SeqReader::Flag::SHORT_MODE);
 				for (btllib::SeqReader::Record record;
@@ -121,12 +122,12 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 						continue;
 					}
 					hist.insert(record.seq.size());
-					for (int j = record.qual.size() - 1; j >= 0; j--) {
+					/*for (int j = record.qual.size() - 1; j >= 0; j--) {
 						if (record.qual[j] >= opt::readQualityThreshold) {
 							qualThresholdPositionsHists[record.seq.size()].insert(j);
 							break;
 						}
-					}
+					}*/
 				}
 
 #pragma omp critical(ReadSizes)
@@ -146,12 +147,12 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 							batch = &(ReadSize::readSizes.back());
 						}
 						batch->sampleCount += i.second;
-						auto& qualHist = batch->qualThresholdPositions;
+						/*auto& qualHist = batch->qualThresholdPositions;
 						for (const auto& q : qualThresholdPositionsHists[i.first]) {
 							for (size_t n = 0; n < q.second; n++) {
 								qualHist.insert(q.first);
 							}
-						}
+						}*/
 					}
 				}
 			}
@@ -164,14 +165,42 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		ReadSize::readsSampleSize += batch.sampleCount;
 	}
 
-	std::sort(ReadSize::readSizes.begin(), ReadSize::readSizes.end(), [](ReadSize a, ReadSize b) {
-		return a.sampleCount > b.sampleCount;
-	});
-
 	if (ReadSize::readSizes.size() == 0) {
 		std::cerr << "Insufficient number of short reads. Finishing..." << std::endl;
 		return false;
 	}
+
+	std::sort(ReadSize::readSizes.begin(), ReadSize::readSizes.end(), [](ReadSize a, ReadSize b) {
+		return a.size < b.size;
+	});
+
+	decltype(ReadSize::readSizes) mergedReadSizes;
+	std::set<size_t> idxToSkip;
+	for (size_t i = 0; i < ReadSize::readSizes.size() - 1; i++) {
+		if (idxToSkip.find(i) != idxToSkip.end()) {
+			continue;
+		}
+		for (size_t j = i + 1; j < ReadSize::readSizes.size(); j++) {
+			if (ReadSize::readSizes[j].size - ReadSize::readSizes[i].size <= 2) {
+				/*for (const auto& q : ReadSize::readSizes[j].qualThresholdPositions) {
+					for (size_t n = 0; n < q.second; n++) {
+						ReadSize::readSizes[j].qualThresholdPositions.insert(q.first);
+					}
+				}*/
+				if (ReadSize::readSizes[i].sampleCount <= ReadSize::readSizes[j].sampleCount) {
+					ReadSize::readSizes[i].size = ReadSize::readSizes[j].size;
+				}
+				ReadSize::readSizes[i].sampleCount += ReadSize::readSizes[j].sampleCount;
+				idxToSkip.insert(j);
+			}
+		}
+		mergedReadSizes.push_back(ReadSize::readSizes[i]);
+	}
+	ReadSize::readSizes = mergedReadSizes;
+
+	std::sort(ReadSize::readSizes.begin(), ReadSize::readSizes.end(), [](ReadSize a, ReadSize b) {
+		return a.sampleCount > b.sampleCount;
+	});
 
 	if (ReadSize::readSizes[0].getFractionOfTotal() < READ_BATCH_FRACTION_THRESHOLD) {
 		std::cerr << "Insufficient reads of same size. Finishing..." << std::endl;
@@ -198,6 +227,11 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 			          << (ReadSize::readSizes[i].getFractionOfTotal() * 100.0) << "%)";
 		}
 		std::cerr << std::defaultfloat << std::endl;
+	}
+
+	if ((opt::rValues.size() > 0) && (opt::rValues.size() < ReadSize::readSizes.size())) {
+		std::cerr << opt::rValues.size() << " r values provided, " << ReadSize::readSizes.size() << " needed." << std::endl;;
+		std::exit(-1);
 	}
 
 	std::sort(opt::rValues.begin(), opt::rValues.end());
