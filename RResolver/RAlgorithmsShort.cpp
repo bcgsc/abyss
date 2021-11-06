@@ -180,6 +180,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		if (idxToSkip.find(i) != idxToSkip.end()) {
 			continue;
 		}
+		ReadSize::readSizes[i].sizeAndMergedSizes.insert(ReadSize::readSizes[i].size);
 		for (size_t j = i + 1; j < ReadSize::readSizes.size(); j++) {
 			if (ReadSize::readSizes[j].size - ReadSize::readSizes[i].size <= 2) {
 				/*for (const auto& q : ReadSize::readSizes[j].qualThresholdPositions) {
@@ -187,6 +188,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 						ReadSize::readSizes[j].qualThresholdPositions.insert(q.first);
 					}
 				}*/
+				ReadSize::readSizes[i].sizeAndMergedSizes.insert(ReadSize::readSizes[j].size);
 				if (ReadSize::readSizes[i].sampleCount <= ReadSize::readSizes[j].sampleCount) {
 					ReadSize::readSizes[i].size = ReadSize::readSizes[j].size;
 				}

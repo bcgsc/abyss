@@ -169,6 +169,7 @@ class ReadSize
 	double getFractionOfTotal() const { return double(sampleCount) / double(readsSampleSize); }
 
 	int size;
+	std::set<int> sizeAndMergedSizes;
 	std::vector<int> rValues;
 	//Histogram qualThresholdPositions;
 	long sampleCount = 0;

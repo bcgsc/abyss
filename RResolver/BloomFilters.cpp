@@ -171,7 +171,7 @@ loadReads(const std::vector<std::string>& readFilepaths, int r)
 				uint64_t readCount = 0;
 #pragma omp parallel num_threads(threads_per_task)
 				for (btllib::SeqReader::Record record; (record = reader.read());) {
-					if (int(record.seq.size()) != ReadSize::current.size) {
+					if (ReadSize::current.sizeAndMergedSizes.find(int(record.seq.size())) == ReadSize::current.sizeAndMergedSizes.end()) {
 						continue;
 					}
 					std::string seq = record.seq.substr(0, r + opt::extract - 1);
