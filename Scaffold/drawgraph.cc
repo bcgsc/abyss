@@ -124,21 +124,7 @@ static void readGraph(const string& path, Graph& g)
  */
 static void solve(Matrix& a, Vector& b)
 {
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-copy"
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-copy"
-#endif
 	int ret = cholesky_decompose(a);
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 	if (ret > 0) {
 		cerr << PROGRAM ": error: The graph matrix is singular. "
 			"It may have multiple connected components. "

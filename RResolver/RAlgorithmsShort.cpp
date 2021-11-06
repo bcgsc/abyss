@@ -86,6 +86,7 @@ windowLongEnough(const int windowSize, const int tests, const int repeatSize, co
 static int
 getMargin(const int windowSize, const int tests, const int repeatSize, const int minMargin)
 {
+	(void)minMargin;
 	assert(windowLongEnough(windowSize, tests, repeatSize, minMargin));
 	const int requiredSeqSize = windowSize + tests - 1;
 	const int margin = (requiredSeqSize - repeatSize + 1) / 2;
