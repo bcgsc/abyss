@@ -181,6 +181,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		if (idxToSkip.find(i) != idxToSkip.end()) {
 			continue;
 		}
+		int mergeCount = 0;
 		ReadSize::readSizes[i].sizeAndMergedSizes.insert(ReadSize::readSizes[i].size);
 		for (size_t j = i + 1; j < ReadSize::readSizes.size(); j++) {
 			if (ReadSize::readSizes[j].size - ReadSize::readSizes[i].size <= 2) {
@@ -195,6 +196,10 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 				}
 				ReadSize::readSizes[i].sampleCount += ReadSize::readSizes[j].sampleCount;
 				idxToSkip.insert(j);
+				mergeCount++;
+				if (mergeCount >= 3) {
+					break;
+				}
 			}
 		}
 		mergedReadSizes.push_back(ReadSize::readSizes[i]);
