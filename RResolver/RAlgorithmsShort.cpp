@@ -200,6 +200,7 @@ determineShortReadStats(const std::vector<std::string>& readFilenames)
 		mergedReadSizes.push_back(ReadSize::readSizes[i]);
 	}
 	if (idxToSkip.find(ReadSize::readSizes.size() - 1) == idxToSkip.end()) {
+		ReadSize::readSizes.back().sizeAndMergedSizes.insert(ReadSize::readSizes.back().size);
 		mergedReadSizes.push_back(ReadSize::readSizes.back());
 	}
 	ReadSize::readSizes = mergedReadSizes;
