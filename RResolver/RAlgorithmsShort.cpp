@@ -420,11 +420,12 @@ static double
 expectedSpacingBetweenReads(const ContigPath& path)
 {
 	assert(path.size() >= 3);
-	const long pathLength = 1000000;
-	const double leftContigBaseCoverage = getContigBaseCoverage(path[0]);
-	const double repeatContigBaseCoverage = getContigBaseCoverage(path[path.size() / 2]);
-	const double rightContigBaseCoverage = getContigBaseCoverage(path[path.size() - 1]);
-	const double pathBaseCoverage = std::min(repeatContigBaseCoverage, std::min(leftContigBaseCoverage, rightContigBaseCoverage));
+	const long pathLength = 1000000; // Use long path lenth in order to calculate numbers asymptotically
+	std::vector<double> contigBaseCoverages;
+	for (const auto& node : path) {
+		contigBaseCoverages.push_back(getContigBaseCoverage(node));
+	}
+	const double pathBaseCoverage = std::min_element(contigBaseCoverages.begin(), contigBaseCoverages.end());
 	const double pathBases = pathBaseCoverage * pathLength;
 
 	double meanReadKmerContribution = 0;
