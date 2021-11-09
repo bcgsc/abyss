@@ -1,4 +1,5 @@
 #include "RAlgorithmsShort.h"
+#include "Contigs.h"
 #include "RUtils.h"
 #include "SequenceTree.h"
 
@@ -418,11 +419,13 @@ testCombination(
 static double
 expectedSpacingBetweenReads(const ContigPath& path)
 {
-	const long pathLength = 100000;
+	assert(path.size() >= 3);
+	const long pathLength = 1000000;
 	const double leftContigBaseCoverage = getContigBaseCoverage(path[0]);
+	const double repeatContigBaseCoverage = getContigBaseCoverage(path[path.size() / 2]);
 	const double rightContigBaseCoverage = getContigBaseCoverage(path[path.size() - 1]);
-	const double pathBaseCoverage = std::min(leftContigBaseCoverage, rightContigBaseCoverage);
-	const double pathBases = pathBaseCoverage * (pathLength - opt::k + 1);
+	const double pathBaseCoverage = std::min(repeatContigBaseCoverage, std::min(leftContigBaseCoverage, rightContigBaseCoverage));
+	const double pathBases = pathBaseCoverage * pathLength;
 
 	double meanReadKmerContribution = 0;
 	for (const auto& batch : ReadSize::readSizes) {
@@ -436,7 +439,9 @@ expectedSpacingBetweenReads(const ContigPath& path)
 	                                double(opt::k * (ReadSize::current.size - opt::k + 1));
 	assert(approxNumOfReads > 2);
 
-	return double(pathLength - ReadSize::current.size) / double(approxNumOfReads - 1);
+	const double expectedSpacing = std::max(double(1.0), double(pathLength - ReadSize::current.size + 1) / double(approxNumOfReads));
+
+	return expectedSpacing;
 }
 
 static Support
