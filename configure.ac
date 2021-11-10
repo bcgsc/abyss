@@ -7,9 +7,9 @@ m4_include(m4/m4_ax_pthread.m4)
 m4_include([m4/ax_cxx_compile_stdcxx.m4])
 AX_CXX_COMPILE_STDCXX(11, noext, mandatory)
 
-AM_INIT_AUTOMAKE(1.9.6 foreign subdir-objects)
+AM_INIT_AUTOMAKE(1.9.6 tar-ustar foreign subdir-objects)
 AC_CONFIG_SRCDIR([ABYSS/abyss.cc])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_AWK
@@ -28,7 +28,6 @@ AM_PROG_AR
 AC_CHECK_HEADERS([dlfcn.h fcntl.h float.h limits.h \
 	stddef.h stdint.h stdlib.h sys/param.h])
 AC_HEADER_STDBOOL
-AC_HEADER_STDC
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_BIGENDIAN
@@ -81,7 +80,6 @@ AC_FUNC_FORK
 AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_REALLOC
-AC_FUNC_SETVBUF_REVERSED
 AC_FUNC_VPRINTF
 
 # Checks for library constants.
