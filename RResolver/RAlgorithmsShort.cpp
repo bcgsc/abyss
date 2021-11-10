@@ -425,7 +425,7 @@ expectedSpacingBetweenReads(const ContigPath& path)
 	for (const auto& node : path) {
 		contigBaseCoverages.push_back(getContigBaseCoverage(node));
 	}
-	const double pathBaseCoverage = std::min_element(contigBaseCoverages.begin(), contigBaseCoverages.end());
+	const double pathBaseCoverage = *std::min_element(contigBaseCoverages.begin(), contigBaseCoverages.end());
 	const double pathBases = pathBaseCoverage * pathLength;
 
 	double meanReadKmerContribution = 0;

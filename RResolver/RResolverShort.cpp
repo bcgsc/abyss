@@ -45,8 +45,8 @@ static const char USAGE_MESSAGE[] =
     "  -h, --hist=PREFIX           write the algorithm histograms with the given prefix. Histograms are omitted if no prefix is given.\n"
     "  -t, --threshold=N           set path support threshold to N. [4]\n"
     "  -x, --extract=N             extract N r-mers per read. [4]\n"
-    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [20]\n"
-    "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [36]\n"
+    "  -m, --min-tests=N           set minimum number of sliding window moves to N. Cannot be higher than 127. [18]\n"
+    "  -M, --max-tests=N           set maximum number of sliding window moves to N. Cannot be higher than 127. [40]\n"
     "  -n, --branching=N           set maximum number of branching paths to N. [75]\n"
     "  -r, --rmer=N                explicitly set r value (k value used by rresolver). The number of set r values should be equal to the number of read sizes.\n"
     "  -a, --approx-factor         explicitly set coverage approximation factor.\n"
@@ -94,10 +94,10 @@ int threshold = 4;
 int extract = 4;
 
 /** Minimum number of sliding window moves */
-int minTests = 20;
+int minTests = 18;
 
 /** Maximum number of sliding window moves */
-int maxTests = 36;
+int maxTests = 40;
 
 /** Maximum number of branching paths */
 int branching = 75;
