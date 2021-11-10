@@ -1,3 +1,14 @@
+2021-11-10 Vladimir Nikolic <vnikolic@bcgsc.ca>
+
+  * Release version 2.3.3
+
+	General:
+	* Fixed a contig overlap distance assertion.
+
+	abyss-rresolver-short:
+	* Multiple read sizes are better handled. E.g. 150 and 151 are processed as one read size.
+  * Updated default parameters.
+
 2021-10-13 Vladimir Nikolic <vnikolic@bcgsc.ca>
 
   * Release version 2.3.2
