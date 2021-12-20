@@ -85,7 +85,10 @@ static int uncompress(const char *path)
 	 * sysctl vm.overcommit_memory=1
 	 */
 #if HAVE_WORKING_VFORK
-	pid_t pid = vfork();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    pid_t pid = vfork();
+#pragma GCC diagnostic pop
 #else
 	pid_t pid = fork();
 #endif
