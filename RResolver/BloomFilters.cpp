@@ -147,7 +147,7 @@ loadReads(const std::vector<std::string>& readFilepaths, int r)
 		i++;
 	}
 
-	for (const auto path : readFilepaths) {
+	for (const auto& path : readFilepaths) {
 		uint64_t currentReadCount = 0;
 		uint64_t totalReadCount = 0;
 		size_t readSizesNum = ReadSize::readSizes.size();
