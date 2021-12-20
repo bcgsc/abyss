@@ -14,14 +14,14 @@
 #include <vector>
 
 const int MIN_MARGIN = 2;
-const int R_HEURISTIC = 45;
-const double R_HEURISTIC_A = 0.49;
-const double R_HEURISTIC_B = 63.5;
+const int R_HEURISTIC = 60;
+const double R_HEURISTIC_A = 1.0;
+const double R_HEURISTIC_B = 0.0;
 const int MAX_SUBITERATIONS = 2;
 const long HIST_SAMPLE_SIZE = LONG_MAX;
 const long REPEAT_CASES_LIMIT = LONG_MAX;
 const long READ_STATS_SAMPLE_SIZE = 100000;
-const double READ_BATCH_FRACTION_THRESHOLD = 0.15;
+const double READ_BATCH_FRACTION_THRESHOLD = 0.1;
 const long PATH_COMBINATIONS_MULTITHREAD_THRESHOLD = 5000;
 const double SUPPORTED_PATHS_MIN = 0.15;
 const double COV_APPROX_FORMULA_FACTOR = 4.00;
@@ -73,6 +73,9 @@ extern int errorCorrection;
 
 /** Upper limit on read size to consider for use with RResolver. */
 extern unsigned maxReadSize;
+
+/** factor to multiply Bloom filter memory budget with in order to stay within similar memory usage as the rest of the pipeline. */
+extern double bfMemFactor;
 
 /** Name of the file to write supported paths to */
 extern std::string outputSupportedPathsPath;

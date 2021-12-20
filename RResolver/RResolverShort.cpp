@@ -52,7 +52,8 @@ static const char USAGE_MESSAGE[] =
     "  -a, --approx-factor         explicitly set coverage approximation factor.\n"
     "  -q, --quality--threshold=N  minimum quality all bases in rmers should have, on average. [35] (UNUSED)\n"
     "  -e, --error-correction      enable correction of a 1bp error in kmers. [false]\n"
-    "  -R, --max-read-size         upper limit on read size to consider for use with RResolver. [300]\n"
+    "  -R, --max-read-size         upper limit on read size to consider for use with RResolver. [350]\n"
+    "  -f, --bf-mem-factor         factor to multiply Bloom filter memory budget with in order to stay within similar memory usage as the rest of the pipeline. [1.0]\n"
     "  -S, --supported=FILE        write supported paths to FILE.\n"
     "  -U, --unsupported=FILE      write unsupported paths to FILE.\n"
     "                              Used for path sequence quality check.\n"
@@ -115,7 +116,10 @@ int readQualityThreshold = 35;
 int errorCorrection = 0;
 
 /** Upper limit on read size to consider for use with RResolver. */
-unsigned maxReadSize = 300;
+unsigned maxReadSize = 350;
+
+/** factor to multiply Bloom filter memory budget with in order to stay within similar memory usage as the rest of the pipeline. */
+double bfMemFactor = 1.0;
 
 /** Name of the file to write supported paths to */
 std::string outputSupportedPathsPath;
@@ -129,7 +133,7 @@ int format; // used by ContigProperties
 
 }
 
-static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:a:q:eR:S:U:v";
+static const char shortopts[] = "b:j:g:c:k:h:t:x:m:M:n:r:a:q:eR:f:S:U:v";
 
 enum
 {
@@ -154,6 +158,7 @@ static const struct option longopts[] = {
 	{ "quality-threshold", required_argument, NULL, 'q' },
 	{ "error-correction", no_argument, &opt::errorCorrection, 1 },
 	{ "max-read-size", required_argument, NULL, 'R' },
+	{ "bf-mem-factor", required_argument, NULL, 'f' },
 	{ "supported", required_argument, NULL, 'S' },
 	{ "unsupported", required_argument, NULL, 'U' },
 	{ "adj", no_argument, &opt::format, ADJ },
@@ -325,6 +330,9 @@ main(int argc, char** argv)
 			break;
 		case 'R':
 		  arg >> opt::maxReadSize;
+			break;
+		case 'f':
+		  arg >> opt::bfMemFactor;
 			break;
 		case 'a':
 			double a;

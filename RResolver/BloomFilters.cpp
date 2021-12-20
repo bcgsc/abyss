@@ -139,66 +139,72 @@ QCSpacedSeedsPatterns(const std::vector<std::string>& patterns)
 static void
 loadReads(const std::vector<std::string>& readFilepaths, int r)
 {
-	const size_t LOAD_PROGRESS_STEP = 100000;
-	const size_t PARALLEL_IO_SIZE = 100;
-
-#if _OPENMP
-	size_t threads_per_task = omp_get_max_threads() / PARALLEL_IO_SIZE;
-	if (threads_per_task < 1) {
-		threads_per_task = 1;
+	ReadSize::readsSampleSize = 0;
+	ReadSize::current.sampleCount = 0;
+	int i = 0;
+	for (auto& b : ReadSize::readSizes) {
+		b.sampleCount = 0;
+		i++;
 	}
-	omp_set_nested(1);
-#endif
-#pragma omp parallel
-#pragma omp single
-	{
-		int counter = 0;
-#if _OPENMP
-		for (const auto& p : readFilepaths) {
-			const auto path = p; // Clang complains that range based loop is copying without this
-#else
-		for (const auto& path : readFilepaths) {
-#endif
-#pragma omp task firstprivate(path)
-			{
-				assert(!path.empty());
-				if (opt::verbose) {
-#pragma omp critical(cerr)
-					std::cerr << "Loading reads from `" << path << "'...\n";
-				}
 
-				btllib::SeqReader reader(path, btllib::SeqReader::Flag::SHORT_MODE);
-				uint64_t readCount = 0;
-#pragma omp parallel num_threads(threads_per_task)
-				for (btllib::SeqReader::Record record; (record = reader.read());) {
-					if (ReadSize::current.sizeAndMergedSizes.find(int(record.seq.size())) == ReadSize::current.sizeAndMergedSizes.end()) {
-						continue;
-					}
-					std::string seq = record.seq.substr(0, r + opt::extract - 1);
-					if (seq.size() >= g_vanillaBloom->get_k()) {
-						g_vanillaBloom->insert(seq);
-						if (opt::errorCorrection) {
-							g_spacedSeedsBloom->insert(seq);
-						}
-						if (opt::verbose)
-#pragma omp critical(cerr)
-						{
-							readCount++;
-							if (readCount % LOAD_PROGRESS_STEP == 0) {
-								std::cerr << "\rLoaded " << readCount << " reads into Bloom filter.";
-							}
-						}
-					}
+	for (const auto path : readFilepaths) {
+		uint64_t currentReadCount = 0;
+		uint64_t totalReadCount = 0;
+		size_t readSizesNum = ReadSize::readSizes.size();
+		uint64_t *readSizeCounts = new uint64_t[readSizesNum];
+		for (size_t i = 0; i < readSizesNum; i++) {
+			readSizeCounts[i] = 0;
+		}
+
+		assert(!path.empty());
+		if (opt::verbose) {
+			std::cerr << "Loading reads from `" << path << "'..." << std::endl;;
+		}
+
+		btllib::SeqReader reader(path, btllib::SeqReader::Flag::SHORT_MODE);
+#pragma omp parallel reduction(+:currentReadCount,totalReadCount,readSizeCounts[:readSizesNum])
+		for (btllib::SeqReader::Record record; (record = reader.read());) {
+			totalReadCount++;
+			int i = 0;
+			for (const auto& b : ReadSize::readSizes) {
+				if (b.sizeAndMergedSizes.find(int(record.seq.size())) != b.sizeAndMergedSizes.end()) {
+					readSizeCounts[i]++;
+					break;
 				}
-				if (opt::verbose) {
-					std::cerr << std::endl;
-				}
+				i++;
 			}
-			counter++;
-			if (counter % PARALLEL_IO_SIZE == 0) {
-#pragma omp taskwait
+			if (ReadSize::current.sizeAndMergedSizes.find(int(record.seq.size())) == ReadSize::current.sizeAndMergedSizes.end()) {
+				continue;
+			}
+			currentReadCount++;
+
+			std::string seq = record.seq.substr(0, r + opt::extract - 1);
+			if (seq.size() >= g_vanillaBloom->get_k()) {
+				g_vanillaBloom->insert(seq);
+				if (opt::errorCorrection) {
+					g_spacedSeedsBloom->insert(seq);
+				}
 			}
 		}
+
+		ReadSize::readsSampleSize += totalReadCount;
+		ReadSize::current.sampleCount += currentReadCount;
+		int i = 0;
+		for (auto& b : ReadSize::readSizes) {
+			b.sampleCount += readSizeCounts[i];
+			i++;
+		}
+	}
+
+	if (opt::verbose) {
+		std::cerr << "\nUpdated read lengths' fractions determined to be: " << std::fixed;
+		std::cerr << ReadSize::readSizes[0].size << " ("
+		          << (ReadSize::readSizes[0].getFractionOfTotal() * 100.0) << "%)";
+		for (size_t i = 1; i < ReadSize::readSizes.size(); i++) {
+			std::cerr << ", " << ReadSize::readSizes[i].size << " ("
+			          << (ReadSize::readSizes[i].getFractionOfTotal() * 100.0) << "%)";
+		}
+		std::cerr << std::defaultfloat << std::endl;
 	}
 }
 

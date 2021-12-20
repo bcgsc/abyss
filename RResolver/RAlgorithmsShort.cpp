@@ -1289,7 +1289,7 @@ resolveShort(
 				std::cerr << "\nRead size = " << batch.size << ", r = " << r << " ...\n\n";
 			}
 
-			buildFilters(readFilepaths, r, opt::bloomSize);
+			buildFilters(readFilepaths, r, opt::bfMemFactor * double(opt::bloomSize));
 
 			for (size_t j = 0; j < MAX_SUBITERATIONS; j++) {
 				if (opt::verbose) {
