@@ -1,3 +1,15 @@
+2021-12-20 Vladimir Nikolic <vnikolic@bcgsc.ca>
+
+  * Release version 2.3.4
+
+    General:
+	* Dropped support for gcc5 due to lack of support for more recent C++ features.
+
+	abyss-rresolver-short:
+	* Reduced memory consumption.
+	* Better calculation of read size proportions in the input dataset.
+	* Increased max read read size allowed.
+
 2021-11-10 Vladimir Nikolic <vnikolic@bcgsc.ca>
 
   * Release version 2.3.3
@@ -7,7 +19,7 @@
 
 	abyss-rresolver-short:
 	* Multiple read sizes are better handled. E.g. 150 and 151 are processed as one read size.
-  * Updated default parameters.
+    * Updated default parameters.
 
 2021-10-13 Vladimir Nikolic <vnikolic@bcgsc.ca>
 

@@ -156,10 +156,10 @@ This installs ABySS at the provided path, in this case `/path/to/abyss`.
 Not specifying `--prefix` would install in `/usr/local`, which requires
 sudo privileges when running `make install`.
 
-ABySS requires a modern compiler such as GCC 4.2 or greater. If you have multiple
+ABySS requires a modern compiler such as GCC 6 or greater. If you have multiple
 versions of GCC installed, you can specify a different compiler:
 
-	../configure CC=gcc-4.6 CXX=g++-4.6
+	../configure CC=gcc-10 CXX=g++-10
 
 If Boost is installed at a non-standard location, you can specify the path to it:
 
