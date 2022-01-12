@@ -457,7 +457,7 @@ static inline string calcQual(const FastqRecord& orig,
 	unsigned extendedRight)
 {
 	assert(extended.length() == orig.seq.length() +
-		extendedLeft + extendedRight);
+		extendedLeft + extendedRight); (void)extendedRight;
 
 	unsigned char correctedQual = opt::qualityOffset + opt::correctedQual;
 	string qual(extended.length(), correctedQual);

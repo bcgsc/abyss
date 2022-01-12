@@ -175,6 +175,7 @@ seedTypeStr(const SeedType& type)
 		break;
 	}
 	assert(false);
+	return "";
 }
 
 /**
@@ -288,6 +289,7 @@ readResultStr(const ReadResult& result)
 		break;
 	}
 	assert(false);
+	return "";
 }
 
 /**
@@ -460,7 +462,7 @@ printContig(
     unsigned k,
     std::ostream& out)
 {
-	assert(seq.length() >= k);
+	assert(seq.length() >= k); (void)k;
 
 	FastaRecord contig;
 

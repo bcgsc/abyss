@@ -76,6 +76,7 @@ static inline const char* pathExtensionResultStr(PathExtensionResultCode result)
 	default:
 		assert(false);
 	}
+	return "";
 }
 
 /** length of path extension (in vertices) and reason for stopping */
