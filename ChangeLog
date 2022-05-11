@@ -4,6 +4,7 @@
 
     General:
 	* Fixed compile errors when using the -DNDEBUG flag.
+	* Removed deprecated C++ features.
 
 
 2021-12-20 Vladimir Nikolic <vnikolic@bcgsc.ca>
