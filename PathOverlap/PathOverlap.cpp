@@ -507,7 +507,7 @@ mergePaths(const Paths& paths, const OverlapMap& overlaps, const ContigPath& mer
 }
 
 /** Return true if the edge e is a path overlap. */
-struct IsPathOverlap : unary_function<edge_descriptor, bool>
+struct IsPathOverlap
 {
 	IsPathOverlap(const Graph& g, const OverlapMap& pmap, const IsPositive<Graph>& pred)
 	  : m_g(g)
@@ -521,6 +521,9 @@ struct IsPathOverlap : unary_function<edge_descriptor, bool>
 			stranded = m_isPositive(e);
 		return stranded && getOverlap(m_pmap, source(e, m_g), target(e, m_g));
 	}
+
+	typedef edge_descriptor argument_type;
+	typedef bool result_type;
 
   private:
 	const Graph& m_g;

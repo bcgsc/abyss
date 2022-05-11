@@ -382,7 +382,7 @@ removeContigs(Graph& g, vector<vertex_descriptor>& sc)
 }
 
 /** Return the value of the bit at the specified index. */
-struct Marked : unary_function<vertex_descriptor, bool>
+struct Marked
 {
 	typedef vector<bool> Data;
 	Marked(const Graph& g, const Data& data)
@@ -390,6 +390,9 @@ struct Marked : unary_function<vertex_descriptor, bool>
 	  , m_data(data)
 	{}
 	bool operator()(vertex_descriptor u) const { return m_data[get(vertex_contig_index, m_g, u)]; }
+
+	typedef vertex_descriptor argument_type;
+	typedef bool result_type;
 
   private:
 	const Graph& m_g;
@@ -434,7 +437,7 @@ struct sortContigs
 	}
 };
 
-struct ShorterThanX : unary_function<vertex_descriptor, bool>
+struct ShorterThanX
 {
 	const Graph& g;
 	const vector<bool>& seen;
@@ -451,9 +454,12 @@ struct ShorterThanX : unary_function<vertex_descriptor, bool>
 		return g[y].length < x && !get(vertex_removed, g, y) &&
 		       !seen[get(vertex_contig_index, g, y)];
 	}
+
+	typedef vertex_descriptor argument_type;
+	typedef bool result_type;
 };
 
-struct LongerThanX : unary_function<vertex_descriptor, bool>
+struct LongerThanX
 {
 	const Graph& g;
 	const vector<bool>& seen;
@@ -470,9 +476,12 @@ struct LongerThanX : unary_function<vertex_descriptor, bool>
 		return g[y].length > x && !get(vertex_removed, g, y) &&
 		       !seen[get(vertex_contig_index, g, y)];
 	}
+
+	typedef vertex_descriptor argument_type;
+	typedef bool result_type;
 };
 
-struct CoverageLessThan : unary_function<vertex_descriptor, bool>
+struct CoverageLessThan
 {
 	const Graph& g;
 	const vector<bool>& seen;
@@ -491,6 +500,9 @@ struct CoverageLessThan : unary_function<vertex_descriptor, bool>
 		return meanCoverage < minCov && !get(vertex_removed, g, u) &&
 		       !seen[get(vertex_contig_index, g, u)];
 	}
+
+	typedef vertex_descriptor argument_type;
+	typedef bool result_type;
 };
 
 static void
@@ -549,7 +561,7 @@ getSequence(const Graph& g, vertex_descriptor u)
 }
 
 /** Return whether the specified edge is inconsistent. */
-struct is_edge_inconsistent : unary_function<edge_descriptor, bool>
+struct is_edge_inconsistent
 {
 	const Graph& g;
 
@@ -574,6 +586,9 @@ struct is_edge_inconsistent : unary_function<edge_descriptor, bool>
 				return true;
 		return false;
 	}
+
+	typedef edge_descriptor argument_type;
+	typedef bool result_type;
 };
 
 template<typename It>

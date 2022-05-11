@@ -18,7 +18,7 @@ using boost::graph_traits;
 
 /** Return true if the edge e is a palindrome. */
 template<typename Graph>
-struct IsPalindrome : std::unary_function<typename graph_traits<Graph>::edge_descriptor, bool>
+struct IsPalindrome
 {
 	IsPalindrome(const Graph& g)
 	  : m_g(g)
@@ -27,6 +27,9 @@ struct IsPalindrome : std::unary_function<typename graph_traits<Graph>::edge_des
 	{
 		return source(e, m_g) == get(vertex_complement, m_g, target(e, m_g));
 	}
+
+	typedef typename graph_traits<Graph>::edge_descriptor argument_type;
+	typedef bool result_type;
 
   private:
 	const Graph& m_g;
@@ -223,7 +226,7 @@ assemble(Graph& g, OutIt out)
 
 /** Return true if the edge e is +ve sense. */
 template<typename Graph>
-struct IsPositive : std::unary_function<typename graph_traits<Graph>::edge_descriptor, bool>
+struct IsPositive
 {
 	IsPositive(const Graph& g)
 	  : m_g(g)
@@ -232,6 +235,9 @@ struct IsPositive : std::unary_function<typename graph_traits<Graph>::edge_descr
 	{
 		return !get(vertex_sense, m_g, source(e, m_g)) && !get(vertex_sense, m_g, target(e, m_g));
 	}
+
+	typedef typename graph_traits<Graph>::edge_descriptor argument_type;
+	typedef bool result_type;
 
   private:
 	const Graph& m_g;
@@ -284,7 +290,7 @@ pruneTips_if(Graph& g, OutputIt result, Pred p)
 
 /** Return true if the vertex is a normal 1-in 0-out tip. */
 template<typename Graph>
-struct IsTip : std::unary_function<typename graph_traits<Graph>::vertex_descriptor, bool>
+struct IsTip
 {
 	IsTip(const Graph& g)
 	  : m_g(g)
@@ -293,6 +299,9 @@ struct IsTip : std::unary_function<typename graph_traits<Graph>::vertex_descript
 	{
 		return in_degree(v, m_g) == 1;
 	}
+
+	typedef typename graph_traits<Graph>::vertex_descriptor argument_type;
+	typedef bool result_type;
 
   private:
 	const Graph& m_g;

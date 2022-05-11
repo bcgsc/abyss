@@ -305,7 +305,6 @@ static unsigned calculatePathLength(const Graph& g,
 
 /** Compare the lengths of two paths. */
 struct ComparePathLength
-		: binary_function<ContigPath, ContigPath, bool>
 {
 	ComparePathLength(const Graph& g, const ContigNode& origin)
 		: m_g(g), m_origin(origin) { }
@@ -315,6 +314,10 @@ struct ComparePathLength
 		return lenA < lenB
 			|| (lenA == lenB && a.size() < b.size());
 	}
+
+	typedef ContigPath first_argument_type;
+	typedef ContigPath second_argument_type;
+	typedef bool result_type;
   private:
 	const Graph& m_g;
 	const ContigNode& m_origin;
