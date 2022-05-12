@@ -158,10 +158,10 @@ To compile, run the following:
 
 You may also pass the following flags to `configure` script:
 
-  --with-boost=PATH
-  --with-mpi=PATH
-  --with-sqlite=PATH
-  --with-sparsehash=PATH
+	--with-boost=PATH
+	--with-mpi=PATH
+	--with-sqlite=PATH
+	--with-sparsehash=PATH
 
 Where PATH is the path to the directory containing the corresponding dependencies. This should only be necessary if `configure` doesn't find the dependencies by default. If you are using Conda, PATH would be the path to the Conda installation. SQLite and MPI are optional dependencies.
 
