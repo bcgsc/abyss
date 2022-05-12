@@ -60,23 +60,23 @@ Contents
 Installation
 ================================================================================
 
-## Install ABySS using Conda
+## Install ABySS using Conda (recommended)
 
 If you have the [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS) installed, run:
 
 	conda install -c bioconda abyss
+
+Or you can install ABySS in a dedicated environment:
+
+    conda create -n abyss-env
+    conda activate abyss-env
+    conda install -c bioconda abyss
 
 ## Install ABySS using Homebrew
 
 If you have the [Homebrew](https://brew.sh) package manager (Linux, MacOS) installed, run:
 
 	brew install abyss
-
-## Install ABySS using apt-get
-
-If you have the [apt-get](https://help.ubuntu.com/community/AptGet/Howto) package manager (Ubuntu, Debian, or any distributions derived from those) installed, run:
-
-	sudo apt-get install abyss
 
 ## Install ABySS on Windows
 
@@ -136,6 +136,10 @@ Conda:
 	conda install -c conda-forge boost openmpi
 	conda install -c bioconda google-sparsehash
 
+It is also helpful to install the compilers Conda package that automatically passes the correct compiler flags to use the available Conda packages:
+
+	conda install -c conda-forge compilers
+
 Homebrew:
 
 	brew install boost open-mpi google-sparsehash
@@ -152,7 +156,16 @@ To compile, run the following:
 	make
 	make install
 
-This installs ABySS at the provided path, in this case `/path/to/abyss`.
+You may also pass the following flags to `configure` script:
+
+  --with-boost=PATH
+  --with-mpi=PATH
+  --with-sqlite=PATH
+  --with-sparsehash=PATH
+
+Where PATH is the path to the directory containing the corresponding dependencies. This should only be necessary if `configure` doesn't find the dependencies by default. If you are using Conda, PATH would be the path to the Conda installation. SQLite and MPI are optional dependencies.
+
+The above steps install ABySS at the provided path, in this case `/path/to/abyss`.
 Not specifying `--prefix` would install in `/usr/local`, which requires
 sudo privileges when running `make install`.
 
@@ -161,28 +174,11 @@ versions of GCC installed, you can specify a different compiler:
 
 	../configure CC=gcc-10 CXX=g++-10
 
-If Boost is installed at a non-standard location, you can specify the path to it:
-
-	../configure --with-boost=/path/to/boost
-
-If you wish to build the assembler with MPI support and it is installed in a non-standard location, you can specify the path to it:
-
-	../configure --with-mpi=/path/to/openmpi
-
 While OpenMPI is assumed by default you can switch to LAM/MPI or MPICH
 using:
 
         ../configure --enable-lammpi
         ../configure --enable-mpich
-
-ABySS should be built using the sparsehash library to reduce memory
-usage, although it will build without. Its path can be specified with:
-
-	../configure -with-sparsehash=/path/to/sparsehash
-
-If the optional dependency SQLite is installed in non-standard directories, its location can be specified with:
-
-	../configure --with-sqlite=/path/to/sqlite3
 
 The default maximum k-mer size is 192 and may be decreased to reduce
 memory usage or increased at compile time. This value must be a
