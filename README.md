@@ -583,6 +583,13 @@ Steven JM Jones, and Inanc Birol (2009).
 Related Publications
 ================================================================================
 
+## [RResolver](https://bmcbioinformatics.biomedcentral.com/articles/10.1186/s12859-022-04790-z)
+
+Vladimir Nikolić, Amirhossein Afshinfard, Justin Chu, Johnathan Wong, Lauren Coombe, Ka Ming Nip, René L. Warren & Inanç Birol (2022).
+**RResolver: efficient short-read repeat resolution within ABySS**.
+*BMC Bioinformatics* 23, Article number: 246 (2022).
+[doi:10.1186/s12859-022-04790-z](https://doi.org/10.1186/s12859-022-04790-z)
+
 ## [Trans-ABySS](http://www.nature.com/nmeth/journal/v7/n11/abs/nmeth.1517.html)
 
 Robertson, Gordon, Jacqueline Schein, Readman Chiu, Richard Corbett,
