@@ -3,7 +3,7 @@
 #include "RUtils.h"
 #include "SequenceTree.h"
 
-#include "btllib/include/btllib/seq_reader.hpp"
+#include "btllib/seq_reader.hpp"
 
 #if _OPENMP
 #include <omp.h>

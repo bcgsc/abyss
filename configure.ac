@@ -126,6 +126,16 @@ if test "$with_sqlite" -a "$with_sqlite" != "no" -a -d "$with_sqlite"; then
 	fi
 fi
 
+
+# btllib
+AC_ARG_WITH(btllib, AS_HELP_STRING([--with-btllib=PATH],
+	[specify prefix directory for the installed sqlite library]))
+if test "$with_btllib" -a "$with_btllib" != "no" -a -d "$with_btllib" ; then
+        sparsehash_cppflags="-isystem$with_btllib/include"
+        sparsehash_ldflags="-L$with_btllib/lib"
+fi
+
+
 # SparseHash
 AC_ARG_WITH(sparsehash, AS_HELP_STRING([--with-sparsehash=PATH],
 	[specify prefix directory for the installed sparsehash library]))
@@ -157,7 +167,7 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $btllib_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
 AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
 
 # Check for pthread.h / libpthread
@@ -213,6 +223,7 @@ AC_COMPILE_IFELSE(
 # Check for the hash table implementation.
 AC_LANG([C++])
 AC_CHECK_HEADERS([ \
+	btllib/bloom_filter.hpp \
 	functional \
 	tr1/functional \
 	boost/functional/hash.hpp \
