@@ -10,6 +10,8 @@ abyss_rresolver_short_SOURCES = \
 
 LDFLAGS += -pthread
 
+LDADD += btllib/btllib.a
+
 abyss_rresolver_short_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
