@@ -168,7 +168,7 @@ boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
 		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $btllib_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $btllib_ldflags $LDFLAGS")
 
 # Check for pthread.h / libpthread
 # (optional 'make check' dependency)
@@ -244,6 +244,14 @@ if test $ac_cv_header_boost_property_map_property_map_hpp != yes; then
 	wget http://downloads.sourceforge.net/project/boost/boost/$boost_ver/$boost_ver_dir.tar.bz2
 	tar jxf $boost_ver_dir.tar.bz2
 	cd -])
+fi
+
+# Check for Boost.
+if test $ac_cv_header_btllib_bloom_filter_hpp != yes; then
+	AC_MSG_ERROR([ABySS requires the btllib C++ libraries, which may
+	be downloaded from here: https://github.com/bcgsc/btllib
+	It is necessary to compile btllib. The readme 
+	in the GitHub repo contains instructs to compile btllib.])
 fi
 
 # Check for SQLite
