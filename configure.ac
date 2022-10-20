@@ -168,7 +168,7 @@ boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
 		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $btllib_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $btllib_ldflags $LDFLAGS")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags -lbtllib $btllib_ldflags $LDFLAGS")
 
 # Check for pthread.h / libpthread
 # (optional 'make check' dependency)
