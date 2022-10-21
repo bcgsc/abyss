@@ -42,9 +42,9 @@ EXTRA_DIST = \
   include/gtest/internal/gtest-tuple.h.pump \
   include/gtest/internal/gtest-type-util.h \
   include/gtest/internal/gtest-type-util.h.pump \
-  include/gtest/internal/gtest-port.h \
-  include/gtest/internal/gtest-printers.h \
-  include/gtest/internal/gtest.h
+  include/gtest/internal/custom/gtest-port.h \
+  include/gtest/internal/custom/gtest-printers.h \
+  include/gtest/internal/custom/gtest.h
 
 libgtest_a_CPPFLAGS = -I$(top_srcdir) -isystem $(top_srcdir)/vendor/gtest-1.7.0/include
 libgtest_a_CXXFLAGS = $(AM_CXXFLAGS) -Wno-missing-field-initializers
