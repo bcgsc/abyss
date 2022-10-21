@@ -10,7 +10,7 @@ jobs:
   - script: |
       source activate goldrush_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi util-linux perl btllib
+      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi util-linux perl btllib pandoc
     displayName: Install dependencies
   - script: |
       source activate goldrush_CI
