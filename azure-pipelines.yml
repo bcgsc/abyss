@@ -13,6 +13,7 @@ jobs:
       mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi util-linux perl btllib
     displayName: Install dependencies
   - script: |
+      source activate goldrush_CI
       ./autogen.sh
       ./configure
       make -j12 distcheck
