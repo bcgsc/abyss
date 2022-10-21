@@ -5020,8 +5020,10 @@ class ScopedPrematureExitFile {
       // errors are ignored as there's nothing better we can do and we
       // don't want to fail the test because of this.
       FILE* pfile = posix::FOpen(premature_exit_filepath_.c_str(), "w");
-      size_t bytes = fwrite("0", 1, 1, pfile);
-      assert(bytes == 1);
+      size_t written_bytes = fwrite("0", 1, 1, pfile);
+      if (written_bytes != 1){
+        std::cerr << "incorrect" << std::endl;
+      }
       fclose(pfile);
     }
   }
