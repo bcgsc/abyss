@@ -19,6 +19,11 @@ jobs:
   - script: sudo apt-get install gcc-8-multilib g++-8-multilib
     displayName: Install 32-bit compilation support
   - script: |
+      git clone https://github.com/bcgsc/btllib.git
+      cd btllib
+      ./compile
+    displayName: Install btllib
+  - script: |
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=\"gcc-8 -m32\" CXX=\"g++-8 -m32\" --build=i386-linux-gnu"
       ./configure CC=gcc-8 CXX=g++-8 --build=i686-linux-gnu "CFLAGS=-m32" "CXXFLAGS=-m32" "LDFLAGS=-m32" --with-mpi=/usr/lib/openmpi
