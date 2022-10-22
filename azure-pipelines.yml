@@ -38,6 +38,8 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate goldrush_CI
+      brew unlink binutils
+      RANLIB=/usr/bin/ranlib
       ./autogen.sh
       ./configure
       make -j12 
