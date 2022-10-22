@@ -212,6 +212,9 @@ AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
 # Check for the dynamic linking library.
 AC_CHECK_LIB([dl], [dlsym])
 
+# Check for the dynamic linking library.
+AC_CHECK_LIB([btllib], [BloomFilter])
+
 # Check for popcnt instruction.
 AC_COMPILE_IFELSE(
 	[AC_LANG_PROGRAM([[#include <stdint.h>],
