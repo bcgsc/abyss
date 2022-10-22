@@ -1,7 +1,9 @@
 jobs:
-- job: linux
+- job:
+  displayName: ubuntu-latest
   pool:
-    vmImage: ubuntu-latest
+    vmImage: 'ubuntu-latest'
+
   steps:
   - script: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
@@ -19,3 +21,24 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS with gcc
 
+- job:
+  displayName: mac-latest
+  pool:
+    vmImage: 'macOS-latest'
+
+  steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name goldrush_CI
+    displayName: Create Anaconda environment
+  - script: |
+      source activate goldrush_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi util-linux perl btllib pandoc
+    displayName: Install dependencies
+  - script: |
+      source activate goldrush_CI
+      ./autogen.sh
+      ./configure
+      make -j12 distcheck
+    displayName: Compiling ABySS with gcc
