@@ -40,5 +40,6 @@ jobs:
       source activate goldrush_CI
       ./autogen.sh
       ./configure
-      make -j12 distcheck
-    displayName: Compiling ABySS with gcc
+      make -j12 
+      make -j12 check
+    displayName: Compiling ABySS with clang
