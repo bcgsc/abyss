@@ -213,7 +213,7 @@ AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
 AC_CHECK_LIB([dl], [dlsym])
 
 # Check for the dynamic linking library.
-AC_CHECK_LIB([btllib], [btllib::reverse_complement])
+AC_CHECK_LIB([btllib], [btllib::reverse_complement], [-lbtllib], [-lbtllib])
 
 # Check for popcnt instruction.
 AC_COMPILE_IFELSE(
