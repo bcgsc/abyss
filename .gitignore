@@ -13,7 +13,6 @@ config.sub
 configure
 depcomp
 install-sh
-lib*.a
 missing
 stamp-h1
 test-driver
