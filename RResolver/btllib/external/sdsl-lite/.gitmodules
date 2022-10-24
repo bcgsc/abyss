@@ -1,6 +1,0 @@
-[submodule "external/googletest"]
-	path = external/googletest
-	url = https://github.com/google/googletest.git
-[submodule "external/libdivsufsort"]
-	path = external/libdivsufsort
-	url = https://github.com/simongog/libdivsufsort.git
