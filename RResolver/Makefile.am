@@ -14,7 +14,7 @@ abyss_rresolver_short_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
 	libralgorithmsshort.a \
-	-lbtllib
+	$(top_builddir)/RResolver/btllib/lib/libbtllib.a
 
 noinst_LIBRARIES = libralgorithmsshort.a
 
@@ -32,6 +32,7 @@ libralgorithmsshort_a_SOURCES = \
 libralgorithmsshort_a_LIBADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
-	-lbtllib
+	$(top_builddir)/RResolver/btllib/lib/libbtllib.a
 
-EXTRA_DIST = btllib
+EXTRA_DIST = btllib \
+	     btllib/lib/libbtllib.a
