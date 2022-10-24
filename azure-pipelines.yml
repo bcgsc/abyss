@@ -7,15 +7,15 @@ jobs:
   steps:
   - script: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
-  - script: conda create --yes --quiet --name goldrush_CI
+  - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
-      source activate goldrush_CI
+      source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi util-linux perl btllib pandoc
     displayName: Install dependencies
   - script: |
-      source activate goldrush_CI
+      source activate abyss_CI
       ./autogen.sh
       ./configure
       make -j12 distcheck
@@ -29,15 +29,15 @@ jobs:
   steps:
   - script: echo "##vso[task.prependpath]$CONDA/bin"
     displayName: Add conda to PATH
-  - script: conda create --yes --quiet --name goldrush_CI
+  - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
-      source activate goldrush_CI
+      source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl btllib pandoc
     displayName: Install dependencies
   - script: |
-      source activate goldrush_CI
+      source activate abyss_CI
       ./autogen.sh
       ./configure
       make -j12 
