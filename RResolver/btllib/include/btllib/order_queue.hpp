@@ -11,6 +11,23 @@
 
 namespace btllib {
 
+/**
+ * @brief OrderQueue is a thread-safe queue where the elements have
+ * an inherent order (they must have a number in this order attached
+ * to them). Using their order information, we can optimize
+ * queue operations. There are four variations of the queue:
+ * 1) OrderQueueSPSC: Single Producer Single Consumer
+ * 2) OrderQueueMPSC: Multiple Producer Single Consumer
+ * 3) OrderQueueSPMC: Single Producer Multiple Consumer
+ * 4) OrderQueueMPMC: Multiple Producer Multiple Consumer
+ * The variations imply which aspect of the queue is thread-safe.
+ * If the queue is multiple producer, then insertion into the queue
+ * is thread-safe. If the queue is multiple consumer, then removal
+ * from the queue is thread-safe. Hence, the first variation is not
+ * thread-safe and the last is fully thread-safe.
+ *
+ * @tparam T The type of the elements in the queue.
+ */
 template<typename T>
 class OrderQueue
 {
@@ -21,17 +38,16 @@ public:
 
     Block(const size_t block_size)
       : data(block_size)
-    {}
+    {
+    }
 
     Block(const Block& block) = default;
 
     Block(Block&& block) noexcept
-      : current(block.current)
-      , count(block.count)
+      : count(block.count)
       , num(block.num)
     {
       std::swap(data, block.data);
-      block.current = 0;
       block.count = 0;
       block.num = 0;
     }
@@ -41,38 +57,39 @@ public:
     Block& operator=(Block&& block) noexcept
     {
       std::swap(data, block.data);
-      current = block.current;
       count = block.count;
       num = block.num;
-      block.current = 0;
       block.count = 0;
       block.num = 0;
       return *this;
     }
 
     std::vector<T> data;
-    size_t current = 0;
     size_t count = 0;
-    size_t num = 0;
+    uint64_t num = 0;
   };
 
   // Surrounds pieces of data in the buffer with a busy mutex
   // for exclusive access
+  /// @cond HIDDEN_SYMBOLS
   struct Slot
   {
     Slot(size_t block_size)
       : block(block_size)
-    {}
+    {
+    }
     Slot(const Slot& slot)
       : block(slot.block)
       , occupied(slot.occupied)
       , last_tenant(slot.last_tenant)
-    {}
+    {
+    }
     Slot(Slot&& slot) noexcept
       : block(slot.block)
       , occupied(slot.occupied)
       , last_tenant(slot.last_tenant)
-    {}
+    {
+    }
 
     Slot& operator=(const Slot& slot)
     {
@@ -98,6 +115,7 @@ public:
     std::condition_variable occupancy_changed;
     size_t last_tenant = -1; // Required to ensure read order
   };
+  /// @endcond
 
   size_t elements() const { return element_count; }
 
@@ -118,14 +136,20 @@ public:
     : slots(queue_size, Slot(block_size))
     , queue_size(queue_size)
     , block_size(block_size)
-  {}
+  {
+  }
 
   OrderQueue(const OrderQueue&) = delete;
   OrderQueue(OrderQueue&&) = delete;
 
+  ~OrderQueue() { close(); }
+
+  size_t get_queue_size() const { return queue_size; }
+  size_t get_block_size() const { return block_size; }
+
 protected:
   std::vector<Slot> slots;
-  size_t queue_size, block_size;
+  const std::atomic<size_t> queue_size, block_size;
   size_t read_counter = 0;
   std::atomic<size_t> element_count{ 0 };
   std::atomic<bool> closed{ false };
@@ -148,7 +172,8 @@ protected:
   public:                                                                      \
     OrderQueue##SUFFIX(const size_t queue_size, const size_t block_size)       \
       : OrderQueue<T>(queue_size, block_size)                                  \
-    {}                                                                         \
+    {                                                                          \
+    }                                                                          \
                                                                                \
     using Block = typename OrderQueue<T>::Block;                               \
     using Slot = typename OrderQueue<T>::Slot;                                 \

@@ -1,8 +1,10 @@
 #ifndef BTLLIB_SEQ_READER_FASTQ_MODULE_HPP
 #define BTLLIB_SEQ_READER_FASTQ_MODULE_HPP
 
-#include "cstring.hpp"
-#include "seq.hpp"
+#include "btllib/cstring.hpp"
+#include "btllib/status.hpp"
+
+#include <cstdlib>
 
 namespace btllib {
 
@@ -32,68 +34,6 @@ private:
   template<typename ReaderType, typename RecordType>
   bool read_file(ReaderType& reader, RecordType& record);
 };
-
-inline bool
-SeqReaderFastqModule::buffer_valid(const char* buffer, const size_t size)
-{
-  size_t current = 0;
-  unsigned char c;
-  enum State
-  {
-    IN_HEADER_1,
-    IN_HEADER_2,
-    IN_SEQ,
-    IN_PLUS_1,
-    IN_PLUS_2,
-    IN_QUAL
-  };
-  State state = IN_HEADER_1;
-  while (current < size) {
-    c = buffer[current];
-    switch (state) {
-      case IN_HEADER_1:
-        if (c == '@') {
-          state = IN_HEADER_2;
-        } else {
-          return false;
-        }
-        break;
-      case IN_HEADER_2:
-        if (c == '\n') {
-          state = IN_SEQ;
-        }
-        break;
-      case IN_SEQ:
-        if (c == '\n') {
-          state = IN_PLUS_1;
-        } else if (c != '\r' && !bool(COMPLEMENTS[c])) {
-          return false;
-        }
-        break;
-      case IN_PLUS_1:
-        if (c == '+') {
-          state = IN_PLUS_2;
-        } else {
-          return false;
-        }
-        break;
-      case IN_PLUS_2:
-        if (c == '\n') {
-          state = IN_QUAL;
-        }
-        break;
-      case IN_QUAL:
-        if (c == '\n') {
-          state = IN_HEADER_1;
-        } else if (c != '\r' && (c < '!' || c > '~')) {
-          return false;
-        }
-        break;
-    }
-    current++;
-  }
-  return true;
-}
 
 template<typename ReaderType, typename RecordType>
 inline bool
@@ -149,7 +89,8 @@ SeqReaderFastqModule::read_transition(ReaderType& reader, RecordType& record)
   if (std::ferror(reader.source) == 0 && std::feof(reader.source) == 0) {
     const auto p = std::fgetc(reader.source);
     if (p != EOF) {
-      std::ungetc(p, reader.source);
+      const auto ret = std::ungetc(p, reader.source);
+      check_error(ret == EOF, "SeqReaderFastqModule: ungetc failed.");
       switch (stage) {
         case Stage::HEADER: {
           reader.readline_file_append(record.header, reader.source);

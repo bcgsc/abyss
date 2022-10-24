@@ -1,14 +1,12 @@
 #ifndef BTLLIB_BLOOM_FILTER_HPP
 #define BTLLIB_BLOOM_FILTER_HPP
 
-#include "nthash.hpp"
-#include "status.hpp"
+#include "btllib/nthash.hpp"
 
-#include "../external/cpptoml.hpp"
+#include "cpptoml.h"
 
 #include <atomic>
 #include <climits>
-#include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <memory>
@@ -23,41 +21,33 @@ static const uint8_t BIT_MASKS[CHAR_BIT] = {
   0x10, 0x20, 0x40, 0x80  // NOLINT
 };
 
-static const char* const BLOOM_FILTER_MAGIC_HEADER = "BTLBloomFilter_v6";
-static const char* const KMER_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLKmerBloomFilter_v6";
-static const char* const SEED_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLSeedBloomFilter_v6";
-static const char* const HASH_FN = "ntHash_v1";
+static const char* const BLOOM_FILTER_SIGNATURE = "[BTLBloomFilter_v6]";
+static const char* const KMER_BLOOM_FILTER_SIGNATURE =
+  "[BTLKmerBloomFilter_v6]";
+static const char* const SEED_BLOOM_FILTER_SIGNATURE =
+  "[BTLSeedBloomFilter_v6]";
+static const char* const HASH_FN = NTHASH_FN_NAME;
 
 static const unsigned MAX_HASH_VALUES = 1024;
 static const unsigned PLACEHOLDER_NEWLINES = 50;
 
-inline unsigned
-pop_cnt_byte(uint8_t x)
-{
-  return ((0x876543210 >>                                              // NOLINT
-           (((0x4332322132212110 >> ((x & 0xF) << 2)) & 0xF) << 2)) >> // NOLINT
-          ((0x4332322132212110 >> (((x & 0xF0) >> 2)) & 0xF) << 2)) &  // NOLINT
-         0xf;                                                          // NOLINT
-}
-
+/// @cond HIDDEN_SYMBOLS
 class BloomFilterInitializer
 {
 
 public:
-  BloomFilterInitializer(const std::string& path,
-                         const std::string& magic_string)
-    : ifs(path)
-    , table(parse_header(ifs, magic_string))
-  {}
+  BloomFilterInitializer(const std::string& path, const std::string& signature)
+    : path(path)
+    , ifs(path)
+    , table(parse_header(signature))
+  {
+  }
 
-  /** Parse a Bloom filter file header. Useful for implementing Bloom filter
-   * variants. */
-  static std::shared_ptr<cpptoml::table> parse_header(
-    std::ifstream& file,
-    const std::string& magic_string);
+  static bool check_file_signature(std::ifstream& ifs,
+                                   const std::string& expected_signature,
+                                   std::string& file_signature);
 
+  std::string path;
   std::ifstream ifs;
   std::shared_ptr<cpptoml::table> table;
 
@@ -66,7 +56,13 @@ public:
 
   BloomFilterInitializer& operator=(const BloomFilterInitializer&) = delete;
   BloomFilterInitializer& operator=(BloomFilterInitializer&&) = default;
+
+private:
+  /** Parse a Bloom filter file header. Useful for implementing Bloom filter
+   * variants. */
+  std::shared_ptr<cpptoml::table> parse_header(const std::string& signature);
 };
+/// @endcond
 
 class BloomFilter
 {
@@ -181,8 +177,21 @@ public:
                    const char* data,
                    size_t n);
 
+  /**
+   * Check whether the file at the given path is a saved Bloom filter.
+   *
+   * @param path Filepath to check.
+   */
+  static bool is_bloom_file(const std::string& path)
+  {
+    return check_file_signature(path, BLOOM_FILTER_SIGNATURE);
+  }
+
+  static bool check_file_signature(const std::string& path,
+                                   const std::string& signature);
+
 private:
-  BloomFilter(BloomFilterInitializer bfi);
+  BloomFilter(const std::shared_ptr<BloomFilterInitializer>& bfi);
 
   friend class KmerBloomFilter;
   friend class SeedBloomFilter;
@@ -375,8 +384,19 @@ public:
    */
   void save(const std::string& path);
 
+  /**
+   * Check whether the file at the given path is a saved Kmer Bloom filter.
+   *
+   * @param path Filepath to check.
+   */
+  static bool is_bloom_file(const std::string& path)
+  {
+    return btllib::BloomFilter::check_file_signature(
+      path, KMER_BLOOM_FILTER_SIGNATURE);
+  }
+
 private:
-  KmerBloomFilter(BloomFilterInitializer bfi);
+  KmerBloomFilter(const std::shared_ptr<BloomFilterInitializer>& bfi);
 
   friend class SeedBloomFilter;
 
@@ -606,397 +626,24 @@ public:
    */
   void save(const std::string& path);
 
+  /**
+   * Check whether the file at the given path is a saved Seed Bloom filter.
+   *
+   * @param path Filepath to check.
+   */
+  static bool is_bloom_file(const std::string& path)
+  {
+    return btllib::BloomFilter::check_file_signature(
+      path, SEED_BLOOM_FILTER_SIGNATURE);
+  }
+
 private:
-  SeedBloomFilter(BloomFilterInitializer bfi);
+  SeedBloomFilter(const std::shared_ptr<BloomFilterInitializer>& bfi);
 
   std::vector<std::string> seeds;
   std::vector<SpacedSeed> parsed_seeds;
   KmerBloomFilter kmer_bloom_filter;
 };
-
-inline BloomFilter::BloomFilter(size_t bytes,
-                                unsigned hash_num,
-                                std::string hash_fn)
-  : bytes(
-      size_t(std::ceil(double(bytes) / sizeof(uint64_t)) * sizeof(uint64_t)))
-  , array_size(get_bytes() / sizeof(array[0]))
-  , array_bits(array_size * CHAR_BIT)
-  , hash_num(hash_num)
-  , hash_fn(std::move(hash_fn))
-  , array(new std::atomic<uint8_t>[array_size])
-{
-  check_error(bytes == 0, "BloomFilter: memory budget must be >0!");
-  check_error(hash_num == 0, "BloomFilter: number of hash values must be >0!");
-  check_error(hash_num > MAX_HASH_VALUES,
-              "BloomFilter: number of hash values cannot be over 1024!");
-  check_warning(
-    sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
-    "Atomic primitives take extra memory. BloomFilter will have less than " +
-      std::to_string(bytes) + " for bit array.");
-  std::memset((void*)array.get(), 0, array_size * sizeof(array[0]));
-}
-
-inline void
-BloomFilter::insert(const uint64_t* hashes)
-{
-  for (unsigned i = 0; i < hash_num; ++i) {
-    const auto normalized = hashes[i] % array_bits;
-    array[normalized / CHAR_BIT] |= BIT_MASKS[normalized % CHAR_BIT];
-  }
-}
-
-inline bool
-BloomFilter::contains(const uint64_t* hashes) const
-{
-  for (unsigned i = 0; i < hash_num; ++i) {
-    const auto normalized = hashes[i] % array_bits;
-    const auto mask = BIT_MASKS[normalized % CHAR_BIT];
-    if (!bool(array[normalized / CHAR_BIT] & mask)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-inline bool
-BloomFilter::contains_insert(const uint64_t* hashes)
-{
-  uint8_t found = 1;
-  for (unsigned i = 0; i < hash_num; ++i) {
-    const auto normalized = hashes[i] % array_bits;
-    const auto bitpos = normalized % CHAR_BIT;
-    const auto mask = BIT_MASKS[bitpos];
-    found &= ((array[normalized / CHAR_BIT].fetch_or(mask) >> bitpos) & 1);
-  }
-  return bool(found);
-}
-
-inline uint64_t
-BloomFilter::get_pop_cnt() const
-{
-  uint64_t pop_cnt = 0;
-#pragma omp parallel for default(none) reduction(+ : pop_cnt)
-  for (size_t i = 0; i < array_size; ++i) {
-    pop_cnt += pop_cnt_byte(array[i]);
-  }
-  return pop_cnt;
-}
-
-inline double
-BloomFilter::get_occupancy() const
-{
-  return double(get_pop_cnt()) / double(array_bits);
-}
-
-inline double
-BloomFilter::get_fpr() const
-{
-  return std::pow(get_occupancy(), double(hash_num));
-}
-
-inline std::shared_ptr<cpptoml::table>
-BloomFilterInitializer::parse_header(std::ifstream& file,
-                                     const std::string& magic_string)
-{
-  const std::string magic_with_brackets = std::string("[") + magic_string + "]";
-
-  std::string line;
-  std::getline(file, line);
-  if (line != magic_with_brackets) {
-    log_error(
-      std::string("Magic string does not match (likely version mismatch)\n") +
-      "File magic string:\t" + line + "\n" + "Loader magic string:\t" +
-      magic_with_brackets);
-    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
-  }
-
-  /* Read bloom filter line by line until it sees "[HeaderEnd]"
-  which is used to mark the end of the header section and
-  assigns the header to a char array*/
-  std::string toml_buffer(line + '\n');
-  bool header_end_found = false;
-  while (bool(std::getline(file, line))) {
-    toml_buffer.append(line + '\n');
-    if (line == "[HeaderEnd]") {
-      header_end_found = true;
-      break;
-    }
-  }
-  if (!header_end_found) {
-    log_error("Pre-built bloom filter does not have the correct header end.");
-    std::exit(EXIT_FAILURE); // NOLINT(concurrency-mt-unsafe)
-  }
-  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
-    std::getline(file, line);
-  }
-
-  // Send the char array to a stringstream for the cpptoml parser to parse
-  std::istringstream toml_stream(toml_buffer);
-  cpptoml::parser toml_parser(toml_stream);
-  const auto header_config = toml_parser.parse();
-
-  // Obtain header values from toml parser and assign them to class members
-  return header_config->get_table(magic_string);
-}
-
-inline BloomFilter::BloomFilter(const std::string& path)
-  : BloomFilter::BloomFilter(
-      BloomFilterInitializer(path, BLOOM_FILTER_MAGIC_HEADER))
-{}
-
-inline BloomFilter::BloomFilter(BloomFilterInitializer bfi)
-  : bytes(*(bfi.table->get_as<decltype(bytes)>("bytes")))
-  , array_size(bytes / sizeof(array[0]))
-  , array_bits(array_size * CHAR_BIT)
-  , hash_num(*(bfi.table->get_as<decltype(hash_num)>("hash_num")))
-  , hash_fn(bfi.table->contains("hash_fn")
-              ? *(bfi.table->get_as<decltype(hash_fn)>("hash_fn"))
-              : "")
-  , array(new std::atomic<uint8_t>[array_size])
-{
-  check_warning(
-    sizeof(uint8_t) != sizeof(std::atomic<uint8_t>),
-    "Atomic primitives take extra memory. BloomFilter will have less than " +
-      std::to_string(bytes) + " for bit array.");
-  bfi.ifs.read((char*)array.get(),
-               std::streamsize(array_size * sizeof(array[0])));
-}
-
-inline void
-BloomFilter::save(const std::string& path,
-                  const cpptoml::table& table,
-                  const char* data,
-                  const size_t n)
-{
-  std::ofstream ofs(path.c_str(), std::ios::out | std::ios::binary);
-
-  ofs << table << "[HeaderEnd]\n";
-  for (unsigned i = 0; i < PLACEHOLDER_NEWLINES; i++) {
-    if (i == 1) {
-      ofs << "  <binary data>";
-    }
-    ofs << '\n';
-  }
-
-  ofs.write(data, std::streamsize(n));
-}
-
-inline void
-BloomFilter::save(const std::string& path)
-{
-  /* Initialize cpptoml root table
-    Note: Tables and fields are unordered
-    Ordering of table is maintained by directing the table
-    to the output stream immediately after completion  */
-  auto root = cpptoml::make_table();
-
-  /* Initialize bloom filter section and insert fields
-      and output to ostream */
-  auto header = cpptoml::make_table();
-  header->insert("bytes", get_bytes());
-  header->insert("hash_num", get_hash_num());
-  if (!hash_fn.empty()) {
-    header->insert("hash_fn", get_hash_fn());
-  }
-  root->insert(BLOOM_FILTER_MAGIC_HEADER, header);
-
-  save(path, *root, (char*)array.get(), array_size * sizeof(array[0]));
-}
-
-inline KmerBloomFilter::KmerBloomFilter(size_t bytes,
-                                        unsigned hash_num,
-                                        unsigned k)
-  : k(k)
-  , bloom_filter(bytes, hash_num, HASH_FN)
-{}
-
-inline void
-KmerBloomFilter::insert(const char* seq, size_t seq_len)
-{
-  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
-  while (nthash.roll()) {
-    bloom_filter.insert(nthash.hashes());
-  }
-}
-
-inline unsigned
-KmerBloomFilter::contains(const char* seq, size_t seq_len) const
-{
-  unsigned count = 0;
-  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
-  while (nthash.roll()) {
-    if (bloom_filter.contains(nthash.hashes())) {
-      count++;
-    }
-  }
-  return count;
-}
-
-inline unsigned
-KmerBloomFilter::contains_insert(const char* seq, size_t seq_len)
-{
-  unsigned count = 0;
-  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
-  while (nthash.roll()) {
-    if (bloom_filter.contains_insert(nthash.hashes())) {
-      count++;
-    }
-  }
-  return count;
-}
-
-inline KmerBloomFilter::KmerBloomFilter(const std::string& path)
-  : KmerBloomFilter::KmerBloomFilter(
-      BloomFilterInitializer(path, KMER_BLOOM_FILTER_MAGIC_HEADER))
-{}
-
-inline KmerBloomFilter::KmerBloomFilter(BloomFilterInitializer bfi)
-  : k(*(bfi.table->get_as<decltype(k)>("k")))
-  , bloom_filter(std::move(bfi))
-{
-  check_error(bloom_filter.hash_fn != HASH_FN,
-              "KmerBloomFilter: loaded hash function (" + bloom_filter.hash_fn +
-                ") is different from the one used by default (" + HASH_FN +
-                ").");
-}
-
-inline void
-KmerBloomFilter::save(const std::string& path)
-{
-  /* Initialize cpptoml root table
-    Note: Tables and fields are unordered
-    Ordering of table is maintained by directing the table
-    to the output stream immediately after completion  */
-  auto root = cpptoml::make_table();
-
-  /* Initialize bloom filter section and insert fields
-      and output to ostream */
-  auto header = cpptoml::make_table();
-  header->insert("bytes", get_bytes());
-  header->insert("hash_num", get_hash_num());
-  header->insert("hash_fn", get_hash_fn());
-  header->insert("k", get_k());
-  root->insert(KMER_BLOOM_FILTER_MAGIC_HEADER, header);
-
-  BloomFilter::save(path,
-                    *root,
-                    (char*)bloom_filter.array.get(),
-                    bloom_filter.array_size * sizeof(bloom_filter.array[0]));
-}
-
-inline SeedBloomFilter::SeedBloomFilter(size_t bytes,
-                                        unsigned k,
-                                        const std::vector<std::string>& seeds,
-                                        unsigned hash_num_per_seed)
-  : seeds(seeds)
-  , parsed_seeds(parse_seeds(seeds))
-  , kmer_bloom_filter(bytes, hash_num_per_seed, k)
-{
-  for (const auto& seed : seeds) {
-    check_error(k != seed.size(),
-                "SeedBloomFilter: passed k (" + std::to_string(k) +
-                  ") not equal to passed spaced seed size (" +
-                  std::to_string(seed.size()) + ")");
-  }
-}
-
-inline void
-SeedBloomFilter::insert(const char* seq, size_t seq_len)
-{
-  SeedNtHash nthash(
-    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
-  while (nthash.roll()) {
-    for (size_t s = 0; s < seeds.size(); s++) {
-      kmer_bloom_filter.bloom_filter.insert(nthash.hashes() +
-                                            s * get_hash_num_per_seed());
-    }
-  }
-}
-
-inline std::vector<std::vector<unsigned>>
-SeedBloomFilter::contains(const char* seq, size_t seq_len) const
-{
-  std::vector<std::vector<unsigned>> hit_seeds;
-  SeedNtHash nthash(
-    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
-  while (nthash.roll()) {
-    hit_seeds.emplace_back();
-    for (size_t s = 0; s < seeds.size(); s++) {
-      if (kmer_bloom_filter.bloom_filter.contains(
-            nthash.hashes() + s * get_hash_num_per_seed())) {
-        hit_seeds.back().push_back(s);
-      }
-    }
-  }
-  return hit_seeds;
-}
-
-inline std::vector<std::vector<unsigned>>
-SeedBloomFilter::contains_insert(const char* seq, size_t seq_len)
-{
-  std::vector<std::vector<unsigned>> hit_seeds;
-  SeedNtHash nthash(
-    seq, seq_len, parsed_seeds, get_hash_num_per_seed(), get_k());
-  while (nthash.roll()) {
-    hit_seeds.emplace_back();
-    for (size_t s = 0; s < seeds.size(); s++) {
-      if (kmer_bloom_filter.bloom_filter.contains_insert(
-            nthash.hashes() + s * get_hash_num_per_seed())) {
-        hit_seeds.back().push_back(s);
-      }
-    }
-  }
-  return hit_seeds;
-}
-
-inline double
-SeedBloomFilter::get_fpr() const
-{
-  const double single_seed_fpr =
-    std::pow(get_occupancy(), get_hash_num_per_seed());
-  return 1 - std::pow(1 - single_seed_fpr, seeds.size());
-}
-
-inline SeedBloomFilter::SeedBloomFilter(const std::string& path)
-  : SeedBloomFilter::SeedBloomFilter(
-      BloomFilterInitializer(path, SEED_BLOOM_FILTER_MAGIC_HEADER))
-{}
-
-inline SeedBloomFilter::SeedBloomFilter(BloomFilterInitializer bfi)
-  : seeds(*(bfi.table->get_array_of<std::string>("seeds")))
-  , parsed_seeds(parse_seeds(seeds))
-  , kmer_bloom_filter(std::move(bfi))
-{}
-
-inline void
-SeedBloomFilter::save(const std::string& path)
-{
-  /* Initialize cpptoml root table
-    Note: Tables and fields are unordered
-    Ordering of table is maintained by directing the table
-    to the output stream immediately after completion  */
-  auto root = cpptoml::make_table();
-
-  /* Initialize bloom filter section and insert fields
-      and output to ostream */
-  auto header = cpptoml::make_table();
-  header->insert("bytes", get_bytes());
-  header->insert("hash_num", get_hash_num());
-  header->insert("hash_fn", get_hash_fn());
-  header->insert("k", get_k());
-  auto seeds_array = cpptoml::make_array();
-  for (const auto& seed : seeds) {
-    seeds_array->push_back(seed);
-  }
-  header->insert("seeds", seeds_array);
-  root->insert(SEED_BLOOM_FILTER_MAGIC_HEADER, header);
-
-  BloomFilter::save(path,
-                    *root,
-                    (char*)kmer_bloom_filter.bloom_filter.array.get(),
-                    kmer_bloom_filter.bloom_filter.array_size *
-                      sizeof(kmer_bloom_filter.bloom_filter.array[0]));
-}
 
 } // namespace btllib
 

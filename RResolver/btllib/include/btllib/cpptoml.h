@@ -1,5 +1,5 @@
 /**
- * @file cpptoml.hpp
+ * @file cpptoml.h
  * @author Chase Geigle
  * @date May 2013
  */
@@ -26,8 +26,14 @@
 #define CPPTOML_DEPRECATED(reason) [[deprecated(reason)]]
 #elif defined(__clang__)
 #define CPPTOML_DEPRECATED(reason) __attribute__((deprecated(reason)))
-#else
+#elif defined(__GNUG__)
 #define CPPTOML_DEPRECATED(reason) __attribute__((deprecated))
+#elif defined(_MSC_VER)
+#if _MSC_VER < 1910
+#define CPPTOML_DEPRECATED(reason) __declspec(deprecated)
+#else
+#define CPPTOML_DEPRECATED(reason) [[deprecated(reason)]]
+#endif
 #endif
 
 namespace cpptoml

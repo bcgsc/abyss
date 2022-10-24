@@ -1,8 +1,9 @@
 #ifndef BTLLIB_SEQ_READER_MULTILINE_FASTQ_MODULE_HPP
 #define BTLLIB_SEQ_READER_MULTILINE_FASTQ_MODULE_HPP
 
-#include "cstring.hpp"
-#include "seq.hpp"
+#include "btllib/cstring.hpp"
+#include "btllib/status.hpp"
+
 #include <cstdlib>
 
 namespace btllib {
@@ -34,85 +35,6 @@ private:
   template<typename ReaderType, typename RecordType>
   bool read_file(ReaderType& reader, RecordType& record);
 };
-
-inline bool
-SeqReaderMultilineFastqModule::buffer_valid(const char* buffer,
-                                            const size_t size)
-{
-  size_t current = 0;
-  unsigned char c;
-  enum State
-  {
-    IN_HEADER_1,
-    IN_HEADER_2,
-    IN_SEQ,
-    IN_TRANSITION,
-    IN_PLUS_2,
-    IN_QUAL
-  };
-  size_t seqlen = 0, quallen = 0;
-  State state = IN_HEADER_1;
-  while (current < size) {
-    c = buffer[current];
-    switch (state) {
-      case IN_HEADER_1:
-        if (c == '@') {
-          state = IN_HEADER_2;
-        } else {
-          return false;
-        }
-        break;
-      case IN_HEADER_2:
-        if (c == '\n') {
-          state = IN_SEQ;
-        }
-        break;
-      case IN_SEQ:
-        if (c == '\n') {
-          state = IN_TRANSITION;
-        } else if (c != '\r') {
-          if (!bool(COMPLEMENTS[c])) {
-            return false;
-          }
-          seqlen++;
-        }
-        break;
-      case IN_TRANSITION:
-        if (c == '+') {
-          state = IN_PLUS_2;
-          break;
-        } else if (c != '\r' && !bool(COMPLEMENTS[c])) {
-          return false;
-        }
-        seqlen++;
-        state = IN_SEQ;
-        break;
-      case IN_PLUS_2:
-        if (c == '\n') {
-          state = IN_QUAL;
-        }
-        break;
-      case IN_QUAL:
-        if (quallen < seqlen) {
-          if (c != '\r' && c != '\n') {
-            if (c < '!' || c > '~') {
-              return false;
-            }
-            quallen++;
-          }
-        } else if (c == '\n') {
-          seqlen = 0;
-          quallen = 0;
-          state = IN_HEADER_1;
-        } else if (c != '\r') {
-          return false;
-        }
-        break;
-    }
-    current++;
-  }
-  return true;
-}
 
 template<typename ReaderType, typename RecordType>
 inline bool
@@ -194,7 +116,8 @@ SeqReaderMultilineFastqModule::read_transition(ReaderType& reader,
   if (std::ferror(reader.source) == 0 && std::feof(reader.source) == 0) {
     const auto p = std::fgetc(reader.source);
     if (p != EOF) {
-      std::ungetc(p, reader.source);
+      const auto ret = std::ungetc(p, reader.source);
+      check_error(ret == EOF, "SeqReaderMultilineFastqModule: ungetc failed.");
       int c;
       for (;;) {
         switch (stage) {
@@ -214,7 +137,9 @@ SeqReaderMultilineFastqModule::read_transition(ReaderType& reader,
             if (c == EOF) {
               return false;
             }
-            std::ungetc(c, reader.source);
+            const auto ret = std::ungetc(c, reader.source);
+            check_error(ret == EOF,
+                        "SeqReaderMultilineFastqModule: ungetc failed.");
             if (c == '+') {
               stage = Stage::SEP;
             } else {
@@ -264,7 +189,8 @@ SeqReaderMultilineFastqModule::read_file(ReaderType& reader, RecordType& record)
       c = std::fgetc(reader.source);
       check_error(c == EOF,
                   "SeqReader: Multiline FASTQ reader: Unexpected end.");
-      std::ungetc(c, reader.source);
+      const auto ret = std::ungetc(c, reader.source);
+      check_error(ret == EOF, "SeqReaderMultilineFastqModule: ungetc failed.");
       if (c == '+') {
         reader.readline_file(tmp, reader.source);
         reader.readline_file(record.qual, reader.source);

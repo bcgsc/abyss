@@ -1,11 +1,11 @@
 #ifndef BTLLIB_MI_BLOOM_FILTER_HPP
 #define BTLLIB_MI_BLOOM_FILTER_HPP
 
-#include "nthash.hpp"
-#include "status.hpp"
+#include "btllib/nthash.hpp"
+#include "btllib/status.hpp"
 
-#include <sdsl/bit_vector_il.hpp>
-#include <sdsl/rank_support.hpp>
+#include "sdsl/bit_vector_il.hpp"
+#include "sdsl/rank_support.hpp"
 
 #include <algorithm> // std::random_shuffle
 #include <cassert>
@@ -94,6 +94,7 @@ public:
   }
 
   // TODO: include allowed miss in header
+  /// @cond HIDDEN_SYMBOLS
 #pragma pack(1) // to maintain consistent values across platforms
   struct FileHeader
   {
@@ -105,6 +106,7 @@ public:
     uint32_t version;
     //		uint8_t allowed_miss;
   };
+  /// @endcond
 
   /*
    * Constructor using a prebuilt bitvector
@@ -136,6 +138,8 @@ public:
   }
 
   MIBloomFilter<T>(const std::string& filter_file_path)
+    : m_prob_saturated(pow(double(get_pop_saturated()) / double(get_pop()),
+                           m_hash_num)) // TODO: make more streamlined
   {
 #pragma omp parallel for default(none) shared(filter_file_path)
     for (unsigned i = 0; i < 2; ++i) {
@@ -205,9 +209,15 @@ public:
         log_info("MIBloomFilter: Loading data vector");
 
         long int l_cur_pos = ftell(file);
-        fseek(file, 0, 2);
+        auto ret = fseek(file, 0, 2);
+        check_error(ret != 0,
+                    "MIBloomFilter: Failed to seek to end of file: " +
+                      get_strerror());
         size_t file_size = ftell(file) - header.hlen;
-        fseek(file, l_cur_pos, 0);
+        ret = fseek(file, l_cur_pos, 0);
+        check_error(ret != 0,
+                    "MIBloomFilter: Failed to seek to end of file: " +
+                      get_strerror());
 
         check_error(file_size != m_d_size * sizeof(T),
                     "MIBloomFilter: " + filter_file_path +
@@ -233,9 +243,6 @@ public:
 
     log_info("MIBloomFilter: Bit vector size: " + std::to_string(m_bv.size()) +
              "\nPopcount: " + std::to_string(get_pop()));
-    // TODO: make more streamlined
-    m_prob_saturated =
-      pow(double(get_pop_saturated()) / double(get_pop()), m_hash_num);
   }
 
   /*
@@ -549,9 +556,15 @@ public:
     return m_ss_val;
   }
 
-  unsigned get_kmer_size() const { return m_kmer_size; }
+  unsigned get_kmer_size() const
+  {
+    return m_kmer_size;
+  }
 
-  unsigned get_hash_num() const { return m_hash_num; }
+  unsigned get_hash_num() const
+  {
+    return m_hash_num;
+  }
 
   /*
    * Computes id frequency based on data vector contents
@@ -640,7 +653,10 @@ public:
     return count;
   }
 
-  size_t size() const { return m_bv.size(); }
+  size_t size() const
+  {
+    return m_bv.size();
+  }
 
   // overwrites existing value CAS
   void set_data(uint64_t pos, T id)
@@ -662,7 +678,10 @@ public:
   }
 
   // Does not overwrite
-  void set_data_if_empty(uint64_t pos, T id) { set_val(&m_data[pos], id); }
+  void set_data_if_empty(uint64_t pos, T id)
+  {
+    set_val(&m_data[pos], id);
+  }
 
   std::vector<T> get_data(const std::vector<uint64_t>& rank_pos) const
   {
@@ -673,7 +692,10 @@ public:
     return results;
   }
 
-  T get_data(uint64_t rank) const { return m_data[rank]; }
+  T get_data(uint64_t rank) const
+  {
+    return m_data[rank];
+  }
 
   /*
    * Preconditions:
@@ -737,7 +759,10 @@ public:
     return sat_prop;
   }
 
-  ~MIBloomFilter() { delete[] m_data; }
+  ~MIBloomFilter()
+  {
+    delete[] m_data;
+  }
 
 private:
   // Driver function to sort the std::vector elements

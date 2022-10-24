@@ -1,27 +1,30 @@
 #ifndef BTLLIB_COUNTING_BLOOM_FILTER_HPP
 #define BTLLIB_COUNTING_BLOOM_FILTER_HPP
 
-#include "bloom_filter.hpp"
-#include "nthash.hpp"
-#include "status.hpp"
+#include "btllib/bloom_filter.hpp"
+#include "btllib/counting_bloom_filter.hpp"
+#include "btllib/nthash.hpp"
+#include "btllib/status.hpp"
 
-#include "../external/cpptoml.hpp"
+#include "cpptoml.h"
 
 #include <atomic>
-#include <climits>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace btllib {
 
-static const char* const COUNTING_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLCountingBloomFilter_v5";
-static const char* const KMER_COUNTING_BLOOM_FILTER_MAGIC_HEADER =
-  "BTLKmerCountingBloomFilter_v5";
+// NOLINTNEXTLINE(clang-diagnostic-unneeded-internal-declaration)
+static const char* const COUNTING_BLOOM_FILTER_SIGNATURE =
+  "[BTLCountingBloomFilter_v5]";
+// NOLINTNEXTLINE(clang-diagnostic-unneeded-internal-declaration)
+static const char* const KMER_COUNTING_BLOOM_FILTER_SIGNATURE =
+  "[BTLKmerCountingBloomFilter_v5]";
 
 template<typename T>
 class KmerCountingBloomFilter;
@@ -36,7 +39,7 @@ class CountingBloomFilter
 {
 
 public:
-  /** Construct a dummy Kmer Bloom filter (e.g. as a default argument). */
+  /** Construct a dummy k-mer Bloom filter (e.g. as a default argument). */
   CountingBloomFilter() {}
 
   /**
@@ -64,34 +67,34 @@ public:
   CountingBloomFilter& operator=(CountingBloomFilter&&) = delete;
 
   /**
-   * Insert an element's hash values.
+   * Insert an element.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of the element's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    */
   void insert(const uint64_t* hashes);
 
   /**
-   * Insert an element's hash values.
+   * Insert an element.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of the element's hash values.
    */
   void insert(const std::vector<uint64_t>& hashes) { insert(hashes.data()); }
 
   /**
-   * Check for the presence of an element's hash values.
+   * Get the count of an element.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of the element's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    *
    * @return The count of the queried element.
    */
   T contains(const uint64_t* hashes) const;
 
   /**
-   * Check for the presence of an element's hash values.
+   * Get the count of an element.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of the element's hash values.
    *
    * @return The count of the queried element.
    */
@@ -101,19 +104,19 @@ public:
   }
 
   /**
-   * Check for the presence of an element's hash values and insert if missing.
+   * Get the count of an element and then increment the count.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of the element's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    *
    * @return The count of the queried element before insertion.
    */
   T contains_insert(const uint64_t* hashes);
 
   /**
-   * Check for the presence of an element's hash values and insert if missing.
+   * Get the count of an element and then increment the count.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of the element's hash values.
    *
    * @return The count of the queried element before insertion.
    */
@@ -122,16 +125,103 @@ public:
     return contains_insert(hashes.data());
   }
 
+  /**
+   * Increment an element's count and then return the count.
+   *
+   * @param hashes Integer array of the element's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   *
+   * @return The count of the queried element after insertion.
+   */
+  T insert_contains(const uint64_t* hashes);
+
+  /**
+   * Increment an element's count and then return the count.
+   *
+   * @param hashes Integer vector of the element's hash values.
+   *
+   * @return The count of the queried element after insertion.
+   */
+  T insert_contains(const std::vector<uint64_t>& hashes)
+  {
+    return insert_contains(hashes.data());
+  }
+
+  /**
+   * Increment an element's count if it's not above the threshold and then
+   * return the count.
+   *
+   * @param hashes Integer array of the element's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried element after insertion.
+   */
+  T insert_thresh_contains(const uint64_t* hashes, T threshold);
+
+  /**
+   * Increment an element's count if it's not above the threshold and then
+   * return the count.
+   *
+   * @param hashes Integer array of the element's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried element after insertion.
+   */
+  T insert_thresh_contains(const std::vector<uint64_t>& hashes,
+                           const T threshold)
+  {
+    return insert_thresh_contains(hashes.data(), threshold);
+  }
+
+  /**
+   * Get the count of an element and then increment the count if it's not
+   * above the threshold.
+   *
+   * @param hashes Integer array of the element's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried element before insertion.
+   */
+  T contains_insert_thresh(const uint64_t* hashes, T threshold);
+
+  /**
+   * Get the count of an element and then increment the count if it's not
+   * above the threshold.
+   *
+   * @param hashes Integer vector of the element's hash values.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried element before insertion.
+   */
+  T contains_insert_thresh(const std::vector<uint64_t>& hashes,
+                           const T threshold)
+  {
+    return contains_insert_thresh(hashes.data(), threshold);
+  }
+
   /** Get filter size in bytes. */
   size_t get_bytes() const { return bytes; }
-  /** Get population count, i.e. the number of counters >0 in the filter. */
-  uint64_t get_pop_cnt() const;
-  /** Get the fraction of the filter occupied by >1 counters. */
-  double get_occupancy() const;
+  /** Get population count, i.e. the number of counters >= threshold in the
+   * filter. */
+  uint64_t get_pop_cnt(T threshold = 1) const;
+  /** Get the fraction of the filter occupied by >= threshold counters. */
+  double get_occupancy(T threshold = 1) const;
   /** Get the number of hash values per element. */
   unsigned get_hash_num() const { return hash_num; }
-  /** Get the query false positive rate. */
-  double get_fpr() const;
+  /** Get the query false positive rate for elements with count >= threshold.
+   *
+   * @param threshold The threshold.
+   *
+   * @return The false positive rate.
+   */
+  double get_fpr(T threshold = 1) const;
   /** Get the name of the hash function used. */
   const std::string& get_hash_fn() const { return hash_fn; }
 
@@ -142,8 +232,21 @@ public:
    */
   void save(const std::string& path);
 
+  /**
+   * Check whether the file at the given path is a saved Counting Bloom filter.
+   *
+   * @param path Filepath to check.
+   */
+  static bool is_bloom_file(const std::string& path)
+  {
+    return btllib::BloomFilter::check_file_signature(
+      path, COUNTING_BLOOM_FILTER_SIGNATURE);
+  }
+
 private:
-  CountingBloomFilter(BloomFilterInitializer bfi);
+  CountingBloomFilter(const std::shared_ptr<BloomFilterInitializer>& bfi);
+
+  void insert(const uint64_t* hashes, T min_val);
 
   friend class KmerCountingBloomFilter<T>;
 
@@ -164,11 +267,11 @@ class KmerCountingBloomFilter
 {
 
 public:
-  /** Construct a dummy Kmer Bloom filter (e.g. as a default argument). */
+  /** Construct a dummy k-mer Bloom filter (e.g. as a default argument). */
   KmerCountingBloomFilter() {}
 
   /**
-   * Construct an empty Kmer Counting Bloom filter of given size.
+   * Construct an empty k-mer Counting Bloom filter of given size.
    *
    * @param bytes Filter size in bytes.
    * @param hash_num Number of hash values per element.
@@ -177,7 +280,7 @@ public:
   KmerCountingBloomFilter(size_t bytes, unsigned hash_num, unsigned k);
 
   /**
-   * Load a Kmer Counting Bloom filter from a file.
+   * Load a k-mer Counting Bloom filter from a file.
    *
    * @param path Filepath to load from.
    */
@@ -205,39 +308,39 @@ public:
   void insert(const std::string& seq) { insert(seq.c_str(), seq.size()); }
 
   /**
-   * Insert an element's hash values.
+   * Insert a k-mer into the filter.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of the k-mer's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    */
   void insert(const uint64_t* hashes) { counting_bloom_filter.insert(hashes); }
 
   /**
-   * Insert an element's hash values.
+   * Insert a k-mer into the filter.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of the k-mer's hash values.
    */
   void insert(const std::vector<uint64_t>& hashes)
   {
-    counting_bloom_filter.insert(hashes.data());
+    counting_bloom_filter.insert(hashes);
   }
 
   /**
-   * Query the presence of k-mers of a sequence.
+   * Query the counts of k-mers of a sequence.
    *
    * @param seq Sequence to k-merize.
    * @param seq_len Length of seq.
    *
-   * @return The sum of counters of seq's k-mers found in the filter.
+   * @return The sum of counts of seq's k-mers found in the filter.
    */
   uint64_t contains(const char* seq, size_t seq_len) const;
 
   /**
-   * Query the presence of k-mers of a sequence.
+   * Query the counts of k-mers of a sequence.
    *
    * @param seq Sequence to k-merize.
    *
-   * @return The sum of counters of seq's k-mers found in the filter.
+   * @return The sum of counts of seq's k-mers found in the filter.
    */
   uint64_t contains(const std::string& seq) const
   {
@@ -245,12 +348,12 @@ public:
   }
 
   /**
-   * Check for the presence of an element's hash values.
+   * Get a k-mer's count.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of k-mer's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    *
-   * @return The count of the queried element.
+   * @return The count of the queried k-mer.
    */
   T contains(const uint64_t* hashes) const
   {
@@ -258,11 +361,11 @@ public:
   }
 
   /**
-   * Check for the presence of an element's hash values.
+   * Get a k-mer's count.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of k-mer's hash values.
    *
-   * @return The count of the queried element.
+   * @return The count of the queried k-mer.
    */
   T contains(const std::vector<uint64_t>& hashes) const
   {
@@ -270,21 +373,21 @@ public:
   }
 
   /**
-   * Check for the presence of sequence k-mers and insert if missing.
+   * Get the counts of a sequence's k-mers and then increment the counts.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
    *
-   * @return The count of the queried element before insertion.
+   * @return The sum of counts of the queried k-mers before insertion.
    */
   T contains_insert(const char* seq, size_t seq_len);
 
   /**
-   * Check for the presence of sequence k-mers and insert if missing.
+   * Get the counts of a sequence's k-mers and then increment the counts.
    *
-   * @param hashes Integer vector of hash values.
+   * @param seq Sequence to k-merize.
    *
-   * @return The count of the queried element before insertion.
+   * @return The sum of counts of the queried k-mers before insertion.
    */
   T contains_insert(const std::string& seq)
   {
@@ -292,12 +395,12 @@ public:
   }
 
   /**
-   * Check for the presence of an element's hash values and insert if missing.
+   * Get the count of a k-mer and then increment the count.
    *
-   * @param hashes Integer array of hash values. Array size should equal the
-   * hash_num argument used when the Bloom filter was constructed.
+   * @param hashes Integer array of the k-mers's hash values. Array size should
+   * equal the hash_num argument used when the Bloom filter was constructed.
    *
-   * @return The count of the queried element before insertion.
+   * @return The count of the queried k-mer before insertion.
    */
   T contains_insert(const uint64_t* hashes)
   {
@@ -305,27 +408,205 @@ public:
   }
 
   /**
-   * Check for the presence of an element's hash values and insert if missing.
+   * Get the count of a k-mer and then increment the count.
    *
-   * @param hashes Integer vector of hash values.
+   * @param hashes Integer vector of the k-mer's hash values.
    *
-   * @return The count of the queried element before insertion.
+   * @return The count of the queried k-mer before insertion.
    */
   T contains_insert(const std::vector<uint64_t>& hashes)
   {
-    return counting_bloom_filter.contains_insert(hashes.data());
+    return counting_bloom_filter.contains_insert(hashes);
+  }
+
+  /**
+   * Increment the counts of a sequence's k-mers and then return the counts.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   *
+   * @return The sum of counts of the queried k-mers after insertion.
+   */
+  T insert_contains(const char* seq, size_t seq_len);
+
+  /**
+   * Increment the counts of a sequence's k-mers and then return the counts.
+   *
+   * @param seq Sequence to k-merize.
+   *
+   * @return The sum of counts of the queried k-mers after insertion.
+   */
+  T insert_contains(const std::string& seq)
+  {
+    return insert_contains(seq.c_str(), seq.size());
+  }
+
+  /**
+   * Increment a k-mer's count and then return the count.
+   *
+   * @param hashes Integer array of the k-mer's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   *
+   * @return The count of the queried k-mer after insertion.
+   */
+  T insert_contains(const uint64_t* hashes)
+  {
+    return counting_bloom_filter.insert_contains(hashes);
+  }
+
+  /**
+   * Increment a k-mer's count and then return the count.
+   *
+   * @param hashes Integer vector of the k-mer's hash values.
+   *
+   * @return The count of the queried k-mer after insertion.
+   */
+  T insert_contains(const std::vector<uint64_t>& hashes)
+  {
+    return counting_bloom_filter.insert_contains(hashes);
+  }
+
+  /**
+   * Increment the counts of a sequence's k-mers if they are not above the
+   * threshold and then return the counts.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   * @param threshold The threshold.
+   *
+   * @return The sum of counts of the queried k-mers after insertion.
+   */
+  T insert_thresh_contains(const char* seq, size_t seq_len, T threshold);
+
+  /**
+   * Increment the counts of a sequence's k-mers if they are not above the
+   * threshold and then return the counts.
+   *
+   * @param seq Sequence to k-merize.
+   * @param threshold The threshold.
+   *
+   * @return The sum of counts of the queried k-mers after insertion.
+   */
+  T insert_thresh_contains(const std::string& seq, const T threshold)
+  {
+    return insert_thresh_contains(seq.c_str(), seq.size(), threshold);
+  }
+
+  /**
+   * Increment a k-mer's count if it's not above the threshold and then
+   * return the count.
+   *
+   * @param hashes Integer array of the k-mer's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried k-mer after insertion.
+   */
+  T insert_thresh_contains(const uint64_t* hashes, const T threshold)
+  {
+    return counting_bloom_filter.insert_thresh_contains(hashes, threshold);
+  }
+
+  /**
+   * Increment a k-mer's count if it's not above the threshold and then
+   * return the count.
+   *
+   * @param hashes Integer array of the k-mer's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried k-mer after insertion.
+   */
+  T insert_thresh_contains(const std::vector<uint64_t>& hashes,
+                           const T threshold)
+  {
+    return counting_bloom_filter.insert_thresh_contains(hashes, threshold);
+  }
+
+  /**
+   * Get the counts of a sequence's k-mer's and then increment the counts if
+   * they are not above the threshold.
+   *
+   * @param seq Sequence to k-merize.
+   * @param seq_len Length of seq.
+   * @param threshold The threshold.
+   *
+   * @return The sum of counts of the queried k-mers before insertion.
+   */
+  T contains_insert_thresh(const char* seq, size_t seq_len, T threshold);
+
+  /**
+   * Get the counts of a sequence's k-mer's and then increment the counts if
+   * they are not above the threshold.
+   *
+   * @param seq Sequence to k-merize.
+   * @param threshold The threshold.
+   *
+   * @return The sum of counts of the queried k-mers before insertion.
+   */
+  T contains_insert_thresh(const std::string& seq, const T threshold)
+  {
+    return contains_insert_thresh(seq.c_str(), seq.size(), threshold);
+  }
+
+  /**
+   * Get the count of a k-mer and then increment the count if it's not
+   * above the threshold.
+   *
+   * @param hashes Integer array of the k-mer's hash values. Array size
+   * should equal the hash_num argument used when the Bloom filter was
+   * constructed.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried k-mer before insertion.
+   */
+  T contains_insert_thresh(const uint64_t* hashes, const T threshold)
+  {
+    return counting_bloom_filter.contains_insert_thresh(hashes, threshold);
+  }
+
+  /**
+   * Get the count of a k-mer and then increment the count if it's not
+   * above the threshold.
+   *
+   * @param hashes Integer vector of the k-mer's hash values.
+   * @param threshold The threshold.
+   *
+   * @return The count of the queried k-mer before insertion.
+   */
+  T contains_insert_thresh(const std::vector<uint64_t>& hashes,
+                           const T threshold)
+  {
+    return counting_bloom_filter.contains_insert_thresh(hashes, threshold);
   }
 
   /** Get filter size in bytes. */
   size_t get_bytes() const { return counting_bloom_filter.get_bytes(); }
   /** Get population count, i.e. the number of counters >0 in the filter. */
-  uint64_t get_pop_cnt() const { return counting_bloom_filter.get_pop_cnt(); }
+  uint64_t get_pop_cnt(T threshold = 1) const
+  {
+    return counting_bloom_filter.get_pop_cnt(threshold);
+  }
   /** Get the fraction of the filter occupied by >0 counters. */
-  double get_occupancy() const { return counting_bloom_filter.get_occupancy(); }
+  double get_occupancy(T threshold = 1) const
+  {
+    return counting_bloom_filter.get_occupancy(threshold);
+  }
   /** Get the number of hash values per element. */
   unsigned get_hash_num() const { return counting_bloom_filter.get_hash_num(); }
-  /** Get the query false positive rate. */
-  double get_fpr() const { return counting_bloom_filter.get_fpr(); }
+  /** Get the query false positive rate for elements with count >= threshold.
+   *
+   * @param threshold The threshold.
+   *
+   * @return The false positive rate.
+   */
+  double get_fpr(T threshold = 1) const
+  {
+    return counting_bloom_filter.get_fpr(threshold);
+  }
   /** Get the k-mer size used. */
   unsigned get_k() const { return k; }
   /** Get the name of the hash function used. */
@@ -346,8 +627,20 @@ public:
    */
   void save(const std::string& path);
 
+  /**
+   * Check whether the file at the given path is a saved k-mer counting Bloom
+   * filter.
+   *
+   * @param path Filepath to check.
+   */
+  static bool is_bloom_file(const std::string& path)
+  {
+    return btllib::BloomFilter::check_file_signature(
+      path, KMER_COUNTING_BLOOM_FILTER_SIGNATURE);
+  }
+
 private:
-  KmerCountingBloomFilter(BloomFilterInitializer bfi);
+  KmerCountingBloomFilter(const std::shared_ptr<BloomFilterInitializer>& bfi);
 
   unsigned k = 0;
   CountingBloomFilter<T> counting_bloom_filter;
@@ -385,33 +678,35 @@ inline CountingBloomFilter<T>::CountingBloomFilter(size_t bytes,
   std::memset((void*)array.get(), 0, array_size * sizeof(array[0]));
 }
 
+/*
+ * Assumes min_count is not std::numeric_limits<T>::max()
+ */
+template<typename T>
+inline void
+CountingBloomFilter<T>::insert(const uint64_t* hashes, T min_val)
+{
+  // Update flag to track if increment is done on at least one counter
+  bool update_done = false;
+  T new_val, tmp_min_val;
+  while (true) {
+    new_val = min_val + 1;
+    for (size_t i = 0; i < hash_num; ++i) {
+      tmp_min_val = min_val;
+      update_done = array[hashes[i] % array_size].compare_exchange_strong(
+        tmp_min_val, new_val);
+    }
+    if (update_done ||
+        (min_val = contains(hashes)) == std::numeric_limits<T>::max()) {
+      break;
+    }
+  }
+}
+
 template<typename T>
 inline void
 CountingBloomFilter<T>::insert(const uint64_t* hashes)
 {
-  // Update flag to track if increment is done on at least one counter
-  bool update_done = false;
-  T new_val;
-  T min_val = contains(hashes);
-  while (!update_done) {
-    // Simple check to deal with overflow
-    new_val = min_val + 1;
-    if (min_val > new_val) {
-      return;
-    }
-    for (size_t i = 0; i < hash_num; ++i) {
-      decltype(min_val) temp_min_val = min_val;
-      if (array[hashes[i] % array_size].compare_exchange_strong(temp_min_val,
-                                                                new_val)) {
-        update_done = true;
-      }
-    }
-    // Recalculate minval because if increment fails, it needs a new minval to
-    // use and if it doesnt hava a new one, the while loop runs forever.
-    if (!update_done) {
-      min_val = contains(hashes);
-    }
-  }
+  contains_insert(hashes);
 }
 
 template<typename T>
@@ -432,19 +727,61 @@ template<typename T>
 inline T
 CountingBloomFilter<T>::contains_insert(const uint64_t* hashes)
 {
-  const auto prev_count = contains(hashes);
-  insert(hashes);
-  return prev_count;
+  const auto count = contains(hashes);
+  if (count < std::numeric_limits<T>::max()) {
+    insert(hashes, count);
+  }
+  return count;
+}
+
+template<typename T>
+inline T
+CountingBloomFilter<T>::insert_contains(const uint64_t* hashes)
+{
+  const auto count = contains(hashes);
+  if (count < std::numeric_limits<T>::max()) {
+    insert(hashes, count);
+    return count + 1;
+  }
+  return std::numeric_limits<T>::max();
+}
+
+template<typename T>
+inline T
+CountingBloomFilter<T>::insert_thresh_contains(const uint64_t* hashes,
+                                               const T threshold)
+{
+  const auto count = contains(hashes);
+  if (count < threshold) {
+    insert(hashes, count);
+    return count + 1;
+  }
+  return count;
+}
+
+template<typename T>
+inline T
+CountingBloomFilter<T>::contains_insert_thresh(const uint64_t* hashes,
+                                               const T threshold)
+{
+  const auto count = contains(hashes);
+  if (count < threshold) {
+    insert(hashes, count);
+  }
+  return count;
 }
 
 template<typename T>
 inline uint64_t
-CountingBloomFilter<T>::get_pop_cnt() const
+CountingBloomFilter<T>::get_pop_cnt(const T threshold) const
 {
   uint64_t pop_cnt = 0;
-#pragma omp parallel for default(none) reduction(+ : pop_cnt)
+  // OpenMP make up your mind man. Using default(none) here causes errors on
+  // some compilers and not others.
+  // NOLINTNEXTLINE(openmp-use-default-none,-warnings-as-errors)
+#pragma omp parallel for reduction(+ : pop_cnt)
   for (size_t i = 0; i < array_size; ++i) {
-    if (array[i] > 0) {
+    if (array[i] >= threshold) {
       ++pop_cnt;
     }
   }
@@ -453,31 +790,34 @@ CountingBloomFilter<T>::get_pop_cnt() const
 
 template<typename T>
 inline double
-CountingBloomFilter<T>::get_occupancy() const
+CountingBloomFilter<T>::get_occupancy(const T threshold) const
 {
-  return double(get_pop_cnt()) / double(array_size);
+  return double(get_pop_cnt(threshold)) / double(array_size);
 }
 
 template<typename T>
 inline double
-CountingBloomFilter<T>::get_fpr() const
+CountingBloomFilter<T>::get_fpr(const T threshold) const
 {
-  return std::pow(get_occupancy(), double(hash_num));
+  return std::pow(get_occupancy(threshold), double(hash_num));
 }
 
 template<typename T>
 inline CountingBloomFilter<T>::CountingBloomFilter(const std::string& path)
   : CountingBloomFilter<T>::CountingBloomFilter(
-      BloomFilterInitializer(path, COUNTING_BLOOM_FILTER_MAGIC_HEADER))
-{}
+      std::make_shared<BloomFilterInitializer>(path,
+                                               COUNTING_BLOOM_FILTER_SIGNATURE))
+{
+}
 
 template<typename T>
-inline CountingBloomFilter<T>::CountingBloomFilter(BloomFilterInitializer bfi)
-  : bytes(*bfi.table->get_as<decltype(bytes)>("bytes"))
+inline CountingBloomFilter<T>::CountingBloomFilter(
+  const std::shared_ptr<BloomFilterInitializer>& bfi)
+  : bytes(*bfi->table->get_as<decltype(bytes)>("bytes"))
   , array_size(bytes / sizeof(array[0]))
-  , hash_num(*(bfi.table->get_as<decltype(hash_num)>("hash_num")))
-  , hash_fn(bfi.table->contains("hash_fn")
-              ? *(bfi.table->get_as<decltype(hash_fn)>("hash_fn"))
+  , hash_num(*(bfi->table->get_as<decltype(hash_num)>("hash_num")))
+  , hash_fn(bfi->table->contains("hash_fn")
+              ? *(bfi->table->get_as<decltype(hash_fn)>("hash_fn"))
               : "")
   , array(new std::atomic<T>[array_size])
 {
@@ -485,14 +825,15 @@ inline CountingBloomFilter<T>::CountingBloomFilter(BloomFilterInitializer bfi)
                 "Atomic primitives take extra memory. CountingBloomFilter will "
                 "have less than " +
                   std::to_string(bytes) + " for bit array.");
-  const auto loaded_counter_bits = *bfi.table->get_as<size_t>("counter_bits");
+  const auto loaded_counter_bits =
+    *(bfi->table->get_as<size_t>("counter_bits"));
   check_error(sizeof(array[0]) * CHAR_BIT != loaded_counter_bits,
               "CountingBloomFilter" +
                 std::to_string(sizeof(array[0]) * CHAR_BIT) +
                 " tried to load a file of CountingBloomFilter" +
                 std::to_string(loaded_counter_bits));
-  bfi.ifs.read((char*)array.get(),
-               std::streamsize(array_size * sizeof(array[0])));
+  bfi->ifs.read((char*)array.get(),
+                std::streamsize(array_size * sizeof(array[0])));
 }
 
 template<typename T>
@@ -514,7 +855,10 @@ CountingBloomFilter<T>::save(const std::string& path)
     header->insert("hash_fn", hash_fn);
   }
   header->insert("counter_bits", size_t(sizeof(array[0]) * CHAR_BIT));
-  root->insert(COUNTING_BLOOM_FILTER_MAGIC_HEADER, header);
+  std::string header_string = COUNTING_BLOOM_FILTER_SIGNATURE;
+  header_string =
+    header_string.substr(1, header_string.size() - 2); // Remove [ ]
+  root->insert(header_string, header);
 
   BloomFilter::save(
     path, *root, (char*)array.get(), array_size * sizeof(array[0]));
@@ -526,7 +870,8 @@ inline KmerCountingBloomFilter<T>::KmerCountingBloomFilter(size_t bytes,
                                                            unsigned k)
   : k(k)
   , counting_bloom_filter(bytes, hash_num, HASH_FN)
-{}
+{
+}
 
 template<typename T>
 inline void
@@ -542,35 +887,83 @@ template<typename T>
 inline uint64_t
 KmerCountingBloomFilter<T>::contains(const char* seq, size_t seq_len) const
 {
-  uint64_t count = 0;
+  uint64_t sum = 0;
   NtHash nthash(seq, seq_len, get_hash_num(), get_k());
   while (nthash.roll()) {
-    count += counting_bloom_filter.contains(nthash.hashes());
+    sum += counting_bloom_filter.contains(nthash.hashes());
   }
-  return count;
+  return sum;
 }
 
 template<typename T>
 inline T
 KmerCountingBloomFilter<T>::contains_insert(const char* seq, size_t seq_len)
 {
-  const auto prev_count = contains(seq, seq_len);
-  insert(seq, seq_len);
-  return prev_count;
+  uint64_t sum = 0;
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
+  while (nthash.roll()) {
+    sum += counting_bloom_filter.contains_insert(nthash.hashes());
+  }
+  return sum;
+}
+
+template<typename T>
+inline T
+KmerCountingBloomFilter<T>::insert_contains(const char* seq, size_t seq_len)
+{
+  uint64_t sum = 0;
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
+  while (nthash.roll()) {
+    sum += counting_bloom_filter.insert_contains(nthash.hashes());
+  }
+  return sum;
+}
+
+template<typename T>
+inline T
+KmerCountingBloomFilter<T>::insert_thresh_contains(const char* seq,
+                                                   size_t seq_len,
+                                                   const T threshold)
+{
+  uint64_t sum = 0;
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
+  while (nthash.roll()) {
+    sum +=
+      counting_bloom_filter.insert_thresh_contains(nthash.hashes(), threshold);
+  }
+  return sum;
+}
+
+template<typename T>
+inline T
+KmerCountingBloomFilter<T>::contains_insert_thresh(const char* seq,
+                                                   size_t seq_len,
+                                                   const T threshold)
+{
+  uint64_t sum = 0;
+  NtHash nthash(seq, seq_len, get_hash_num(), get_k());
+  while (nthash.roll()) {
+    sum +=
+      counting_bloom_filter.contains_insert_thresh(nthash.hashes(), threshold);
+  }
+  return sum;
 }
 
 template<typename T>
 inline KmerCountingBloomFilter<T>::KmerCountingBloomFilter(
   const std::string& path)
   : KmerCountingBloomFilter<T>::KmerCountingBloomFilter(
-      BloomFilterInitializer(path, KMER_COUNTING_BLOOM_FILTER_MAGIC_HEADER))
-{}
+      std::make_shared<BloomFilterInitializer>(
+        path,
+        KMER_COUNTING_BLOOM_FILTER_SIGNATURE))
+{
+}
 
 template<typename T>
 inline KmerCountingBloomFilter<T>::KmerCountingBloomFilter(
-  BloomFilterInitializer bfi)
-  : k(*(bfi.table->get_as<decltype(k)>("k")))
-  , counting_bloom_filter(std::move(bfi))
+  const std::shared_ptr<BloomFilterInitializer>& bfi)
+  : k(*(bfi->table->get_as<decltype(k)>("k")))
+  , counting_bloom_filter(bfi)
 {
   check_error(counting_bloom_filter.hash_fn != HASH_FN,
               "KmerCountingBloomFilter: loaded hash function (" +
@@ -598,7 +991,10 @@ KmerCountingBloomFilter<T>::save(const std::string& path)
   header->insert("counter_bits",
                  size_t(sizeof(counting_bloom_filter.array[0]) * CHAR_BIT));
   header->insert("k", k);
-  root->insert(KMER_COUNTING_BLOOM_FILTER_MAGIC_HEADER, header);
+  std::string header_string = KMER_COUNTING_BLOOM_FILTER_SIGNATURE;
+  header_string =
+    header_string.substr(1, header_string.size() - 2); // Remove [ ]
+  root->insert(header_string, header);
 
   BloomFilter::save(path,
                     *root,
