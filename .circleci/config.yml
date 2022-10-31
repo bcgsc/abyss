@@ -7,7 +7,7 @@ aliases:
       apt-get install -qq software-properties-common
       add-apt-repository -y ppa:ubuntu-toolchain-r/test
       apt-get update -qq
-      apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
+      apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc ssh git
 
 jobs:
 
