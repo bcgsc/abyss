@@ -13,7 +13,8 @@ LDFLAGS += -pthread
 abyss_rresolver_short_LDADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a \
-	libralgorithmsshort.a
+	libralgorithmsshort.a \
+	-lbtllib
 
 noinst_LIBRARIES = libralgorithmsshort.a
 
@@ -32,4 +33,3 @@ libralgorithmsshort_a_LIBADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
 	$(top_builddir)/Common/libcommon.a
 
-EXTRA_DIST = btllib
