@@ -13,16 +13,15 @@ Please [cite our papers](#citation).
 News
 ================================================================================
 #### October 31, 2022
-We're looking for C++ bioinformatics developers to work on ABySS and other exciting bioinformatics tools with the Bioinformatics Technology Lab in Vancouver, BC! For more information, check out the [BCGSC website](http://www.birollab.ca/jobs/2022/08/29/ProgrammerJob.html) and our [Birol Lab website](https://bcgsc.ca/careers/research-programmer-birol-labbioinformatics-technology-lab).   
+We're looking for C++ bioinformatics developers to work on ABySS and other exciting bioinformatics tools with the Bioinformatics Technology Lab in Vancouver, BC! For more information, check out the [BCGSC website](https://bcgsc.ca/careers/research-programmer-birol-labbioinformatics-technology-lab) and our [Birol Lab website](http://www.birollab.ca/jobs/2022/08/29/ProgrammerJob.html).   
 
 
 Contents
 ================================================================================
 
 * [Installation](#installation)
-	* [Install ABySS using Conda](#install-abyss-using-conda)
+	* [Install ABySS using Conda](#install-abyss-using-conda-recommended)
 	* [Install ABySS using Homebrew](#install-abyss-using-homebrew)
-	* [Install ABySS using apt-get](#install-abyss-using-apt-get)
 	* [Install ABySS on Windows](#install-abyss-on-windows)
 * [Dependencies](#dependencies)
 	* [Dependencies for linked reads](#dependencies-for-linked-reads)
