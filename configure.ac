@@ -131,8 +131,8 @@ fi
 AC_ARG_WITH(btllib, AS_HELP_STRING([--with-btllib=PATH],
 	[specify prefix directory for the installed sqlite library]))
 if test "$with_btllib" -a "$with_btllib" != "no" -a -d "$with_btllib" ; then
-        sparsehash_cppflags="-isystem$with_btllib/include"
-        sparsehash_ldflags="-L$with_btllib/lib"
+        btllib_cppflags="-isystem$with_btllib/include"
+        btllib_ldflags="-L$with_btllib/lib"
 fi
 
 
@@ -211,9 +211,6 @@ AC_CHECK_FUNC(ceilf, [], AC_DEFINE(ceilf, [ceil],
 
 # Check for the dynamic linking library.
 AC_CHECK_LIB([dl], [dlsym])
-
-# Check for the dynamic linking library.
-AC_CHECK_LIB([btllib], [btllib::reverse_complement], [-lbtllib], [-lbtllib])
 
 # Check for popcnt instruction.
 AC_COMPILE_IFELSE(
