@@ -40,5 +40,5 @@ jobs:
       source activate abyss_CI
       ./autogen.sh
       ./configure
-      make -j12 
+      make -j12 distcheck
     displayName: Compiling ABySS with clang
