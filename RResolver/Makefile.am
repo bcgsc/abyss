@@ -31,7 +31,4 @@ libralgorithmsshort_a_SOURCES = \
 
 libralgorithmsshort_a_LIBADD = \
 	$(top_builddir)/DataLayer/libdatalayer.a \
-	$(top_builddir)/Common/libcommon.a \
-	-lbtllib
-
-
+	$(top_builddir)/Common/libcommon.a
