@@ -12,12 +12,9 @@ Please [cite our papers](#citation).
 
 News
 ================================================================================
-3 May 2019
+#### October 31, 2022
+We're looking for C++ bioinformatics developers to work on ABySS and other exciting bioinformatics tools with the Bioinformatics Technology Lab in Vancouver, BC! For more information, check out the [BCGSC website](http://www.birollab.ca/jobs/2022/08/29/ProgrammerJob.html) and our [Birol Lab website](https://bcgsc.ca/careers/research-programmer-birol-labbioinformatics-technology-lab).   
 
-Looking for a fun & worthy challenge? Think you can contribute code to this project? 
-Join our team of developers! We are currently looking for C++ bioinformatics programmers.
-Inquire for staff, graduate student, and postdoctoral positions. 
-[Contact the project lead (Inanc Birol)](mailto:ibirol@bcgsc.ca?Subject=ABySS%20developer%20position) 
 
 Contents
 ================================================================================
