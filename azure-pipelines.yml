@@ -1,7 +1,5 @@
 jobs:
 - job: linux_gcc12
-  pool:
-    vmImage: ubuntu-latest
   container: # inline container specification
     image: "homebrew/brew"
   steps:
