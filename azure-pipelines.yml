@@ -215,4 +215,50 @@ jobs:
       ./configure
       make -j12 distcheck
     displayName: Compiling ABySS with clang
+    
+- job: macOS_default_gcc
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      ./compile
+    displayName: Install btllib
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="--with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install"
+      ./configure   --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with default gcc
+
+- job: macOS_default_clang
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with default clang
 
