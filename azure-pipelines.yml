@@ -1,7 +1,7 @@
 jobs:
 - job: RunsInContainer
-  container: # inline container specification
-    image: "homebrew/brew"
+  pool:
+    vmImage: ubuntu-22.04
   steps:
   - script: |
       sudo apt-get update -qq
