@@ -17,7 +17,9 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
-      ./compile CC=gcc-8 CXX=g++-8
+      env CC=gcc-8
+      env CXX=g++-8
+      ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
