@@ -21,8 +21,8 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8"
-      ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install/
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8 --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install"
+      ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-8
 - job:
