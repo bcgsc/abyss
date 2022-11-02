@@ -233,8 +233,8 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="--with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install"
-      ./configure   --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install
+      export DISTCHECK_CONFIGURE_FLAGS="--with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure   --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
 
@@ -257,8 +257,8 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install"
-      ./configure CC=clang CXX=clang++ --with-btllib=/home/vsts/work/1/s/btllib-1.4.9/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with default clang
 
