@@ -208,7 +208,7 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq clang-10 cmake
+  - script: sudo apt-get install -qq clang-10
     displayName: Install clang-10
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
@@ -216,6 +216,8 @@ jobs:
       cd btllib-1.4.9
       export CC=clang-10
       export CXX=clang++-10
+      export CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -v")
+      export CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi")
       ./compile
     displayName: Install btllib
   - script: |
