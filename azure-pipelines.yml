@@ -216,8 +216,8 @@ jobs:
       cd btllib-1.4.9
       export CC=clang-10
       export CXX=clang++-10
-      export CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++ -v"
-      export CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi"
+      export CMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS} -stdlib=libc++ -v"
+      export CMAKE_EXE_LINKER_FLAGS="${CMAKE_EXE_LINKER_FLAGS} -stdlib=libc++ -lc++abi"
       ./compile
     displayName: Install btllib
   - script: |
