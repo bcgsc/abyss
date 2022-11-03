@@ -209,7 +209,9 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
-  - script: sudo apt-get install -qq llvm-10 lldb-10 llvm-10-dev libllvm10 llvm-10-runtime
+  - script: |
+      sudo apt-get install -qq llvm-10 lldb-10 llvm-10-dev libllvm10 llvm-10-runtime
+      sudo apt install -qq libc++-dev libc++abi-dev
     displayName: Install llvm-10
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
