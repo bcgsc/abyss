@@ -13,7 +13,7 @@ jobs:
     displayName: Install common
   - script: sudo apt-get install -qq gcc-12 g++-12
     displayName: Install gcc-12
-    - script: |
+  - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
