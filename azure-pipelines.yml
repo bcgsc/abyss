@@ -212,15 +212,15 @@ jobs:
       export PATH="/usr/local/bin:$PATH"
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export CC=clang-14
-      export CXX=clang++-14
+      export CC=clang-14.0
+      export CXX=clang++-14.0
       ./compile
     displayName: Install btllib
   - script: |
       export PATH=/usr/local/bin:$PATH
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
-      ./configure CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14.0 CXX=clang++-14.0 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang-14.0 CXX=clang++-14.0 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
 
