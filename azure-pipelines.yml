@@ -209,15 +209,15 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
-      export CC=clang-14
-      export CXX=clang++-14
+      export CC=clang
+      export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
-      ./configure CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
 
