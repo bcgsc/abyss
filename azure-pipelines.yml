@@ -202,14 +202,22 @@ jobs:
   - script: |
       set -o errexit -o pipefail
       brew update
-      brew install llvm@14 btllib pandoc sparsehash boost make automake openmpi perl pandoc ghc
+      brew install llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
     displayName: Install common
   - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export CC=clang-14
+      export CXX=clang++-14
+      ./compile
+    displayName: Install btllib
+  - script: |
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14 CXX=clang++-14"
-      ./configure CC=clang-14 CXX=clang++-14
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
 
