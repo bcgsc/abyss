@@ -202,19 +202,22 @@ jobs:
   - script: |
       set -o errexit -o pipefail
       brew update
-      brew install llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc
+      brew reinstall llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
+      export PATH="/usr/local/bin:$PATH"
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export CC=clang
       export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
-      export PATH="$(brew --prefix llvm@14)/bin:$PATH"
+      export PATH=/usr/local/bin:$PATH
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
