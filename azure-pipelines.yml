@@ -204,6 +204,7 @@ jobs:
       brew update
       brew reinstall llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
+      ls /usr/local/bin
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
