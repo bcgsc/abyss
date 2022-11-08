@@ -211,17 +211,29 @@ jobs:
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
       export PATH="/usr/local/bin:$PATH"
+      export PATH="/usr/local/opt/llvm@14/bin:$PATH"
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export CC=clang-14.0
-      export CXX=clang++-14.0
+      export LDFLAGS="-L/usr/local/opt/llvm@14/lib"
+      export CPPFLAGS="-I/usr/local/opt/llvm@14/include"
+      export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
+      export CC=clang
+      export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
-      export PATH=/usr/local/bin:$PATH
+      export PATH="/usr/local/bin:$PATH"
+      export PATH="/usr/local/opt/llvm@14/bin:$PATH"
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS="-L/usr/local/opt/llvm@14/lib"
+      export CPPFLAGS="-I/usr/local/opt/llvm@14/include"
+      export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
+      export CC=clang
+      export CXX=clang++
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14.0 CXX=clang++-14.0 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
-      ./configure CC=clang-14.0 CXX=clang++-14.0 --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
 
