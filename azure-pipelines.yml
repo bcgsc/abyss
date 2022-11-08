@@ -212,7 +212,7 @@ jobs:
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export LDFLAGS=-L/usr/local/opt/llvm@15/lib
-      export CPPFLAGS=-I/usr/local/opt/llvm@15/include
+      export CPPFLAGS="-I/usr/local/opt/llvm@15/include -stdlib=libc++"
       export LDFLAGS="L/usr/local/opt/llvm@15/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@15/lib/c++"
       export CC=clang
       export CXX=clang++
@@ -223,7 +223,7 @@ jobs:
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export LDFLAGS=-L/usr/local/opt/llvm@15/lib
-      export CPPFLAGS=-I/usr/local/opt/llvm@15/include
+      export CPPFLAGS="-I/usr/local/opt/llvm@15/include -stdlib=libc++"
       export LDFLAGS="-L/usr/local/opt/llvm@15/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@15/lib/c++"
       export CC=clang
       export CXX=clang++
@@ -252,7 +252,7 @@ jobs:
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export LDFLAGS=-L/usr/local/opt/llvm@14/lib
-      export CPPFLAGS=-I/usr/local/opt/llvm@14/include
+      export CPPFLAGS="-stdlib=libc++ -I/usr/local/opt/llvm@14/include"
       export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
       export CC=clang
       export CXX=clang++
@@ -263,7 +263,7 @@ jobs:
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export LDFLAGS=-L/usr/local/opt/llvm@14/lib
-      export CPPFLAGS=-I/usr/local/opt/llvm@14/include
+      export CPPFLAGS="-stdlib=libc++ -I/usr/local/opt/llvm@14/include"
       export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
       export CC=clang
       export CXX=clang++
