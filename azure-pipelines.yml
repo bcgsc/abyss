@@ -43,9 +43,6 @@ jobs:
       export PATH="/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH"
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib $LDFLAGS"
-      export CPPFLAGS="-stdlib=libc++ -I/usr/local/opt/llvm@14/include $CPPFLAGS"
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++ $LDFLAGS"
       export CC=clang
       export CXX=clang++
       ./compile
@@ -54,9 +51,6 @@ jobs:
       export PATH=/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib $LDFLAGS"
-      export CPPFLAGS="-stdlib=libc++ -I/usr/local/opt/llvm@14/include $CPPFLAGS"
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++ $LDFLAGS"
       export CC=clang
       export CXX=clang++
       ./autogen.sh
