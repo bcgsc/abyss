@@ -195,7 +195,45 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS with gcc
     
-- job: macos
+- job: macos_clang15
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@15 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@15/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@15/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@15/include
+      export LDFLAGS="L/usr/local/opt/llvm@15/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@15/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@15/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@15/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@15/include
+      export LDFLAGS="-L/usr/local/opt/llvm@15/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@15/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 15
+
+- job: macos_clang14
   pool:
     vmImage: 'macOS-latest'
   steps:
@@ -210,24 +248,22 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
-      export PATH="/usr/local/bin:$PATH"
-      export PATH="/usr/local/opt/llvm@14/bin:$PATH"
+      export PATH="/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH"
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib"
-      export CPPFLAGS="-I/usr/local/opt/llvm@14/include"
+      export LDFLAGS=-L/usr/local/opt/llvm@14/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@14/include
       export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
       export CC=clang
       export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
-      export PATH="/usr/local/bin:$PATH"
-      export PATH="/usr/local/opt/llvm@14/bin:$PATH"
+      export PATH=/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export LDFLAGS="-L/usr/local/opt/llvm@14/lib"
-      export CPPFLAGS="-I/usr/local/opt/llvm@14/include"
+      export LDFLAGS=-L/usr/local/opt/llvm@14/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@14/include
       export LDFLAGS="-L/usr/local/opt/llvm@14/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@14/lib/c++"
       export CC=clang
       export CXX=clang++
@@ -236,6 +272,197 @@ jobs:
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
+
+- job: macos_clang13
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@13 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@13/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@13/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@13/include
+      export LDFLAGS="-L/usr/local/opt/llvm@13/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@13/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@13/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@13/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@13/include
+      export LDFLAGS="-L/usr/local/opt/llvm@13/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@13/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 13
+
+- job: macos_clang12
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@12 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@12/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@12/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@12/include
+      export LDFLAGS="-L/usr/local/opt/llvm@12/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@12/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@12/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@12/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@12/include
+      export LDFLAGS="-L/usr/local/opt/llvm@12/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@12/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 12
+    
+- job: macos_clang11
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@11 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@11/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@11/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@11/include
+      export LDFLAGS="-L/usr/local/opt/llvm@11/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@11/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@11/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@11/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@11/include
+      export LDFLAGS="-L/usr/local/opt/llvm@11/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@11/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 11
+
+- job: macos_clang10
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@10 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@10/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@10/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@10/include
+      export LDFLAGS="-L/usr/local/opt/llvm@10/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@10/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@10/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@10/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@10/include
+      export LDFLAGS="-L/usr/local/opt/llvm@10/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@10/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 10
+    
+- job: macos_clang9
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: |
+      set -o errexit -o pipefail
+      brew update
+      brew reinstall llvm@9 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export PATH=/usr/local/opt/llvm@9/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@9/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@9/include
+      export LDFLAGS="-L/usr/local/opt/llvm@9/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@9/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      export PATH=/usr/local/opt/llvm@9/bin:/usr/local/bin:$PATH
+      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
+      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+      export LDFLAGS=-L/usr/local/opt/llvm@9/lib
+      export CPPFLAGS=-I/usr/local/opt/llvm@9/include
+      export LDFLAGS="-L/usr/local/opt/llvm@9/lib/c++ -Wl,-rpath,/usr/local/opt/llvm@9/lib/c++"
+      export CC=clang
+      export CXX=clang++
+      ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
+      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 9
+
 
 - job:
   displayName: mac-latest
