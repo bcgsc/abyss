@@ -11,7 +11,7 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda llvm clang make boost-cpp sparsehash openmpi automake perl pandoc
+      mamba install --yes -c conda-forge -c bioconda llvm clang clangxx make boost-cpp sparsehash openmpi automake perl pandoc
     displayName: Install dependencies
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
