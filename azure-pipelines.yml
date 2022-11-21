@@ -17,11 +17,13 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
+      source activate abyss_CI
       export CC=clang
       export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
+      source activate abyss_CI
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
@@ -46,11 +48,13 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
       tar xzf btllib-1.4.9.tar.gz
       cd btllib-1.4.9
+      source activate abyss_CI
       export CC=clang
       export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
+      source activate abyss_CI
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
