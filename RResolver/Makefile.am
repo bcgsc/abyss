@@ -1,4 +1,5 @@
 bin_PROGRAMS = abyss-rresolver-short
+AM_CXXFLAGS += $(PTHREAD_CFLAGS) -Wno-deprecated-declarations
 
 abyss_rresolver_short_CXXFLAGS = \
 	$(AM_CXXFLAGS) $(OPENMP_CXXFLAGS) \
