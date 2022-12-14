@@ -25,36 +25,44 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS with clang 15
 
-- job: macos_clang14
+- job:
+  displayName: mac-latest-compilers-13
   pool:
     vmImage: 'macOS-latest'
   steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name abyss_CI
+    displayName: Create Anaconda environment
   - script: |
-      set -o errexit -o pipefail
-      brew update
-      brew reinstall llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
-      export PATH="$(brew --prefix llvm@14)/bin:$PATH"
-      ls /usr/local/bin
-    displayName: Install common
+      source activate abyss_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc
+    displayName: Install dependencies
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
-      tar xzf btllib-1.4.9.tar.gz
-      cd btllib-1.4.9
-      export PATH="/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH"
-      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
-      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
-  - script: |
-      export PATH=/usr/local/opt/llvm@14/bin:/usr/local/bin:$PATH
-      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
-      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export CC=clang
-      export CXX=clang++
+      source activate abyss_CI
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
-      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
+      ./configure
       make -j12 distcheck
-    displayName: Compiling ABySS with clang 14
+    displayName: Compiling ABySS
+
+- job:
+  displayName: mac-latest-compilers-13
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name abyss_CI
+    displayName: Create Anaconda environment
+  - script: |
+      source activate abyss_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers=1.3.0 make boost-cpp sparsehash openmpi automake perl btllib pandoc
+    displayName: Install dependencies
+  - script: |
+      source activate abyss_CI
+      ./autogen.sh
+      ./configure
+      make -j12 distcheck
+    displayName: Compiling ABySS
