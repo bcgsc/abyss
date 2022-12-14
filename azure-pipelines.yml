@@ -41,6 +41,11 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
+      export CC=clang
+      export CXX=clang++
+      which clang
+      which clang++
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
       ./autogen.sh
       ./configure
       make -j12 distcheck
@@ -62,6 +67,11 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
+      export CC=clang
+      export CXX=clang++
+      which clang
+      which clang++
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
       ./autogen.sh
       ./configure
       make -j12 distcheck
