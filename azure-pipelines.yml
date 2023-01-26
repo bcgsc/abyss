@@ -16,6 +16,8 @@ jobs:
       cd btllib-1.4.9
       export CC=clang
       export CXX=clang++
+      which clang
+      which clang++
       ./compile
     displayName: Install btllib
   - script: |
@@ -23,6 +25,8 @@ jobs:
       export CPPFLAGS+=" -I/usr/local/opt/llvm/include"
       export CC=clang
       export CXX=clang++
+      which clang
+      which clang++
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
@@ -41,17 +45,27 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl btllib pandoc
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc
     displayName: Install dependencies
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.4.9/btllib-1.4.9.tar.gz
+      tar xzf btllib-1.4.9.tar.gz
+      cd btllib-1.4.9
+      export CC=clang
+      export CXX=clang++
+      which clang
+      which clang++
+      ./compile
+    displayName: Install btllib
   - script: |
       source activate abyss_CI
       export CC=clang
       export CXX=clang++
       which clang
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"  --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install"
       ./autogen.sh
-      ./configure
+      ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.4.9/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 12
 
