@@ -23,7 +23,8 @@ jobs:
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       which brew
       brew update
-      brew reinstall llvm
+      arch -x86_64 brew install llvm --only-dependencies
+      arch -x86_64 /usr/local/homebrew/bin/brew reinstall llvm 
       arch -x86_64 /usr/local/bin/brew install automake boost openmpi google-sparsehash make pandoc ghc
     displayName: Install common
   - script: |
