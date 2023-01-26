@@ -2,7 +2,7 @@ jobs:
 
 - job: macOS_default_gcc
   pool:
-    vmImage: macOS-latest
+    vmImage: macOS-11
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
@@ -23,9 +23,7 @@ jobs:
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       which brew
       brew update
-      brew uninstall llvm
-      arch -x86_64 brew install llvm 
-      arch -x86_64 brew install automake boost openmpi google-sparsehash make pandoc ghc
+      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
     displayName: Install common
   - script: |
       ./autogen.sh
