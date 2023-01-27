@@ -7,7 +7,7 @@ jobs:
       sudo apt-get update -qq
       sudo apt-get install -qq software-properties-common
       sudo add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu focal main universe restricted"
-      sudo add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu bionic-updates main universe restricted"
+      sudo add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu focal-updates main universe restricted"
       sudo apt-get update -qq
       sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
     displayName: Install common
@@ -262,7 +262,6 @@ jobs:
   steps:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
-      which brew
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
     displayName: Install common
