@@ -10,12 +10,6 @@ ABySS is a *de novo* sequence assembler intended for short paired-end reads and 
 
 Please [cite our papers](#citation).
 
-News
-================================================================================
-#### October 31, 2022
-We're looking for C++ bioinformatics developers to work on ABySS and other exciting bioinformatics tools with the Bioinformatics Technology Lab in Vancouver, BC! For more information, check out the [BCGSC website](https://bcgsc.ca/careers/research-programmer-birol-labbioinformatics-technology-lab) and our [Birol Lab website](http://www.birollab.ca/jobs/2022/08/29/ProgrammerJob.html).   
-
-
 Contents
 ================================================================================
 
