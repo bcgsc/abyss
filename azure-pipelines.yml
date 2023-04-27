@@ -32,6 +32,7 @@ jobs:
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 15
+
 - job: linux_gcc12
   pool:
     vmImage: ubuntu-22.04
@@ -60,6 +61,7 @@ jobs:
       ./configure CC=gcc-12 CXX=g++-12 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
+
 - job: linux_gcc11
   pool:
     vmImage: ubuntu-latest
@@ -88,6 +90,7 @@ jobs:
       ./configure CC=gcc-11 CXX=g++-11 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-11
+
 - job: linux_gcc10
   pool:
     vmImage: ubuntu-latest
@@ -116,6 +119,7 @@ jobs:
       ./configure CC=gcc-10 CXX=g++-10 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-10
+
 - job: linux_gcc9
   pool:
     vmImage: ubuntu-latest
@@ -144,6 +148,7 @@ jobs:
       ./configure CC=gcc-9 CXX=g++-9 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-9
+
 - job: linux_gcc8
   pool:
     vmImage: ubuntu-latest
@@ -173,34 +178,6 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-8
 
-- job: linux_gcc7
-  pool:
-    vmImage: ubuntu-latest
-  steps:
-  - script: |
-      sudo apt-get update -qq
-      sudo apt-get install -qq software-properties-common
-      sudo add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu focal main universe security"
-      sudo add-apt-repository -y "deb http://us.archive.ubuntu.com/ubuntu focal-updates main universe restricted"
-      sudo apt-get update -qq
-      sudo apt-get install -qq autoconf automake gcc g++ libboost-dev libgtest-dev libopenmpi-dev libsparsehash-dev make pandoc
-    displayName: Install common
-  - script: sudo apt-get install -qq gcc-7 g++-7
-    displayName: Install gcc-7
-  - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      tar xzf btllib-1.5.1.tar.gz
-      cd btllib-1.5.1
-      export CC=gcc-7
-      export CXX=g++-7
-      ./compile
-    displayName: Install btllib
-  - script: |
-      ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-7 CXX=g++-7 --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install"
-      ./configure CC=gcc-7 CXX=g++-7 --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
-      make -j12 distcheck
-    displayName: Compiling ABySS with gcc-7
 - job:
   displayName: ubuntu-latest
   pool:
