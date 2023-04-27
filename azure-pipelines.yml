@@ -258,6 +258,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
+      brew tap brewsci/bio
       brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc btllib
     displayName: Install common
   - script: |
