@@ -21,7 +21,7 @@ jobs:
       export CXX=g++-12
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="--with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure   --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
+      ./configure   --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install --with-boost=/usr/local/opt/boost --with-sparsehash=-I/usr/local/opt/google-sparsehash
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
@@ -134,7 +134,7 @@ jobs:
 
 - job: linux_gcc12
   pool:
-    vmImage: ubuntu-20.04
+    vmImage: ubuntu-latest
   steps:
   - script: |
       sudo apt-get update -qq
@@ -160,15 +160,7 @@ jobs:
       ./configure CC=gcc-12 CXX=g++-12 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
-  - script: |
-      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
-      sudo apt-get update
-      sudo apt-get install -y --no-install-recommends clang-format-8
-      sudo ln -sf clang-format-8 /usr/bin/clang-format
-    displayName: Install clang-format
-  - script: make clang-format
-    displayName: Run clang-format
+
 
 - job: linux_gcc11
   pool:
@@ -201,7 +193,7 @@ jobs:
 
 - job: linux_gcc10
   pool:
-    vmImage: ubuntu-latest
+    vmImage: ubuntu-20.04
   steps:
   - script: |
       sudo apt-get update -qq
@@ -227,6 +219,15 @@ jobs:
       ./configure CC=gcc-10 CXX=g++-10 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-10
+  - script: |
+      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
+      sudo apt-get update
+      sudo apt-get install -y --no-install-recommends clang-format-8
+      sudo ln -sf clang-format-8 /usr/bin/clang-format
+    displayName: Install clang-format
+  - script: make clang-format
+    displayName: Run clang-format
 
 - job: linux_gcc9
   pool:
