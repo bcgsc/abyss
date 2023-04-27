@@ -291,7 +291,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc llvm-openmp
+      brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc libomp
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
@@ -324,7 +324,7 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc libgomp
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp
     displayName: Install dependencies
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
