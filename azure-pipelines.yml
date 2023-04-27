@@ -9,8 +9,8 @@ jobs:
       brew reinstall llvm@15 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
     displayName: Install common
   - script: |
-      export LDFLAGS+=" -L/usr/local/opt/llvm/lib"
-      export CPPFLAGS+=" -I/usr/local/opt/llvm/include"
+      export LDFLAGS+=" -L/usr/local/opt/llvm@15/lib"
+      export CPPFLAGS+=" -I/usr/local/opt/llvm@15/include"
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
@@ -21,8 +21,8 @@ jobs:
       ./compile
     displayName: Install btllib
   - script: |
-      export LDFLAGS+=" -L/usr/local/opt/llvm/lib"
-      export CPPFLAGS+=" -I/usr/local/opt/llvm/include"
+      export LDFLAGS+=" -L/usr/local/opt/llvm@15/lib"
+      export CPPFLAGS+=" -I/usr/local/opt/llvm@15/include"
       export CC=clang
       export CXX=clang++
       which clang
@@ -61,6 +61,15 @@ jobs:
       ./configure CC=gcc-12 CXX=g++-12 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
+  - script: |
+      curl https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+      sudo apt-add-repository "deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main"
+      sudo apt-get update
+      sudo apt-get install -y --no-install-recommends clang-format-8
+      sudo ln -sf clang-format-8 /usr/bin/clang-format
+    displayName: Install clang-format
+  - script: make clang-format
+    displayName: Run clang-format
 
 - job: linux_gcc11
   pool:
@@ -196,7 +205,7 @@ jobs:
       source activate abyss_CI
       ./autogen.sh
       ./configure
-      make -j12 distcheck
+      make -j12 distcheck AM_CXXFLAGS=-Wall
     displayName: Compiling ABySS with gcc
     
 - job: macos
@@ -220,7 +229,8 @@ jobs:
       export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
       export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
       export CC=clang-14
-      export CXX=clang++-14
+      export CXX=clang++
+      clang++ --version
       ./compile
     displayName: Install btllib
   - script: |
@@ -259,7 +269,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
@@ -287,11 +297,15 @@ jobs:
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
+      export LDFLAGS="-L/usr/local/opt/llvm/lib"
+      export CPPFLAGS="-I/usr/local/opt/llvm/include"
       export CC=clang
       export CXX=clang++
       ./compile
     displayName: Install btllib
   - script: |
+      export LDFLAGS="-L/usr/local/opt/llvm/lib"
+      export CPPFLAGS="-I/usr/local/opt/llvm/include"
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
       ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
