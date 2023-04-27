@@ -210,6 +210,9 @@ jobs:
       export PATH="$(brew --prefix llvm@14)/bin:$PATH"
     displayName: Install common
   - script: |
+      export PATH="$(brew --prefix llvm@14)/bin:$PATH"
+      echo $PATH
+      ls $(brew --prefix llvm@14)/bin
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
@@ -227,6 +230,7 @@ jobs:
       ./configure CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with clang 14
+
 - job:
   displayName: mac-latest
   pool:
@@ -269,6 +273,7 @@ jobs:
       ./configure   --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with default gcc
+
 - job: macOS_default_clang
   pool:
     vmImage: macOS-latest
@@ -276,7 +281,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc llvm
+      brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
