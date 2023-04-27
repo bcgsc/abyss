@@ -17,11 +17,12 @@ jobs:
       ./compile
     displayName: Install btllib
   - script: |
+      ls /usr/local/opt
+      make -j12 distcheck
       export CC=gcc-12
       export CXX=g++-12
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="--with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure   --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install --with-boost=/usr/local/opt/boost --with-sparsehash=-I/usr/local/opt/google-sparsehash
+      ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install --with-boost=/usr/local/opt/boost --with-sparsehash=-I/usr/local/opt/google-sparsehash
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
