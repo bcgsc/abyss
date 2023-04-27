@@ -249,7 +249,7 @@ Examples
 
 Calculate assembly contiguity statistics:
 
-	abyss-fac test-unitigs.fa
+	abyss-fac test-unitigs.fa test-contigs.fa test-scaffolds.fa
 
 ## Assembling a paired-end library
 
@@ -262,7 +262,7 @@ command:
 The parameter `in` specifies the input files to read, which may be in
 FASTA, FASTQ, qseq, export, SRA, SAM or BAM format and compressed with
 gz, bz2 or xz and may be tarred. The assembled contigs will be stored
-in `${name}-contigs.fa`.
+in `${name}-contigs.fa` and the scaffolds will be stored in `${name}-scaffolds.fa`.
 
 A pair of reads must be named with the suffixes `/1` and `/2` to
 identify the first and second read, or the reads may be named
@@ -303,7 +303,7 @@ The empirical distribution of fragment sizes will be stored in two
 files named `pea-3.hist` and `peb-3.hist`. These files may be
 plotted to check that the empirical distribution agrees with the
 expected distribution. The assembled contigs will be stored in
-`${name}-contigs.fa`.
+`${name}-contigs.fa` and the scaffolds will be stored in `${name}-scaffolds.fa`.
 
 ## Scaffolding
 
