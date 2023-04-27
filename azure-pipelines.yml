@@ -49,7 +49,7 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS
 
-  - job:
+- job:
   displayName: mac_clang14
   pool:
     vmImage: 'macOS-latest'
