@@ -294,6 +294,8 @@ jobs:
       brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc libomp
     displayName: Install common
   - script: |
+      which clang++
+      echo $PATH
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
@@ -327,6 +329,7 @@ jobs:
       mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp
     displayName: Install dependencies
   - script: |
+      source activate abyss_CI
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
