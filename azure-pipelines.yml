@@ -208,39 +208,6 @@ jobs:
       make -j12 distcheck AM_CXXFLAGS=-Wall CXXFLAGS='-pthread'
     displayName: Compiling ABySS with gcc
     
-- job: macos
-  pool:
-    vmImage: 'macOS-latest'
-  steps:
-  - script: |
-      set -o errexit -o pipefail
-      brew update
-      brew reinstall llvm@14 pandoc google-sparsehash boost make automake openmpi perl pandoc ghc cmake meson ninja
-      export PATH="$(brew --prefix llvm@14)/bin:$PATH"
-    displayName: Install common
-  - script: |
-      export PATH="$(brew --prefix llvm@14)/bin:$PATH"
-      echo $PATH
-      ls $(brew --prefix llvm@14)/bin
-      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      tar xzf btllib-1.5.1.tar.gz
-      cd btllib-1.5.1
-      export PATH="/usr/local/bin:$PATH"
-      export LIBRARY_PATH=/usr/local/lib:$LIBRARY_PATH
-      export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-      export CC=clang-14
-      export CXX=clang++
-      clang++ --version
-      ./compile
-    displayName: Install btllib
-  - script: |
-      export PATH=/usr/local/bin:$PATH
-      ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure CC=clang-14 CXX=clang++-14 --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
-      make -j12 distcheck
-    displayName: Compiling ABySS with clang 14
-
 - job:
   displayName: mac-latest
   pool:
@@ -269,7 +236,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc libomp
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
@@ -291,27 +258,14 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc libomp
+      brew install automake boost open-mpi google-sparsehash make pandoc ghc llvm gcc btllib
     displayName: Install common
-  - script: |
-      which clang++
-      echo $PATH
-      ls /usr/local/bin
-      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      tar xzf btllib-1.5.1.tar.gz
-      cd btllib-1.5.1
-      export LDFLAGS="-L/usr/local/opt/llvm/lib"
-      export CPPFLAGS="-I/usr/local/opt/llvm/include"
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
   - script: |
       export LDFLAGS="-L/usr/local/opt/llvm/lib"
       export CPPFLAGS="-I/usr/local/opt/llvm/include"
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      ./configure CC=clang CXX=clang++
       make -j12 distcheck
     displayName: Compiling ABySS with default clang
 
