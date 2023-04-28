@@ -17,13 +17,10 @@ jobs:
       ./compile
     displayName: Install btllib
   - script: |
-      ls /usr/local/opt/google-sparsehash
+      ls /usr/local/opt/google-sparsehash/include/google
       ls /usr/local/bin
       ./autogen.sh
-      export CC=gcc-12
-      export CXX=g++-12
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install"
-      ./configure --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
+      ./configure  CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi  --with-btllib=/home/vsts/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
