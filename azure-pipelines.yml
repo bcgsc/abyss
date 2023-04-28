@@ -22,7 +22,7 @@ jobs:
       export CC=gcc-12
       export CXX=g++-12
       ./autogen.sh
-      ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash
+      ./configure --with-boost=/usr/local/opt/boost --with-sparsehash=-I/usr/local/opt/google-sparsehash --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install 
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
