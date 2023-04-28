@@ -6,22 +6,19 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc libomp
+      brew install automake boost openmpi google-sparsehash make pandoc ghc libomp
     displayName: Install common
   - script: |
-      export CC=gcc-12
-      export CXX=g++-12
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
       ./compile
     displayName: Install btllib
   - script: |
-      ls /usr/local/opt
-      export CC=gcc-12
-      export CXX=g++-12
+      ls /usr/local/opt/google-sparsehash
+      ls /usr/local/bin
       ./autogen.sh
-      ./configure --with-boost=/usr/local/opt --with-sparsehash=/usr/local/opt --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install 
+      ./configure --with-boost=/usr/local/opt/boost --with-mpi=/usr/local/opt/openmpi --with-sparsehash=-I/usr/local/opt/google-sparsehash --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install 
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
