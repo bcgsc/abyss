@@ -10,6 +10,8 @@ jobs:
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
+      export CC=gcc-12
+      export CXX=g++-12
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
       ./compile
