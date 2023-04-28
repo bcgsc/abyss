@@ -134,6 +134,14 @@ if test "$with_sparsehash" -a "$with_sparsehash" != "no" -a -d "$with_sparsehash
 	sparsehash_ldflags="-L$with_sparsehash/lib"
 fi
 
+# btllib
+AC_ARG_WITH(btllib, AS_HELP_STRING([--with-btllib=PATH],
+	[specify prefix directory for the installed sqlite library]))
+if test "$with_btllib" -a "$with_btllib" != "no" -a -d "$with_btllib" ; then
+        btllib_cppflags="-isystem$with_btllib/include"
+        btllib_ldflags="-L$with_btllib/lib"
+fi
+
 AC_ARG_ENABLE(fm, AS_HELP_STRING([--enable-fm],
 	[specify the width of the FM-index in bits (default is 64-bit)]),
 	[], [enable_fm=64])
@@ -157,8 +165,8 @@ my_abs_srcdir=$(cd $srcdir; pwd)
 boost_ver=1.56.0
 boost_ver_dir=boost_1_56_0
 AC_SUBST(CPPFLAGS,
-		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
-AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $LDFLAGS")
+		 "-I$my_abs_srcdir $boost_cppflags $mpi_cppflags $sqlite_cppflags $sparsehash_cppflags $btllib_cppflags $CPPFLAGS -isystem$my_abs_srcdir/$boost_ver_dir")
+AC_SUBST(LDFLAGS, "$mpi_ldflags $sqlite_ldflags $sparsehash_ldflags $btllib_ldflags $LDFLAGS")
 
 # Check for pthread.h / libpthread
 # (optional 'make check' dependency)
@@ -221,6 +229,7 @@ AC_CHECK_HEADERS([ \
 	unordered_map tr1/unordered_map \
 	unordered_set tr1/unordered_set \
 	boost/unordered_set.hpp \
+	btllib/bloom_filter.hpp \
 ])
 
 # Check for Boost.
@@ -254,6 +263,14 @@ LIBS=$libs
 AC_OPENMP
 if test -z $OPENMP_CXXFLAGS; then
 	OPENMP_CXXFLAGS=-Wno-unknown-pragmas
+fi
+
+# Check for btllib.
+if test $ac_cv_header_btllib_bloom_filter_hpp != yes; then
+	AC_MSG_ERROR([ABySS requires the btllib C++ libraries, which may
+	be downloaded from here: https://github.com/bcgsc/btllib
+	It is necessary to compile btllib. The readme 
+	in the GitHub repo contains instructs to compile btllib.])
 fi
 
 # Set compiler flags.

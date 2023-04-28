@@ -120,11 +120,12 @@ The following libraries are required:
 * [Boost](http://www.boost.org/)
 * [Open MPI](http://www.open-mpi.org)
 * [sparsehash](https://code.google.com/p/sparsehash/)
+* [btllib](https://github.com/bcgsc/btllib)
 
 Conda:
 
 	conda install -c conda-forge boost openmpi
-	conda install -c bioconda google-sparsehash
+	conda install -c bioconda google-sparsehash btllib
 
 It is also helpful to install the compilers Conda package that automatically passes the correct compiler flags to use the available Conda packages:
 
@@ -152,6 +153,7 @@ You may also pass the following flags to `configure` script:
 	--with-mpi=PATH
 	--with-sqlite=PATH
 	--with-sparsehash=PATH
+	--with-btllib=PATH
 
 Where PATH is the path to the directory containing the corresponding dependencies. This should only be necessary if `configure` doesn't find the dependencies by default. If you are using Conda, PATH would be the path to the Conda installation. SQLite and MPI are optional dependencies.
 
