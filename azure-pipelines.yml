@@ -18,7 +18,6 @@ jobs:
       pwd
     displayName: Install btllib
   - script: |
-      ls /Users/runner/work/1/s/btllib-1.5.1/install
       ./autogen.sh
       export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
       ./configure CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
@@ -67,8 +66,6 @@ jobs:
       source activate abyss_CI
       export CC=clang
       export CXX=clang++
-      which clang
-      which clang++
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
       ./autogen.sh
       ./configure
