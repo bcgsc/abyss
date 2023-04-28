@@ -18,11 +18,10 @@ jobs:
     displayName: Install btllib
   - script: |
       ls /usr/local/opt
-      make -j12 distcheck
       export CC=gcc-12
       export CXX=g++-12
       ./autogen.sh
-      ./configure --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install 
+      ./configure --with-boost=/usr/local/opt --with-sparsehash=/usr/local/opt --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install 
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
