@@ -6,23 +6,22 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc 
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      export CC=gcc-13
-      export CXX=g++-13
+      export CC=gcc-12
+      export CXX=g++-12
       tar xzf btllib-1.5.1.tar.gz
       cd btllib-1.5.1
       ./compile
-      pwd
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
+      ./configure CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
-    displayName: Compiling ABySS with gcc-13
+    displayName: Compiling ABySS with gcc-12
 
 - job:
   displayName: mac_latest-compilers-clang
