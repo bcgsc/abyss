@@ -6,7 +6,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12 llvm
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
