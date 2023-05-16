@@ -1,7 +1,7 @@
 noinst_LIBRARIES = libdb.a
 libdb_a_SOURCES = DB.cc DB.h Options.h
 libdb_a_CPPFLAGS = -I$(top_srcdir)
-libdb_a_LIBADD = $(top_builddir)/Common/libcommon.a
+libdb_a_LIBADD = $(wildcard $(top_builddir)/Common/*.o)
 
 if HAVE_SQLITE3
 bin_PROGRAMS = abyss-db-csv

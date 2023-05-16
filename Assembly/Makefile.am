@@ -22,4 +22,4 @@ libassembly_a_SOURCES = \
 	SplitAlgorithm.h \
 	TrimAlgorithm.h
 
-libassembly_a_LIBADD = $(top_builddir)/Common/libcommon.a
+libassembly_a_LIBADD = $(wildcard $(top_builddir)/Common/*.o)
