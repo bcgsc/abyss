@@ -1,5 +1,5 @@
 jobs:  
-- job: mac_gcc
+- job: mac11_gcc
   pool:
     vmImage: macOS-11
   steps:
@@ -18,6 +18,35 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
+      ./configure CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
+      make -j12 distcheck
+    displayName: Compiling ABySS with gcc-12
+
+- job: mac_latest_gcc
+  pool:
+    vmImage: macOS-latest
+  steps:
+  - script: |
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
+      brew update
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12 llvm
+    displayName: Install common
+  - script: |
+      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
+      export CC=gcc-12
+      export CXX=g++-12
+      tar xzf btllib-1.5.1.tar.gz
+      cd btllib-1.5.1
+      ./compile
+    displayName: Install btllib
+  - script: |
+      ./autogen.sh
+      export CXXFLAGS="$CXXFLAGS -fuse-ld=lld"
+      echo $CXXFLAGS
+      export CFLAGS="$CFLAGS -fuse-ld=lld"
+      export OBJCFLAGS="$OBJCFLAGS -fuse-ld=lld"
+      export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
       export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
       ./configure CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
