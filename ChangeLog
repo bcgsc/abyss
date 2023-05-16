@@ -1,3 +1,10 @@
+2023-05-16 Lauren Coombe <lcoombe@bcgsc.ca>
+
+  * Release version 2.3.7
+
+    General:
+	* Fix build on macOS-12 and macOS-13 (Thanks @parham-k!)
+
 2023-05-02 Lauren Coombe <lcoombe@bcgsc.ca>
 
   * Release version 2.3.6
