@@ -31,6 +31,6 @@ libralgorithmsshort_a_SOURCES = \
 	RUtils.cpp RUtils.h
 
 libralgorithmsshort_a_LIBADD = \
-	$(wildcard $(top_srcdir)/DataLayer/*.o) \
-	$(wildcard $(top_srcdir)/Common/*.o)
+	$(wildcard $(top_builddir)/DataLayer/*.o) \
+	$(wildcard $(top_builddir)/Common/*.o)
 
