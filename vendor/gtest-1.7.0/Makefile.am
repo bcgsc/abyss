@@ -34,9 +34,9 @@ EXTRA_DIST = \
   include/gtest/internal/gtest-type-util.h
 
 libgtest_a_CPPFLAGS = -I$(top_srcdir) -isystem $(top_srcdir)/vendor/gtest-1.7.0/include
-libgtest_a_CXXFLAGS = $(AM_CXXFLAGS) -Wno-missing-field-initializers -Wno-error=unused-result
+libgtest_a_CXXFLAGS = $(AM_CXXFLAGS) -Wno-missing-field-initializers -Wno-maybe-uninitialized -Wno-error=unused-result
 libgtest_a_SOURCES = src/gtest-all.cc
 
 libgtest_main_a_CPPFLAGS = -I$(top_srcdir) -isystem $(top_srcdir)/vendor/gtest-1.7.0/include
-libgtest_main_a_CXXFLAGS = $(AM_CXXFLAGS) -Wno-missing-field-initializers -Wno-error=unused-result
+libgtest_main_a_CXXFLAGS = $(AM_CXXFLAGS) -Wno-missing-field-initializers -Wno-maybe-uninitialized -Wno-error=unused-result
 libgtest_main_a_SOURCES = src/gtest_main.cc src/gtest-all.cc
