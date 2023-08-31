@@ -54,13 +54,13 @@ Installation
 
 If you have the [Conda](https://docs.conda.io/en/latest/) package manager (Linux, MacOS) installed, run:
 
-	conda install -c bioconda abyss
+	conda install -c bioconda -c conda-forge abyss
 
 Or you can install ABySS in a dedicated environment:
 
     conda create -n abyss-env
     conda activate abyss-env
-    conda install -c bioconda abyss
+    conda install -c bioconda -c conda-forge abyss
 
 ## Install ABySS using Homebrew
 
