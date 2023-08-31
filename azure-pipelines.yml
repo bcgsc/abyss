@@ -73,7 +73,7 @@ jobs:
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
       ./autogen.sh
       ./configure
-      make -j12 distcheck
+      make -j12 distcheck AM_CXXFLAGS=-Wall
     displayName: Compiling ABySS
 
 - job:
@@ -127,7 +127,7 @@ jobs:
       source activate abyss_CI
       export CC=clang
       export CXX=clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install""
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install"
       ./autogen.sh
       ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install
       make -j12 distcheck
