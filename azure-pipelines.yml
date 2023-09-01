@@ -5,6 +5,7 @@ jobs:
   steps:
   - script: |
       rm -f /usr/local/bin/2to3-3.11 # brew is having issues with installing Python
+      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12
     displayName: Install common
@@ -105,7 +106,7 @@ jobs:
       export CXX=clang++
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install"
       ./autogen.sh
-      ./configure with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install
+      ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.6.2/install
       make -j12 distcheck
     displayName: Compiling ABySS
 
