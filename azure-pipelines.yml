@@ -1,7 +1,7 @@
 jobs:  
 - job: mac11_gcc
   pool:
-    vmImage: macOS-11
+    vmImage: macOS-latest
   steps:
   - script: |
       rm -f /usr/local/bin/2to3-3.11 # brew is having issues with installing Python
