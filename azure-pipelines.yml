@@ -30,6 +30,7 @@ jobs:
   - script: |
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       rm -f /usr/local/bin/2to3-3.12 # brew failing on linkage step
+      rm -f /usr/local/lib/node_modules/npm/node_modules/@npmcli/disparity-colors/node_modules/ansi-styles/index.js # brew failing on node linkage
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12 llvm
     displayName: Install common
@@ -65,7 +66,7 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda clangxx_osx-64 make boost-cpp sparsehash openmpi automake perl pandoc
+      mamba install --yes -c conda-forge -c bioconda clangxx_osx-64 make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
