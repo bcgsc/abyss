@@ -620,4 +620,4 @@ Authors
 
 Supervised by [**Dr. Inanc Birol**](http://www.bcgsc.ca/faculty/inanc-birol).
 
-Copyright 2016 Canada's Michael Smith Genome Sciences Centre
+Copyright 2016-present Canada's Michael Smith Genome Sciences Centre
