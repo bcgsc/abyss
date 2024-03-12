@@ -1,28 +1,4 @@
 jobs:  
-- job: mac11_gcc
-  pool:
-    vmImage: macOS-11
-  steps:
-  - script: |
-      rm -f /usr/local/bin/2to3-3.11 # brew is having issues with installing Python
-      rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12
-    displayName: Install common
-  - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      export CC=gcc-12
-      export CXX=g++-12
-      tar xzf btllib-1.5.1.tar.gz
-      cd btllib-1.5.1
-      ./compile
-    displayName: Install btllib
-  - script: |
-      ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure CC=gcc-12 CXX=g++-12 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
-      make -j12 distcheck
-    displayName: Compiling ABySS with gcc-12
-
 - job: mac_latest_gcc
   pool:
     vmImage: macOS-latest
@@ -31,6 +7,7 @@ jobs:
       rm -f /usr/local/bin/2to3 # brew is having issues with installing Python
       rm -f /usr/local/bin/2to3-3.12 # brew failing on linkage step
       rm -f /usr/local/lib/node_modules/npm/node_modules/@npmcli/disparity-colors/node_modules/ansi-styles/index.js # brew failing on node linkage
+      rm -f /usr/local/bin/idle3
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@12 llvm
     displayName: Install common
@@ -66,7 +43,7 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda clangxx_osx-64 make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
+      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
