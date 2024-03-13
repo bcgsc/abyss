@@ -9,7 +9,7 @@ jobs:
       brew install --force python3 node@18 && brew unlink python3 node@18 && brew unlink python3 node@18 && brew link --overwrite python3 node@18
       find /usr/local/Cellar/python* -name EXTERNALLY-MANAGED -print0 | xargs -0 rm -vf
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@13 llvm btllib
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@13 llvm brewsci/bio/btllib
     displayName: Install common
   - script: |
       ./autogen.sh
