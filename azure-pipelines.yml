@@ -12,11 +12,11 @@ jobs:
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@13 llvm
     displayName: Install common
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.5.1.tar.gz
       export CC=gcc-13
       export CXX=g++-13
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
+      tar xzf btllib-1.5.1.tar.gz
+      cd btllib-1.5.1
       ./compile
     displayName: Install btllib
   - script: |
@@ -26,7 +26,7 @@ jobs:
       export CFLAGS="$CFLAGS -fuse-ld=lld"
       export OBJCFLAGS="$OBJCFLAGS -fuse-ld=lld"
       export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
-      ./configure CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
+      ./configure CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-13
