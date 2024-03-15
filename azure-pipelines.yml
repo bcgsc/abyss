@@ -28,5 +28,5 @@ jobs:
       export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
       export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
       ./configure CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
-      make -j12 distcheck
+      make -j12 distcheck AM_CXXFLAGS=-Wno-error=dangling-reference
     displayName: Compiling ABySS with gcc-13
