@@ -27,3 +27,5 @@ abyss_paired_dbg_mpi_CPPFLAGS = $(ABYSS_P_CPPFLAGS) -DPAIRED_DBG
 abyss_paired_dbg_mpi_LDADD = $(ABYSS_P_LDADD)
 
 abyss_paired_dbg_mpi_SOURCES = $(ABYSS_P_SOURCES)
+
+CXXFLAGS += -Wno-deprecated-declarations

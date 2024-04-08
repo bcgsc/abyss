@@ -2,6 +2,9 @@ if HAVE_LIBMPI
 Parallel=Parallel
 endif
 
+
+CXXFLAGS += -Wno-deprecated-declarations
+
 if HAVE_PTHREAD
 GTest=vendor/gtest-1.7.0
 UnitTest=Unittest

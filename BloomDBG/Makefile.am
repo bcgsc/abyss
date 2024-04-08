@@ -25,3 +25,5 @@ abyss_bloom_dbg_SOURCES = \
 	RollingHash.h \
 	RollingHashIterator.h \
 	SpacedSeed.h
+
+CXXFLAGS += -Wno-deprecated-declarations

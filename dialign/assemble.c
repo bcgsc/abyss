@@ -395,7 +395,7 @@ void heapify_diag_array(struct diag **diags, int pos, int length, int up) {
  *
  * Returns whether something new could be aligned
  */
-char simple_aligner(struct seq_col *scol, struct diag_col *dcol, 
+int simple_aligner(struct seq_col *scol, struct diag_col *dcol, 
 			    struct scr_matrix* smatrix, 
 			    struct prob_dist *pdist, 
 			    struct alignment *algn, int round) {

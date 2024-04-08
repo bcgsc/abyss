@@ -41,3 +41,5 @@ EXTRA_DIST = \
 abyss_gc_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 abyss_gc_LDADD = $(top_builddir)/Common/libcommon.a
 abyss_gc_SOURCES = gc.cc
+
+CXXFLAGS += -Wno-deprecated-declarations

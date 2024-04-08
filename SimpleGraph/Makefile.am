@@ -12,3 +12,5 @@ SimpleGraph_LDADD = \
 	-lpthread
 
 SimpleGraph_SOURCES = SimpleGraph.cpp
+
+CXXFLAGS += -Wno-deprecated-declarations

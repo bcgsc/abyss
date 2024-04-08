@@ -11,3 +11,5 @@ kmerprint_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 kmerprint_SOURCES = kmerprint.cc
+
+CXXFLAGS += -Wno-deprecated-declarations

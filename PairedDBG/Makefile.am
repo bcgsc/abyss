@@ -24,3 +24,5 @@ abyss_paired_dbg_SOURCES = \
 	SequenceCollection.h
 
 libpaireddbg_a_SOURCES = KmerPair.cc KmerPair.h
+
+CXXFLAGS += -Wno-deprecated-declarations

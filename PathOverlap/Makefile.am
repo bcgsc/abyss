@@ -12,3 +12,5 @@ PathOverlap_LDADD = \
 
 PathOverlap_SOURCES = \
 	PathOverlap.cpp
+
+CXXFLAGS += -Wno-deprecated-declarations

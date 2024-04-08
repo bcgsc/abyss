@@ -21,3 +21,4 @@ abyss_count_LDADD = libfmindex.a \
 	$(top_builddir)/Common/libcommon.a
 abyss_count_CPPFLAGS = -I$(top_srcdir) \
 	-I$(top_srcdir)/Common
+CXXFLAGS += -Wno-deprecated-declarations
