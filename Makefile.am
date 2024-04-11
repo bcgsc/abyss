@@ -3,7 +3,7 @@ Parallel=Parallel
 endif
 
 
-CXXFLAGS += -Wno-deprecated-declarations
+CXXFLAGS += -flto=4 -Werror=odr -Werror=lto-type-mismatch -Werror=strict-aliasing -Wno-deprecated-declarations
 
 if HAVE_PTHREAD
 GTest=vendor/gtest-1.7.0
