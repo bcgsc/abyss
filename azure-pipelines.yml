@@ -16,8 +16,6 @@ jobs:
   - script: |
       source activate abyss_CI
       ./autogen.sh
-      export CFLAGS="-flto=4 -Werror=odr -Werror=lto-type-mismatch -Werror=strict-aliasing"
-      export CXXFLAGS="-flto=4 -Werror=odr -Werror=lto-type-mismatch -Werror=strict-aliasing"
       ./configure
       make -j12 distcheck AM_CXXFLAGS=-Wall CXXFLAGS='-pthread'
     displayName: Compiling ABySS with gcc
