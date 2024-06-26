@@ -20,7 +20,7 @@ struct alignment* guided_aligner(struct alignment *palgn,
 	struct prob_dist *pdist,
 	struct gt_node *gtn,
 	int round);
-char simple_aligner(struct seq_col *scol, struct diag_col *dcol,
+int simple_aligner(struct seq_col *scol, struct diag_col *dcol,
 	struct scr_matrix* smatrix,
 	struct prob_dist *pdist,
 	struct alignment *algn, int round);
