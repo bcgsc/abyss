@@ -28,8 +28,8 @@ jobs:
       export CXX=clang++
       which clang
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++  CPPFLAGS=${CPPFLAGS} CFLAGS=${CFLAGS} ${CXXFLAGS}=${CXXFLAGS} LDFLAGS=${LDFLAGS} --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
       ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
-      make -j12 AM_CXXFLAGS=-Wno-error=unused-but-set-variable
+      make -j12 distcheck
     displayName: Compiling ABySS
