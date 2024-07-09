@@ -43,7 +43,7 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
+      mamba install --yes -c conda-forge -c bioconda compilers=1.7.0 make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
@@ -58,6 +58,8 @@ jobs:
       source activate abyss_CI
       export CC=clang
       export CXX=clang++
+      which clang
+      which clang++
       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
       ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
