@@ -26,9 +26,10 @@ jobs:
       source activate abyss_CI
       export CC=clang
       export CXX=clang++
+      export PATH=$PATH
       which clang
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
+      export DISTCHECK_CONFIGURE_FLAGS=$DISTCHECK_CONFIGURE_FLAGS" CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
       ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
       make -j12 distcheck
