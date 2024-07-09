@@ -24,12 +24,12 @@ jobs:
     displayName: Install btllib
   - script: |
       source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
+      export CC=/usr/local/miniconda/envs/abyss_CI/bin/clang
+      export CXX=/usr/local/miniconda/envs/abyss_CI/bin/clang++
       export PATH=$PATH
       which clang
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS=$DISTCHECK_CONFIGURE_FLAGS" CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
+      export DISTCHECK_CONFIGURE_FLAGS=$DISTCHECK_CONFIGURE_FLAGS" CC=/usr/local/miniconda/envs/abyss_CI/bin/clang CXX=/usr/local/miniconda/envs/abyss_CI/bin/clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
       ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
       make -j12 distcheck
