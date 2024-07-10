@@ -85,9 +85,9 @@ jobs:
       echo $CXXFLAGS
       conda list
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
       ./autogen.sh
-      ./configure
+      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install
       make -j12 distcheck
     displayName: Compiling ABySS
 
