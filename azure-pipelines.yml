@@ -30,3 +30,36 @@ jobs:
       ./configure CC=gcc-14 CXX=g++-14 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
       make -j12 distcheck AM_CXXFLAGS=-Wno-error=dangling-reference
     displayName: Compiling ABySS with gcc-14
+
+- job:
+  displayName: mac_latest-compilers-clang
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name abyss_CI
+    displayName: Create Anaconda environment
+  - script: |
+      source activate abyss_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
+    displayName: Install dependencies
+  - script: |
+      source activate abyss_CI
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
+      tar xzf btllib-1.7.0.tar.gz
+      cd btllib-1.7.0
+      export CC=clang
+      export CXX=clang++
+      ./compile
+    displayName: Install btllib
+  - script: |
+      source activate abyss_CI
+      export CC=clang
+      export CXX=clang++
+      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
+      ./autogen.sh
+      ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      make -j12 distcheck AM_CXXFLAGS=-Wno-error=unused-but-set-variable
+    displayName: Compiling ABySS
