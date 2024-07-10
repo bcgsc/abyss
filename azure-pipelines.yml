@@ -1,4 +1,4 @@
-# jobs:  
+jobs:  
 # - job: mac_latest_gcc
 #   pool:
 #     vmImage: macOS-latest
