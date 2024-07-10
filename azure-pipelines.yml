@@ -80,14 +80,14 @@ jobs:
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
       echo $CXXFLAGS
       conda list
       which clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
+      ls /usr/local/miniconda/envs/abyss_CI/bin
+      export DISTCHECK_CONFIGURE_FLAGS="--with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
       ./autogen.sh
-      ./configure CC=clang CXX=clang++ --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install
+      ls /usr/local/miniconda/envs/abyss_CI/include/boost
+      ./configure --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install
       make -j12 distcheck
     displayName: Compiling ABySS
 
