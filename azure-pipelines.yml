@@ -12,7 +12,7 @@ jobs:
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@14 llvm
     displayName: Install common
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.2.tar.gz
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
       export CC=gcc-14
       export CXX=g++-14
       tar xzf btllib-1.7.2.tar.gz
