@@ -257,17 +257,17 @@ jobs:
   - script: sudo apt-get install -qq gcc-8 g++-8
     displayName: Install gcc-8
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
-      tar xzf btllib-1.7.2.tar.gz
-      cd btllib-1.7.2
+      wget https://github.com/bcgsc/btllib/releases/download/v1.6.0/btllib-1.6.0.tar.gz
+      tar xzf btllib-1.6.0.tar.gz
+      cd btllib-1.6.0
       export CC=gcc-8
       export CXX=g++-8
       ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8 --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install"
-      ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-8 CXX=g++-8 --with-btllib=/home/vsts/work/1/s/btllib-1.6.0/install"
+      ./configure CC=gcc-8 CXX=g++-8 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.6.0/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-8
 
