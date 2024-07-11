@@ -82,7 +82,6 @@ jobs:
       source activate abyss_CI
       echo $CXXFLAGS
       which clang++
-#      export DISTCHECK_CONFIGURE_FLAGS="--with-boost=/usr/local/miniconda/envs/abyss_CI/include --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
       ./autogen.sh
       ls /usr/local/miniconda/envs/abyss_CI/include
       ./configure --with-boost="/usr/local/miniconda/envs/abyss_CI/include" --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib="/usr/local/miniconda/envs/abyss_CI/include/install"
