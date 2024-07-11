@@ -84,10 +84,10 @@ jobs:
       conda list
       which clang++
       ls /usr/local/miniconda/envs/abyss_CI/bin
-      export DISTCHECK_CONFIGURE_FLAGS="--with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
+      export DISTCHECK_CONFIGURE_FLAGS="--with-boost=/usr/local/miniconda/envs/abyss_CI/include --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install"
       ./autogen.sh
-      ls /usr/local/miniconda/envs/abyss_CI/include/boost
-      ./configure --with-boost=/usr/local/miniconda/envs/abyss_CI/include/boost --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install
+      ls /usr/local/miniconda/envs/abyss_CI/include
+      ./configure --with-boost=/usr/local/miniconda/envs/abyss_CI/include --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib=/usr/local/miniconda/envs/abyss_CI/include/install
       make -j12 distcheck
     displayName: Compiling ABySS
 
