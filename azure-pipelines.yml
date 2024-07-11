@@ -76,16 +76,12 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.5.2 make boost-cpp sparsehash openmpi automake perl pandoc btllib
+      mamba install --yes -c conda-forge -c bioconda compilers=1.5.2 make boost-cpp sparsehash openmpi automake perl pandoc btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      echo $CXXFLAGS
-      which clang++
       ./autogen.sh
-      ls /usr/local/miniconda/envs/abyss_CI/include
-      ./configure --with-boost="/usr/local/miniconda/envs/abyss_CI/include" --with-sparsehash=/usr/local/miniconda/envs/abyss_CI/include/sparsehash --with-mpi=/usr/local/miniconda/envs/abyss_CI/include/openmpi --with-btllib="/usr/local/miniconda/envs/abyss_CI/include/install"
-      make -j12 distcheck
+      ./configure
     displayName: Compiling ABySS
 
 # - job:
