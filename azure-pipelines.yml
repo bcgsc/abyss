@@ -85,53 +85,47 @@ jobs:
       make -j12 distcheck
     displayName: Compiling ABySS
 
-# - job:
-#   displayName: mac_clang13
-#   pool:
-#     vmImage: 'macOS-latest'
-#   steps:
-#   - script: echo "##vso[task.prependpath]$CONDA/bin"
-#     displayName: Add conda to PATH
-#   - script: conda create --yes --quiet --name abyss_CI
-#     displayName: Create Anaconda environment
-#   - script: |
-#       source activate abyss_CI
-#       conda install --yes -c conda-forge mamba python=3.9
-#       mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc
-#     displayName: Install dependencies
-#   - script: |
-#       source activate abyss_CI
-#       export CC=clang
-#       export CXX=clang++
-#       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
-#       ./autogen.sh
-#       ./configure
-#       make -j12 distcheck
-#     displayName: Compiling ABySS with clang 13
+- job:
+  displayName: mac_clang13
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name abyss_CI
+    displayName: Create Anaconda environment
+  - script: |
+      source activate abyss_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
+    displayName: Install dependencies
+  - script: |
+      source activate abyss_CI
+      ./autogen.sh
+      ./configure
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 13
 
-# - job:
-#   displayName: mac_clang12
-#   pool:
-#     vmImage: 'macOS-latest'
-#   steps:
-#   - script: echo "##vso[task.prependpath]$CONDA/bin"
-#     displayName: Add conda to PATH
-#   - script: conda create --yes --quiet --name abyss_CI
-#     displayName: Create Anaconda environment
-#   - script: |
-#       source activate abyss_CI
-#       conda install --yes -c conda-forge mamba python=3.9
-#       mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp btllib
-#     displayName: Install dependencies
-#   - script: |
-#       source activate abyss_CI
-#       export CC=clang
-#       export CXX=clang++
-#       export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++"
-#       ./autogen.sh
-#       ./configure
-#       make -j12 distcheck
-#     displayName: Compiling ABySS with clang 12
+- job:
+  displayName: mac_clang12
+  pool:
+    vmImage: 'macOS-latest'
+  steps:
+  - script: echo "##vso[task.prependpath]$CONDA/bin"
+    displayName: Add conda to PATH
+  - script: conda create --yes --quiet --name abyss_CI
+    displayName: Create Anaconda environment
+  - script: |
+      source activate abyss_CI
+      conda install --yes -c conda-forge mamba python=3.9
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
+    displayName: Install dependencies
+  - script: |
+      source activate abyss_CI
+      ./autogen.sh
+      ./configure
+      make -j12 distcheck
+    displayName: Compiling ABySS with clang 12
 
 
 # - job: linux_gcc12
