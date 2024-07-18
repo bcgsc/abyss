@@ -1,5 +1,5 @@
 [![Release](https://img.shields.io/github/release/bcgsc/abyss.svg)](https://github.com/bcgsc/abyss/releases)
-[![Downloads](https://img.shields.io/github/downloads/bcgsc/abyss/total?logo=github)](https://github.com/bcgsc/abyss/releases/download/2.2.3/abyss-2.2.3.tar.gz)
+[![Downloads](https://img.shields.io/github/downloads/bcgsc/abyss/total?logo=github)](https://github.com/bcgsc/abyss/releases/download/2.3.8/abyss-2.3.8.tar.gz)
 [![Conda](https://img.shields.io/conda/dn/bioconda/abyss?label=Conda)](https://anaconda.org/bioconda/abyss)
 [![Issues](https://img.shields.io/github/issues/bcgsc/abyss.svg)](https://github.com/bcgsc/abyss/issues)
 

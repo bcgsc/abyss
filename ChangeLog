@@ -1,3 +1,10 @@
+2024-07-18 Lauren Coombe <lcoombe@bcgsc.ca>
+
+  * Release version 2.3.8
+  
+    General:
+	  * Type changes to allow building with LTO
+
 2023-05-16 Lauren Coombe <lcoombe@bcgsc.ca>
 
   * Release version 2.3.7
