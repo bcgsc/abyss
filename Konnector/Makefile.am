@@ -15,3 +15,5 @@ konnector_SOURCES = konnector.cc \
 	DBGBloom.h \
 	DBGBloomAlgorithms.h \
 	konnector.h
+
+CXXFLAGS += -Wno-deprecated-declarations

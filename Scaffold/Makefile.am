@@ -33,6 +33,8 @@ abyss_junction_LDADD = \
 
 abyss_junction_SOURCES = junction.cc
 
+CXXFLAGS += -Wno-deprecated-declarations
+
 #abyss_drawgraph_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/Common
 #abyss_drawgraph_LDADD = $(top_builddir)/Common/libcommon.a
 #abyss_drawgraph_SOURCES = drawgraph.cc

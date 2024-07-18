@@ -50,3 +50,5 @@ abyss_overlap_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 abyss_overlap_SOURCES = overlap.cc
+
+CXXFLAGS += -Wno-deprecated-declarations

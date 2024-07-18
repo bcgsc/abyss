@@ -21,3 +21,5 @@ abyss_bloom_SOURCES = bloom.cc \
 	CascadingBloomFilterWindow.h \
 	RollingBloomDBGVisitor.h \
 	HashAgnosticCascadingBloom.h
+
+CXXFLAGS += -Wno-deprecated-declarations

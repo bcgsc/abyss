@@ -14,3 +14,5 @@ PopBubbles_LDADD = \
 	$(top_builddir)/dialign/libdialign.a
 
 PopBubbles_SOURCES = PopBubbles.cpp
+
+CXXFLAGS += -Wno-deprecated-declarations

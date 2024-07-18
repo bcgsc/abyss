@@ -247,6 +247,7 @@ void CommLayer::receiveBufferedMessage(MessagePtrVector& outmessages)
 				pNewMessage = new SetBaseMessage();
 				break;
 			default:
+				pNewMessage = new SeqDataRequest();
 				assert(false);
 				break;
 		}

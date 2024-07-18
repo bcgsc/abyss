@@ -23,3 +23,5 @@ AdjList_LDADD += \
 
 AdjList_SOURCES = \
 	AdjList.cpp
+
+CXXFLAGS += -Wno-deprecated-declarations

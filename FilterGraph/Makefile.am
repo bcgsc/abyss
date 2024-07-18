@@ -11,3 +11,5 @@ abyss_filtergraph_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 abyss_filtergraph_SOURCES = FilterGraph.cc
+
+CXXFLAGS += -Wno-deprecated-declarations

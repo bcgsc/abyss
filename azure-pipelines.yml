@@ -9,14 +9,14 @@ jobs:
       brew install --force python3 node@18 && brew unlink python3 node@18 && brew unlink python3 node@18 && brew link --overwrite python3 node@18
       find /usr/local/Cellar/python* -name EXTERNALLY-MANAGED -print0 | xargs -0 rm -vf
       brew update
-      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@13 llvm
+      brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@14 llvm
     displayName: Install common
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.5.1/btllib-1.5.1.tar.gz
-      export CC=gcc-13
-      export CXX=g++-13
-      tar xzf btllib-1.5.1.tar.gz
-      cd btllib-1.5.1
+      wget https://github.com/bcgsc/btllib/releases/download/v1.5.0/btllib-1.5.0.tar.gz
+      export CC=gcc-14
+      export CXX=g++-14
+      tar xzf btllib-1.5.0.tar.gz
+      cd btllib-1.5.0
       ./compile
     displayName: Install btllib
   - script: |
@@ -26,10 +26,10 @@ jobs:
       export CFLAGS="$CFLAGS -fuse-ld=lld"
       export OBJCFLAGS="$OBJCFLAGS -fuse-ld=lld"
       export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install"
-      ./configure CC=gcc-13 CXX=g++-13 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.1/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-14 CXX=g++-14 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.0/install"
+      ./configure CC=gcc-14 CXX=g++-14 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.0/install
       make -j12 distcheck AM_CXXFLAGS=-Wno-error=dangling-reference
-    displayName: Compiling ABySS with gcc-13
+    displayName: Compiling ABySS with gcc-14
 
 - job:
   displayName: mac_latest-compilers-clang
@@ -43,24 +43,12 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja
+      mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja btllib
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
-  - script: |
-      source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
-      ./configure  --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      ./configure
       make -j12 distcheck AM_CXXFLAGS=-Wno-error=unused-but-set-variable
     displayName: Compiling ABySS
 
@@ -76,24 +64,12 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.5.2 make boost-cpp sparsehash openmpi automake perl pandoc
+      mamba install --yes -c conda-forge -c bioconda compilers=1.5.2 make boost-cpp sparsehash openmpi automake perl pandoc btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
-  - script: |
-      source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
-      ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      ./configure
       make -j12 distcheck
     displayName: Compiling ABySS
 
@@ -109,24 +85,12 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
-  - script: |
-      source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
-      ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      ./configure
       make -j12 distcheck
     displayName: Compiling ABySS with clang 13
 
@@ -142,26 +106,15 @@ jobs:
   - script: |
       source activate abyss_CI
       conda install --yes -c conda-forge mamba python=3.9
-      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp
+      mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
       source activate abyss_CI
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
-      export CC=clang
-      export CXX=clang++
-      ./compile
-    displayName: Install btllib
-  - script: |
-      source activate abyss_CI
-      export CC=clang
-      export CXX=clang++
-      export DISTCHECK_CONFIGURE_FLAGS="CC=clang CXX=clang++ --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install"
       ./autogen.sh
-      ./configure --with-btllib=/Users/runner/work/1/s/btllib-1.7.0/install
+      ./configure
       make -j12 distcheck
     displayName: Compiling ABySS with clang 12
+
 
 - job: linux_gcc12
   pool:
@@ -178,17 +131,17 @@ jobs:
   - script: sudo apt-get install -qq gcc-12 g++-12
     displayName: Install gcc-12
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
+      tar xzf btllib-1.7.2.tar.gz
+      cd btllib-1.7.2
       export CC=gcc-12
       export CXX=g++-12
       ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install"
-      ./configure CC=gcc-12 CXX=g++-12 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-12 CXX=g++-12 --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install"
+      ./configure CC=gcc-12 CXX=g++-12 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-12
 
@@ -208,17 +161,17 @@ jobs:
   - script: sudo apt-get install -qq gcc-11 g++-11
     displayName: Install gcc-11
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
+      tar xzf btllib-1.7.2.tar.gz
+      cd btllib-1.7.2
       export CC=gcc-11
       export CXX=g++-11
       ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-11 CXX=g++-11 --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install"
-      ./configure CC=gcc-11 CXX=g++-11 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-11 CXX=g++-11 --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install"
+      ./configure CC=gcc-11 CXX=g++-11 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-11
 
@@ -237,17 +190,17 @@ jobs:
   - script: sudo apt-get install -qq gcc-10 g++-10
     displayName: Install gcc-10
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
+      tar xzf btllib-1.7.2.tar.gz
+      cd btllib-1.7.2
       export CC=gcc-10
       export CXX=g++-10
       ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-10 CXX=g++-10 --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install"
-      ./configure CC=gcc-10 CXX=g++-10 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-10 CXX=g++-10 --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install"
+      ./configure CC=gcc-10 CXX=g++-10 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-10
   - script: |
@@ -275,17 +228,17 @@ jobs:
   - script: sudo apt-get install -qq gcc-9 g++-9
     displayName: Install gcc-9
   - script: |
-      wget https://github.com/bcgsc/btllib/releases/download/v1.7.0/btllib-1.7.0.tar.gz
-      tar xzf btllib-1.7.0.tar.gz
-      cd btllib-1.7.0
+      wget https://github.com/bcgsc/btllib/releases/download/v1.7.2/btllib-1.7.2.tar.gz
+      tar xzf btllib-1.7.2.tar.gz
+      cd btllib-1.7.2
       export CC=gcc-9
       export CXX=g++-9
       ./compile
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-9 CXX=g++-9 --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install"
-      ./configure CC=gcc-9 CXX=g++-9 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.0/install
+      export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-9 CXX=g++-9 --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install"
+      ./configure CC=gcc-9 CXX=g++-9 --with-mpi=/usr/lib/openmpi --with-btllib=/home/vsts/work/1/s/btllib-1.7.2/install
       make -j12 distcheck
     displayName: Compiling ABySS with gcc-9
 

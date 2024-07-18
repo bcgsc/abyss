@@ -10,3 +10,5 @@ Overlap_LDADD = \
 
 Overlap_SOURCES = \
 	Overlap.cpp
+
+CXXFLAGS += -Wno-deprecated-declarations

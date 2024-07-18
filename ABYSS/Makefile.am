@@ -10,3 +10,5 @@ ABYSS_LDADD = \
 	$(top_builddir)/Common/libcommon.a
 
 ABYSS_SOURCES = abyss.cc
+
+CXXFLAGS += -Wno-deprecated-declarations

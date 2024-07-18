@@ -11,3 +11,5 @@ KAligner_LDADD = \
 
 KAligner_SOURCES = KAligner.cpp Aligner.cpp Aligner.h Options.h \
 	Pipe.h PipeMux.h Semaphore.h
+
+CXXFLAGS += -Wno-deprecated-declarations
