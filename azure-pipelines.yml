@@ -24,6 +24,8 @@ jobs:
       export CXX=g++-14
       export CXXFLAGS="$CXXFLAGS -fuse-ld=lld"
       echo $CXXFLAGS
+      which g++
+      which g++-14
       export CFLAGS="$CFLAGS -fuse-ld=lld"
       export OBJCFLAGS="$OBJCFLAGS -fuse-ld=lld"
       export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
