@@ -15,5 +15,3 @@ abyss_gapfill_LDADD = \
     $(top_builddir)/Common/libcommon.a
 
 abyss_gapfill_SOURCES = gapfill.cpp gapfill.h
-
-CXXFLAGS += -Wno-deprecated-declarations -Wno-maybe-uninitialized

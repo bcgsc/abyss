@@ -35,4 +35,3 @@ abyss_mergepairs_LDADD = $(builddir)/libalign.a \
 
 abyss_mergepairs_SOURCES = mergepairs.cc
 
-CXXFLAGS += -Wno-maybe-uninitialized
