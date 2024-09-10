@@ -21,6 +21,8 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
+      export CC=gcc-14
+      export CXX=g++-14
       export CXXFLAGS="$CXXFLAGS -fuse-ld=lld"
       echo $CXXFLAGS
       export CFLAGS="$CFLAGS -fuse-ld=lld"
