@@ -46,4 +46,4 @@ PathConsensus_LDADD = \
 PathConsensus_SOURCES = \
 	PathConsensus.cpp
 
-CXXFLAGS += -Wno-deprecated-declarations
+CXXFLAGS += -Wno-deprecated-declarations -Wno-maybe-uninitialized

@@ -310,6 +310,8 @@ int main(int argc, char **argv)
   duration = (clock()-tim)/CLOCKS_PER_SEC;
   printf("Total time:   %f secs\n", duration);
   printf("Total weight: %f \n", algn->total_weight);
+  free_alignment(algn);
+  free_alignment(salgn);
   exit(EXIT_SUCCESS);
 }
 
