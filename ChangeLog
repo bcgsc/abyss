@@ -3,7 +3,7 @@
   * Release version 2.3.9
 
       General:
-                * Deallocate memory used by alignment data structure
+                * Deallocate memory used by alignment data structure in dialign
 
 2024-07-18 Lauren Coombe <lcoombe@bcgsc.ca>
 
