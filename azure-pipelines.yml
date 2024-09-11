@@ -10,6 +10,7 @@ jobs:
       find /usr/local/Cellar/python* -name EXTERNALLY-MANAGED -print0 | xargs -0 rm -vf
       brew update
       brew install automake boost openmpi google-sparsehash make pandoc ghc gcc@14 llvm
+      brew reinstall gcc@14
     displayName: Install common
   - script: |
       wget https://github.com/bcgsc/btllib/releases/download/v1.5.0/btllib-1.5.0.tar.gz
