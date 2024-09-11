@@ -1,3 +1,10 @@
+2024-09-11 Johnathan Wong <jowong@bcgsc.ca>
+
+  * Release version 2.3.9
+
+      General:
+                * Deallocate memory used by alignment data structure in dialign
+
 2024-07-18 Lauren Coombe <lcoombe@bcgsc.ca>
 
   * Release version 2.3.8
