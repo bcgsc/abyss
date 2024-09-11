@@ -21,11 +21,8 @@ jobs:
     displayName: Install btllib
   - script: |
       ./autogen.sh
-      export CXXFLAGS="$CXXFLAGS -fuse-ld=lld"
-      echo $CXXFLAGS
-      export CFLAGS="$CFLAGS -fuse-ld=lld"
-      export OBJCFLAGS="$OBJCFLAGS -fuse-ld=lld"
-      export OBJCXXFLAGS="$OBJCXXFLAGS -fuse-ld=lld"
+      export CC=gcc-14
+      export CXX=g++-14
       export DISTCHECK_CONFIGURE_FLAGS="CC=gcc-14 CXX=g++-14 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.0/install"
       ./configure CC=gcc-14 CXX=g++-14 --with-boost=/usr/local/opt/boost --with-sparsehash=/usr/local/opt/google-sparsehash --with-mpi=/usr/local/opt/openmpi --with-btllib=/Users/runner/work/1/s/btllib-1.5.0/install
       make -j12 distcheck AM_CXXFLAGS=-Wno-error=dangling-reference
