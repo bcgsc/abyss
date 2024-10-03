@@ -33,13 +33,20 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
+  - script: |
+      mkdir -p ~/miniforge3
+      curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh  -o ~/miniforge3/miniforge.sh
+      bash ~/miniforge3/miniforge.sh -b -u -p ~/miniforge3
+      rm -rf  ~/miniforge3/miniforge.sh
+      ~/miniforge3/bin/conda init bash
+      ~/miniforge3/bin/conda init zsh
+      export CONDA=$(realpath ~/miniforge3/bin)
+      echo "##vso[task.prependpath]$CONDA"
+    displayName: Install conda
   - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
       source activate abyss_CI
-      conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers make boost-cpp sparsehash openmpi automake perl pandoc meson ninja btllib
     displayName: Install dependencies
   - script: |
@@ -54,13 +61,20 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
+  - script: |
+      mkdir -p ~/miniforge3
+      curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh  -o ~/miniforge3/miniforge.sh
+      bash ~/miniforge3/miniforge.sh -b -u -p ~/miniforge3
+      rm -rf  ~/miniforge3/miniforge.sh
+      ~/miniforge3/bin/conda init bash
+      ~/miniforge3/bin/conda init zsh
+      export CONDA=$(realpath ~/miniforge3/bin)
+      echo "##vso[task.prependpath]$CONDA"
+    displayName: Install conda
   - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
       source activate abyss_CI
-      conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers=1.5.2 make boost-cpp sparsehash openmpi automake perl pandoc btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
@@ -75,13 +89,20 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
+  - script: |
+      mkdir -p ~/miniforge3
+      curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh  -o ~/miniforge3/miniforge.sh
+      bash ~/miniforge3/miniforge.sh -b -u -p ~/miniforge3
+      rm -rf  ~/miniforge3/miniforge.sh
+      ~/miniforge3/bin/conda init bash
+      ~/miniforge3/bin/conda init zsh
+      export CONDA=$(realpath ~/miniforge3/bin)
+      echo "##vso[task.prependpath]$CONDA"
+    displayName: Install conda
   - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
       source activate abyss_CI
-      conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers=1.4.2 make boost-cpp sparsehash openmpi automake perl btllib pandoc 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
@@ -96,13 +117,20 @@ jobs:
   pool:
     vmImage: 'macOS-latest'
   steps:
-  - script: echo "##vso[task.prependpath]$CONDA/bin"
-    displayName: Add conda to PATH
+  - script: |
+      mkdir -p ~/miniforge3
+      curl -L https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-x86_64.sh  -o ~/miniforge3/miniforge.sh
+      bash ~/miniforge3/miniforge.sh -b -u -p ~/miniforge3
+      rm -rf  ~/miniforge3/miniforge.sh
+      ~/miniforge3/bin/conda init bash
+      ~/miniforge3/bin/conda init zsh
+      export CONDA=$(realpath ~/miniforge3/bin)
+      echo "##vso[task.prependpath]$CONDA"
+    displayName: Install conda
   - script: conda create --yes --quiet --name abyss_CI
     displayName: Create Anaconda environment
   - script: |
       source activate abyss_CI
-      conda install --yes -c conda-forge mamba python=3.9
       mamba install --yes -c conda-forge -c bioconda compilers=1.4.0 make boost-cpp sparsehash openmpi automake perl pandoc llvm-openmp btllib 'llvm-openmp<17.0.0' 'libcxx<17.0.0'
     displayName: Install dependencies
   - script: |
