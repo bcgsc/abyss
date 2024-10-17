@@ -349,12 +349,12 @@ L?=$l
 S?=100-5000
 N?=15-20
 SCAFFOLD_DE_S?=$(shell echo $S | sed 's/-.*//')
-SCAFFOLD_DE_N?=$N
+SCAFFOLD_DE_N?=$(shell echo $N | sed 's/-.*//')
 SCAFFOLD_DE_OPTIONS?=$(DISTANCEEST_OPTIONS)
-$(foreach i,$(mp),$(eval $i_l?=$L))
-$(foreach i,$(mp),$(eval $i_s?=$(SCAFFOLD_DE_S)))
-$(foreach i,$(mp),$(eval $i_n?=$(SCAFFOLD_DE_N)))
-override scaffold_deopt=$v $(dbopt) --dot --median -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_l) -s$($*_s) -n$($*_n) $($*_de)
+$(foreach i,$(mp),$(eval $i_scaf_l?=$L))
+$(foreach i,$(mp),$(eval $i_scaf_s?=$(SCAFFOLD_DE_S)))
+$(foreach i,$(mp),$(eval $i_scaf_n?=$(SCAFFOLD_DE_N)))
+override scaffold_deopt=$v $(dbopt) --dot --median -j$j -k$k $(SCAFFOLD_DE_OPTIONS) -l$($*_scaf_l) -s$($*_scaf_s) -n$($*_scaf_n) $($*_de)
 scopt += $v $(dbopt) $(SS) -k$k
 ifdef G
 scopt += -G$G
