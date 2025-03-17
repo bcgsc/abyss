@@ -43,6 +43,7 @@ static const char* zcatExec(const string& path)
 			"tar --use-compress-program=xzdec -xOf" :
 		endsWith(path, ".Z") ? "gunzip -c" :
 		endsWith(path, ".gz") ? "gunzip -c" :
+                endsWith(path, ".bgz") ? "gunzip -c" :
 		endsWith(path, ".bz2") ? "bunzip2 -c" :
 		endsWith(path, ".xz") ? "xzdec -c" :
 		endsWith(path, ".zip") ? "unzip -p" :
