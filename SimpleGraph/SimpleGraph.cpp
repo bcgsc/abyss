@@ -516,7 +516,7 @@ static void handleEstimate(const Graph& g,
 			= makeDistanceMap(g, origin, *solIter);
 
 		// Remove solutions whose distance estimates are not correct.
-		unsigned validCount = 0, invalidCount = 0, ignoredCount = 0;
+		unsigned validCount = 0, invalidCount = 0;
 		for (Estimates::const_iterator iter
 					= er.estimates[dirIdx].begin();
 				iter != er.estimates[dirIdx].end(); ++iter) {
@@ -528,7 +528,6 @@ static void handleEstimate(const Graph& g,
 				= distanceMap.find(v);
 			if (dmIter == distanceMap.end()) {
 				// This contig is a repeat.
-				ignoredCount++;
 				vout << "ignored\n";
 				continue;
 			}
@@ -541,11 +540,9 @@ static void handleEstimate(const Graph& g,
 			bool invalid = (unsigned)abs(diff) > buffer;
 			bool repeat = repeats.count(v.contigIndex()) > 0;
 			bool ignored = invalid && repeat;
-			if (ignored)
-				ignoredCount++;
-			else if (invalid)
+			if (invalid)
 				invalidCount++;
-			else
+			else if (!ignored)
 				validCount++;
 			vout << "dist: " << actualDistance
 				<< " diff: " << diff
