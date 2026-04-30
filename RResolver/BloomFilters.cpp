@@ -141,10 +141,8 @@ loadReads(const std::vector<std::string>& readFilepaths, int r)
 {
 	ReadSize::readsSampleSize = 0;
 	ReadSize::current.sampleCount = 0;
-	int i = 0;
 	for (auto& b : ReadSize::readSizes) {
 		b.sampleCount = 0;
-		i++;
 	}
 
 	for (const auto& path : readFilepaths) {

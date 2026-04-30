@@ -376,7 +376,6 @@ static void consensus(const string& outPath, const string& pileupPath)
 		: (pileupFile.open(pileupPath.c_str()), pileupFile);
 	assert_good(pileupOut, pileupPath);
 
-	unsigned numIgnored = 0;
 	for (ContigMap::const_iterator it = g_contigs.begin();
 			it != g_contigs.end(); ++it) {
 		const ContigCount& contig = it->second;
@@ -397,7 +396,6 @@ static void consensus(const string& outPath, const string& pileupPath)
 			float percentAgreement
 				= sumBest / (float)(sumBest + sumSecond);
 			if (isnan(percentAgreement) || percentAgreement < .9) {
-				numIgnored++;
 				if (opt::csToNt) {
 					if (opt::verbose > 0)
 						cerr << "warning: Contig " << it->first
